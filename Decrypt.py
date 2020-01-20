@@ -42,18 +42,15 @@ def MTUnShuffle(img_in, imghash):
     N = dim[0]
     img_out = img_in.copy()
 
-    MTmap = np.zeros(N,dtype=int)
-    for i in range(1,N):
-        MTmap = np.vstack((MTmap, np.full((N), i, dtype=float)))
-
     for j in range(N):
         random.seed(temphash & mask)
-        random.shuffle(MTmap[:, j])
+        MTmap = list(range(N))
+        random.shuffle(MTmap)
         temphash = temphash>>CONFIG.MASK_BITS
         if temphash==0:
             temphash = imghash
         for i in range(N):
-            index = int(MTmap[i][j])
+            index = int(MTmap[i])
             img_out[index][j] = img_in[i][j]
     return img_out
 

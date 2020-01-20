@@ -10,5 +10,6 @@ DEBUG_TIMER = True
 
 #Constants
 MASK_BITS = 8 #no. of bits + 1
+SOURCE = "raytracer480.png"
 AR_MIN_ITER = 90
 AR_MAX_ITER = 100
