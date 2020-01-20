@@ -18,7 +18,6 @@ def HistEQ(img_in):
 
     # Convert back to RGB Space
     img_out = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
-    print(os.getcwd())
     if CONFIG.DEBUG_HISTEQ:
         cv2.imshow('Input image', img_in)
         cv2.imshow('Histogram equalized', img_out)
@@ -56,13 +55,19 @@ def MTShuffle(img_in, imghash):
     temphash = imghash
     dim = img_in.shape
     N = dim[0]
+    img_out = img_in.copy()
+
     for j in range(N):
         random.seed(temphash & mask)
-        random.shuffle(img_in[:, j])
+        MTmap = list(range(N))
+        random.shuffle(MTmap)
         temphash = temphash>>CONFIG.MASK_BITS
         if temphash==0:
             temphash = imghash
-    return img_in
+        for i in range(N):
+            index = int(MTmap[i])
+            img_out[i][j] = img_in[index][j]
+    return img_out
 
 #XOR Image with a Fractal
 def FracXor(imghash):
@@ -86,7 +91,7 @@ def FracXor(imghash):
 
 # Driver function
 def Encrypt():
-    filename = "raytracer480.png"
+    filename = CONFIG.SOURCE
     img = cv2.imread(filename, 1)
     dim = img.shape
 
