@@ -1,2 +1,2 @@
 #PyCUDA-Powered-ArMTFr
-Contains an implementation 
+Contains an implementation of the ArMTFR Algorithm
