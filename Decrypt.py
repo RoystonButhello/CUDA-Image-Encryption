@@ -5,20 +5,19 @@ import random               #Obviously neccessary
 import numpy as np          #See above
 import CONFIG               #Module with Debug flags and other constants
 import time                 #Literally just timing
+import hashlib              #For SHA256
 
 os.chdir(CONFIG.PATH)
 
-#Generate 64-bit Integer hash based on rough horizontal gradient
-def gradientHash(img, hashSize=8):
-    # Resize image; add extra column to compute the horizontal gradient
-    imgBW = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgScaled = cv2.resize(imgBW,(hashSize+1,hashSize))
-
-    # Compute horizontal gradient b/w adjacent pixels
-    diffMat = imgScaled[:, 1:] > imgScaled[:, :-1]
-
-    # Convert the gradient image to a hash
-    return sum([2**i for (i, v) in enumerate(diffMat.flatten()) if v])
+def sha2Hash(filename):
+    hashobj = hashlib.sha256()
+    with open(filename,'rb') as f:
+        while True:
+            block = f.read(CONFIG.BUFF_SIZE)
+            if not block:
+                break
+            hashobj.update(block)
+    return int(hashobj.hexdigest(),16)
 
 # Arnold's Cat Map
 def ArCatMap(img_in, num):
@@ -30,8 +29,9 @@ def ArCatMap(img_in, num):
         for y in range(N):
             img_out[x][y] = img_in[(2*x+y)%N][(x+y)%N]
 
-    if CONFIG.DEBUG_CATMAP:
-        cv2.imwrite("catmap\\iteration " + str(num) + ".png", img_out)
+    #Use this condition once I've figured out how to feed img directly to sha256 function
+    #if CONFIG.DEBUG_CATMAP:
+    cv2.imwrite("catmap\\iteration " + str(num) + ".png", img_out)
     return img_out
 
 # Mersenne-Twister Intra-Column-Shuffle
@@ -83,8 +83,6 @@ def Decrypt():
     srchash = int(f.read())
     f.close()
 
-    #srchash = gradientHash(cv2.imread("2histeq.png", 1))
-
     #Clear catmap debug files
     if CONFIG.DEBUG_CATMAP:
         files = os.listdir("catmap")
@@ -107,9 +105,10 @@ def Decrypt():
     i = 1
     timer[2] = time.time()
     # Inverse Ar Phase: Cat-map Iterations
-    while (gradientHash(imgAr)!=srchash) and (i<30):
-        imgAr = ArCatMap(imgAr, i)
+    imgAr = ArCatMap(imgAr, i)
+    while (sha2Hash("catmap\\iteration " + str(i) + ".png")!=srchash):
         i += 1
+        imgAr = ArCatMap(imgAr, i)
     timer[2] = time.time() - timer[2]
     cv2.imwrite("8output.png", imgAr)
 
