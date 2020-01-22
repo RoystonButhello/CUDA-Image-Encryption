@@ -5,6 +5,7 @@ import random               #Obviously neccessary
 import numpy as np          #See above
 import CONFIG               #Module with Debug flags and other constants
 import time                 #Literally just timing
+import hashlib              #For SHA256
 
 os.chdir(CONFIG.PATH)
 
@@ -23,17 +24,15 @@ def HistEQ(img_in):
         cv2.imshow('Histogram equalized', img_out)
     return img_out
 
-#Generate 64-bit Integer hash based on rough horizontal gradient
-def gradientHash(img, hashSize=8):
-    # Resize image; add extra column to compute the horizontal gradient
-    imgBW = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgScaled = cv2.resize(imgBW,(hashSize+1,hashSize))
-
-    # Compute horizontal gradient b/w adjacent pixels
-    diffMat = imgScaled[:, 1:] > imgScaled[:, :-1]
-
-    # Convert the gradient image to a hash
-    return sum([2**i for (i, v) in enumerate(diffMat.flatten()) if v])
+def sha2Hash(filename):
+    hashobj = hashlib.sha256()
+    with open(filename,'rb') as f:
+        while True:
+            block = f.read(CONFIG.BUFF_SIZE)
+            if not block:
+                break
+            hashobj.update(block)
+    return int(hashobj.hexdigest(),16)
 
 # Arnold's Cat Map
 def ArCatMap(img_in, num):
@@ -78,9 +77,6 @@ def FracXor(imghash):
     fileCount = len(glob.glob1("fractals","*.png"))
     fracID = (imghash % fileCount) + 1
     filename = "fractals\\" + str(fracID) + ".png"
-    print(imghash)
-    print(fileCount)
-    print(fracID)
     #Read the file, resize it, then XOR
     fractal = cv2.imread(filename, 1)
     dim = img_in.shape
@@ -97,9 +93,9 @@ def Encrypt():
 
     timer = np.zeros(5)
     overall_time = time.time()
-    timer[0] = overall_time
 
     # Check image dimensions, perform HisEQ if valid and proceed
+    timer[0] = overall_time
     if dim[0]!=dim[1]:
         N = min(dim[0], dim[1])
         img = cv2.resize(img,(N,N))
@@ -110,7 +106,7 @@ def Encrypt():
 
     timer[1] = time.time()
     # Compute hash of imgEQ and write to text file
-    imghash = gradientHash(imgEQ)
+    imghash = sha2Hash("2histeq.png")
     timer[1] = time.time() - timer[1]
     f = open("hash.txt","w+")
     f.write(str(imghash))
@@ -127,6 +123,7 @@ def Encrypt():
     for i in range (1, random.randint(CONFIG.AR_MIN_ITER,CONFIG.AR_MAX_ITER)):
         imgAr = ArCatMap(imgAr, i)
     timer[2] = time.time() - timer[2]
+
     cv2.imwrite("3catmap.png", imgAr)
 
     timer[3] = time.time()
@@ -142,12 +139,14 @@ def Encrypt():
     cv2.imwrite("5imgfractal.png", imgFr)
     overall_time = time.time() - overall_time
 
-    print("Pre-processing completed in " + str(timer[0]) +"s")
-    print("Hashing completed in " + str(timer[1]) +"s")
-    print("Arnold Mapping completed in " + str(timer[2]) +"s")
-    print("MT Shuffle completed in " + str(timer[3]) +"s")
-    print("Fractal XOR completed in " + str(timer[4]) +"s")
-    print("Encryption took " + str(np.sum(timer)) + "s out of " + str(overall_time) + "s of net execution time")
+    if CONFIG.DEBUG_TIMER:
+        print("Pre-processing completed in " + str(timer[0]) +"s")
+        print("Hashing completed in " + str(timer[1]) +"s")
+        print("Arnold Mapping completed in " + str(timer[2]) +"s")
+        print("MT Shuffle completed in " + str(timer[3]) +"s")
+        print("Fractal XOR completed in " + str(timer[4]) +"s")
+        print("\nEncryption took " + str(np.sum(timer)) + "s out of " + str(overall_time) + "s of net execution time\n")
+
     
 Encrypt()
 cv2.waitKey(0)
