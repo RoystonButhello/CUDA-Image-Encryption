@@ -44,7 +44,7 @@ def MTUnShuffle(img_in, imghash):
     
     random.seed(temphash & mask)
     for j in range(N):
-        
+        random.seed(temphash & mask)
         MTmap = list(range(N))
         random.shuffle(MTmap)
         temphash = temphash>>CONFIG.MASK_BITS
