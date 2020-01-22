@@ -34,7 +34,7 @@ def sha2Hash(filename):
             hashobj.update(block)
     return int(hashobj.hexdigest(),16)
 
-# Arnold's Cat Map
+# Arnold's Cat Mapo
 def ArCatMap(img_in, num):
     #print("\n num="+str(num))
     dim = img_in.shape
@@ -57,10 +57,10 @@ def MTShuffle(img_in, imghash):
     N = dim[0]
     img_out = img_in.copy()
     
-    random.seed(temphash & mask)
-
+   
+    
     for j in range(N):
-        
+        random.seed(temphash & mask)
         MTmap = list(range(N))
         random.shuffle(MTmap)
         temphash = temphash>>CONFIG.MASK_BITS
@@ -79,7 +79,7 @@ def FracXor(imghash):
     #Select a file for use based on hash
     fileCount = len(glob.glob1("fractals","*.png"))
     fracID = (imghash % fileCount) + 1
-    filename = "fractals\\" + str(fracID) + ".png"
+    filename = "fractals/" + str(fracID) + ".png"
     #Read the file, resize it, then XOR
     fractal = cv2.imread(filename, 1)
     dim = img_in.shape
