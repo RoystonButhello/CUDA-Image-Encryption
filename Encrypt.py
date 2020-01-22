@@ -36,6 +36,7 @@ def sha2Hash(filename):
 
 # Arnold's Cat Map
 def ArCatMap(img_in, num):
+    #print("\n num="+str(num))
     dim = img_in.shape
     N = dim[0]
     img_out = np.zeros([N, N, dim[2]])
@@ -55,9 +56,11 @@ def MTShuffle(img_in, imghash):
     dim = img_in.shape
     N = dim[0]
     img_out = img_in.copy()
+    
+    random.seed(temphash & mask)
 
     for j in range(N):
-        random.seed(temphash & mask)
+        
         MTmap = list(range(N))
         random.shuffle(MTmap)
         temphash = temphash>>CONFIG.MASK_BITS
