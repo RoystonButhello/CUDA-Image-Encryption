@@ -46,7 +46,7 @@ def ArCatMap(img_in, num):
             img_out[x][y] = img_in[(2*x+y)%N][(x+y)%N]
 
     if CONFIG.DEBUG_CATMAP:
-        cv2.imwrite("catmap\\iteration " + str(num) + ".png", img_out)
+        cv2.imwrite("catmap" + CONFIG.SEPARATOR + "iteration" + str(num) + ".png", img_out)
     return img_out
 
 # Mersenne-Twister Intra-Column-Shuffle
