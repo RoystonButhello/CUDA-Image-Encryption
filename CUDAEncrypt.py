@@ -67,7 +67,7 @@ def FracXor(imghash):
     #Select a file for use based on hash
     fileCount = len(glob.glob1("fractals","*.png"))
     fracID = (imghash % fileCount) + 1
-    filename = "fractals\\" + str(fracID) + ".png"
+    filename = "fractals" + CONFIG.SEPARATOR + str(fracID) + ".png"
     #Read the file, resize it, then XOR
     fractal = cv2.imread(filename, 1)
     dim = img_in.shape
@@ -138,7 +138,7 @@ def Encrypt():
         # Write intermediate files if debugging is enabled
         if CONFIG.DEBUG_CATMAP:
             imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
-            cv2.imwrite("catmap\\iteration " + str(i) + ".png", imgAr)
+            cv2.imwrite("catmap" + CONFIG.SEPARATOR + "iteration " + str(i) + ".png", imgAr)
     imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
     timer[2] = time.time() - timer[2]
     cv2.imwrite("3catmap.png", imgAr)
