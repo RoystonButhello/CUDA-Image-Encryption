@@ -31,7 +31,7 @@ def ArCatMap(img_in, num):
 
     #Use this condition once I've figured out how to feed img directly to sha256 function
     #if CONFIG.DEBUG_CATMAP:
-    cv2.imwrite("catmap/iteration " + str(num) + ".png", img_out)
+    cv2.imwrite("catmap" + CONFIG.SEPARATOR + "iteration" + str(num) + ".png", img_out)
     return img_out
 
 # Mersenne-Twister Intra-Column-Shuffle
@@ -63,7 +63,7 @@ def FracXor(imghash):
     #Select a file for use based on hash
     fileCount = len(glob.glob1("fractals","*.png"))
     fracID = (imghash % fileCount) + 1
-    filename = "fractals/" + str(fracID) + ".png"
+    filename = "fractals" + CONFIG.SEPARATOR + str(fracID) + ".png"
     #Read the file, resize it, then XOR
     fractal = cv2.imread(filename, 1)
     dim = img_in.shape
@@ -107,7 +107,7 @@ def Decrypt():
     timer[2] = time.time()
     # Inverse Ar Phase: Cat-map Iterations
     imgAr = ArCatMap(imgAr, i)
-    while (sha2Hash("catmap/iteration " + str(i) + ".png")!=srchash):
+    while (sha2Hash("catmap" + CONFIG.SEPARATOR + "iteration " + str(i) + ".png")!=srchash):
         i += 1
         imgAr = ArCatMap(imgAr, i)
     timer[2] = time.time() - timer[2]
