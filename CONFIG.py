@@ -1,7 +1,21 @@
 import os
-
+import platform
 # Note:- Use absolute path when executing via VSC, use relative path when executing via IDLE
-PATH = os.path.dirname(os.path.abspath( __file__ )) + "\\"
+
+#Directory or file separator By default set to Windows
+SEPARATOR="\\"
+
+if os.name=='nt':
+  SEPARATOR="\\"
+  print("\nYou are running "+str(platform.system())+" "+str(platform.release()))
+  PATH = os.path.dirname(os.path.abspath( __file__ )) + SEPARATOR
+  print("\nCurrent PATH= "+PATH)
+
+elif os.name=='posix':
+  SEPARATOR="/"
+  PATH = os.path.dirname(os.path.abspath( __file__ )) + SEPARATOR
+  print("\nYou are running "+str(platform.system())+" "+str(platform.release()))
+  print("\nCurrent PATH= "+PATH)
 
 #Flags
 DEBUG_HISTEQ = False
