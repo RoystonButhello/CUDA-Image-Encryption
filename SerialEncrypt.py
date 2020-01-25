@@ -8,11 +8,6 @@ import hashlib              # For SHA256
 import CONFIG               # Debug flags and constants
 import CoreFunctions as cf  # Common functions
 
-#PyCUDA Import
-import pycuda.driver as cuda
-import pycuda.autoinit
-from pycuda.compiler import SourceModule
-
 os.chdir(CONFIG.PATH)
 
 # Function to equalize Luma channel
@@ -30,20 +25,6 @@ def HistEQ(img_in):
         cv2.imshow('Histogram equalized', img_out)
     return img_out
 
-mod = SourceModule("""
-    #include <stdint.h>
-    __global__ void ArCatMap(uint8_t *in, uint8_t *out)
-    {
-        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
-        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
-        int blocksize = blockDim.x * blockDim.y * blockDim.z;
-        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * blocksize  + threadIdx.x;
-        int OutDex = ((gridDim.x)*ny + nx) * blocksize + threadIdx.x;
-        out[OutDex] = in[InDex];
-    }
-  """)
-
-# Driver function
 def Encrypt():
     #Initialize Timer
     timer = np.zeros(5)
@@ -81,20 +62,12 @@ def Encrypt():
     
     timer[2] = time.time()
     # Ar Phase: Cat-map Iterations
-    imgAr_In = np.asarray(imgAr).reshape(-1)
-    gpuimgIn = cuda.mem_alloc(imgAr_In.nbytes)
-    gpuimgOut = cuda.mem_alloc(imgAr_In.nbytes)
     for i in range (1, random.randint(CONFIG.AR_MIN_ITER,CONFIG.AR_MAX_ITER)):
-        cuda.memcpy_htod(gpuimgIn, imgAr_In)
-        func = mod.get_function("ArCatMap")
-        func(gpuimgIn, gpuimgOut, grid=(dim[0],dim[1],1), block=(dim[2],1,1))
-        cuda.memcpy_dtoh(imgAr_In, gpuimgOut)
-        # Write intermediate files if debugging is enabled
+        imgAr = cf.ArCatMap(imgAr)
         if CONFIG.DEBUG_CATMAP:
-            imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
             cv2.imwrite("catmap\\iteration " + str(i) + ".png", imgAr)
-    imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
     timer[2] = time.time() - timer[2]
+
     cv2.imwrite("3catmap.png", imgAr)
 
     timer[3] = time.time()
