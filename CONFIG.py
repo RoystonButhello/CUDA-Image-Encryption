@@ -1,3 +1,4 @@
+'''Configure operation of the encryption algorithms via this file'''
 import os
 
 # Note:- Use absolute path when executing via VSC, use relative path when executing via IDLE
@@ -10,7 +11,7 @@ DEBUG_TIMER = True
 
 #Constants
 MASK_BITS = 16
-AR_MIN_ITER = 50    #Min. catmap iterations
-AR_MAX_ITER = 150   #Max/ catmap iterations
+AR_MIN_ITER = 100   #Min. catmap iterations
+AR_MAX_ITER = 200   #Max. catmap iterations
 BUFF_SIZE = 65536   #Compute hash in 64kB chunks
 SOURCE = "raytracer480.png" #Input image

@@ -1,11 +1,12 @@
-import cv2                  #OpenCV
-import os                   #Path setting and file-retrieval
-import glob                 #File counting
-import random               #Obviously neccessary
-import numpy as np          #See above
-import CONFIG               #Module with Debug flags and other constants
-import time                 #Literally just timing
-import hashlib              #For SHA256
+import os                   # Path setting and file-retrieval
+import cv2                  # OpenCV
+import glob                 # File counting
+import time                 # Timing Execution
+import random               # Obviously neccessary
+import numpy as np          # See above
+import hashlib              # For SHA256
+import CONFIG               # Debug flags and constants
+import CoreFunctions as cf  # Common functions
 
 #PyCUDA Import
 import pycuda.driver as cuda
@@ -29,53 +30,6 @@ def HistEQ(img_in):
         cv2.imshow('Histogram equalized', img_out)
     return img_out
 
-def sha2Hash(filename):
-    hashobj = hashlib.sha256()
-    with open(filename,'rb') as f:
-        while True:
-            block = f.read(CONFIG.BUFF_SIZE)
-            if not block:
-                break
-            hashobj.update(block)
-    return int(hashobj.hexdigest(),16)
-
-# Mersenne-Twister Intra-Column-Shuffle
-def MTShuffle(img_in, imghash):
-    mask = 2**CONFIG.MASK_BITS - 1   # Default: 8 bits
-    temphash = imghash
-    dim = img_in.shape
-    N = dim[0]
-    img_out = img_in.copy()
-
-    for j in range(N):
-        random.seed(temphash & mask)
-        MTmap = list(range(N))
-        random.shuffle(MTmap)
-        temphash = temphash>>CONFIG.MASK_BITS
-        if temphash==0:
-            temphash = imghash
-        for i in range(N):
-            index = int(MTmap[i])
-            img_out[i][j] = img_in[index][j]
-    return img_out
-
-#XOR Image with a Fractal
-def FracXor(imghash):
-    #Open the image
-    img_in = cv2.imread("4mtshuffle.png", 1)
-
-    #Select a file for use based on hash
-    fileCount = len(glob.glob1("fractals","*.png"))
-    fracID = (imghash % fileCount) + 1
-    filename = "fractals\\" + str(fracID) + ".png"
-    #Read the file, resize it, then XOR
-    fractal = cv2.imread(filename, 1)
-    dim = img_in.shape
-    fractal = cv2.resize(fractal,(dim[0],dim[1]))
-    img_out = cv2.bitwise_xor(img_in,fractal)
-
-    return img_out
-
 mod = SourceModule("""
     #include <stdint.h>
     __global__ void ArCatMap(uint8_t *in, uint8_t *out)
@@ -91,12 +45,14 @@ mod = SourceModule("""
 
 # Driver function
 def Encrypt():
+    #Initialize Timer
+    timer = np.zeros(5)
+    overall_time = time.time()
+    
+    # Open Image
     filename = CONFIG.SOURCE
     img = cv2.imread(filename, 1)
     dim = img.shape
-
-    timer = np.zeros(5)
-    overall_time = time.time()
 
     # Check image dimensions
     timer[0] = overall_time
@@ -113,7 +69,7 @@ def Encrypt():
 
     timer[1] = time.time()
     # Compute hash of imgEQ and write to text file
-    imghash = sha2Hash("2histeq.png")
+    imghash = cf.sha2Hash("2histeq.png")
     timer[1] = time.time() - timer[1]
     f = open("hash.txt","w+")
     f.write(str(imghash))
@@ -121,9 +77,7 @@ def Encrypt():
 
     #Clear catmap debug files
     if CONFIG.DEBUG_CATMAP:
-        files = os.listdir("catmap")
-        for f in files:
-            os.remove(os.path.join("catmap", f))
+        cf.CatmapClear()
     
     timer[2] = time.time()
     # Ar Phase: Cat-map Iterations
@@ -145,13 +99,13 @@ def Encrypt():
 
     # MT Phase: Intra-column pixel shuffle
     timer[3] = time.time()
-    imgMT = MTShuffle(imgAr, imghash)
+    imgMT = cf.MTShuffle(imgAr, imghash)
     timer[3] = time.time() - timer[3]
     cv2.imwrite("4mtshuffle.png", imgMT)
 
     timer[4] = time.time()
     # Fractal XOR Phase
-    imgFr = FracXor(imghash)
+    imgFr = cf.FracXor("4mtshuffle.png", imghash)
     timer[4] = time.time() - timer[4]
     cv2.imwrite("5imgfractal.png", imgFr)
     overall_time = time.time() - overall_time
