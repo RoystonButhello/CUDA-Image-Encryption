@@ -9,15 +9,25 @@ import hashlib              #For SHA256
 
 os.chdir(CONFIG.PATH)
 
-def sha2Hash(filename):
-    hashobj = hashlib.sha256()
-    with open(filename,'rb') as f:
-        while True:
-            block = f.read(CONFIG.BUFF_SIZE)
-            if not block:
-                break
-            hashobj.update(block)
-    return int(hashobj.hexdigest(),16)
+
+def sha2alt(img,N):
+  time_array=numpy.zeros([4])
+  cv2.resize(img,N)
+  data = numpy.array(img_in)
+  flattened = data.flatten()
+  st_1=time.time()
+  hash_flattened=sha256()
+  hash_flattened.update(flattened)
+  time_array[0]=st_1-time.time()
+  #hash_flattened.digest()
+  final_hash=int(hash_flattened.hexdigest(),16)
+  
+  hash_str=str(final_hash)
+  hash_file=open("hash.txt","w+")
+  n=0
+  n=hash_file.write(hash_string)
+  hash_file.close()
+  print("\n time for hashing= "+str(time_array[0]))
 
 # Arnold's Cat Map
 def ArCatMap(img_in):
