@@ -10,7 +10,7 @@ import hashlib              #For SHA256
 os.chdir(CONFIG.PATH)
 
 
-def sha2alt(img,N):
+def sha2alt(img,N=256):
   cv2.resize(img,(N,N))
   data = numpy.array(img_in)
   flattened = data.flatten()
