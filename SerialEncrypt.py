@@ -65,7 +65,7 @@ def Encrypt():
     for i in range (1, random.randint(CONFIG.AR_MIN_ITER,CONFIG.AR_MAX_ITER)):
         imgAr = cf.ArCatMap(imgAr)
         if CONFIG.DEBUG_CATMAP:
-            cv2.imwrite("catmap\\iteration " + str(i) + ".png", imgAr)
+            cv2.imwrite("catmap" + CONFIG.SEPARATOR + "iteration" + str(i) + ".png", imgAr)
     timer[2] = time.time() - timer[2]
 
     cv2.imwrite("3catmap.png", imgAr)
