@@ -1,0 +1,7 @@
+# Ignore following directories
+__pycache__\\
+catmap\\
+temp\\
+
+# Ignore output file
+out.png
