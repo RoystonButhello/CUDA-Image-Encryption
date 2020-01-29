@@ -80,9 +80,7 @@ def MTUnShuffle(img_in, imghash):
     return img_out
 
 #XOR Image with a Fractal
-def FracXor(filename, imghash):
-    #Open the image
-    img_in = cv2.imread(filename, 1)
+def FracXor(img_in, imghash):
 
     #Select a file for use based on hash
     fileCount = len(glob.glob1("fractals","*.png"))

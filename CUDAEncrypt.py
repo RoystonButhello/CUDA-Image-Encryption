@@ -47,9 +47,16 @@ def Encrypt():
     timer = np.zeros(5)
     overall_time = time.perf_counter()
     
+    # Check for intermediate directories
+    if not os.path.exists(cfg.TEMP):
+        os.makedirs(cfg.TEMP)
+
     # Open Image
     filename = cfg.IN
     img = cv2.imread(filename, 1)
+    if img is None:
+        print("File does not exist!")
+        raise SystemExit(0)
     dim = img.shape
 
     # Check image dimensions
@@ -103,7 +110,7 @@ def Encrypt():
 
     timer[4] = time.perf_counter()
     # Fractal XOR Phase
-    imgFr = cf.FracXor(cfg.MT, imghash)
+    imgFr = cf.FracXor(imgMT, imghash)
     timer[4] = time.perf_counter() - timer[4]
     cv2.imwrite(cfg.XOR, imgFr)
     overall_time = time.perf_counter() - overall_time

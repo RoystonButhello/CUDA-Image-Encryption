@@ -32,6 +32,12 @@ def Decrypt():
     timer = np.zeros(4)
     overall_time = time.perf_counter()
 
+    #Open the image
+    imgFr = cv2.imread(cfg.XOR, 1)
+    if imgFr is None:
+        print("File does not exist!")
+        raise SystemExit(0)
+
     # Read hash from sent file
     f = open(cfg.HASH, "r")
     srchash = int(f.read())
@@ -39,7 +45,7 @@ def Decrypt():
 
     timer[0] = time.perf_counter()
     # Inverse Fractal XOR Phase
-    imgFr = cf.FracXor(cfg.XOR, srchash)
+    imgFr = cf.FracXor(imgFr, srchash)
     timer[0] = time.perf_counter() - timer[0]
     cv2.imwrite(cfg.UnXOR, imgFr)
 
