@@ -11,24 +11,15 @@ os.chdir(CONFIG.PATH)
 
 
 def sha2alt(img,N):
-  time_array=numpy.zeros([4])
   cv2.resize(img,(N,N))
   data = numpy.array(img_in)
   flattened = data.flatten()
-  st_1=time.time()
-  hash_flattened=sha256()
+  hash_flattened=hashlib.sha256()
   hash_flattened.update(flattened)
+  return int(hash_flattened.hexdigest(),16)
   
-  #hash_flattened.digest()
-  final_hash=int(hash_flattened.hexdigest(),16)
-  time_array[0]=time.time()-st1
-  hash_str=str(final_hash)
-  hash_file=open("hash.txt","w+")
-  n=0
-  n=hash_file.write(hash_str)
-  hash_file.close()
-  print("\n time for hashing= "+str(time_array[0]))
-
+  
+  
 # Arnold's Cat Map
 def ArCatMap(img_in):
     dim = img_in.shape
