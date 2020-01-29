@@ -69,7 +69,7 @@ def Encrypt():
 
     timer[1] = time.time()
     # Compute hash of imgEQ and write to text file
-    imghash = cf.sha2Hash("2histeq.png")
+    imghash = cf.sha2alt(imgEq)
     timer[1] = time.time() - timer[1]
     f = open("hash.txt","w+")
     f.write(str(imghash))
@@ -92,7 +92,7 @@ def Encrypt():
         # Write intermediate files if debugging is enabled
         if CONFIG.DEBUG_CATMAP:
             imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
-            cv2.imwrite("catmap\\iteration " + str(i) + ".png", imgAr)
+            cv2.imwrite("catmap" + CONFIG.SEPARATOR + "iteration"  + str(i) + ".png", imgAr)
     imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
     timer[2] = time.time() - timer[2]
     cv2.imwrite("3catmap.png", imgAr)
