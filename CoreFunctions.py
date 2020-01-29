@@ -6,6 +6,10 @@ import numpy as np          # See above
 import CONFIG               # Module with Debug flags and other constants
 import hashlib              # For SHA256
 
+#PyCUDA Import
+import pycuda.autoinit
+from pycuda.compiler import SourceModule
+
 os.chdir(CONFIG.PATH)
 
 # Return SHA256 Hash of file as integer
@@ -99,3 +103,16 @@ def CatmapClear():
     files = os.listdir("catmap")
     for f in files:
         os.remove(os.path.join("catmap", f))
+        
+sm = SourceModule("""
+    #include <stdint.h>
+    __global__ void ArCatMap(uint8_t *in, uint8_t *out)
+    {
+        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
+        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
+        int blocksize = blockDim.x * blockDim.y * blockDim.z;
+        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * blocksize  + threadIdx.x;
+        int OutDex = ((gridDim.x)*ny + nx) * blocksize + threadIdx.x;
+        out[OutDex] = in[InDex];
+    }
+  """)
