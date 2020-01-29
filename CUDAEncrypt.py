@@ -9,7 +9,6 @@ import CoreFunctions as cf  # Common functions
 #PyCUDA Import
 import pycuda.driver as cuda
 import pycuda.autoinit
-from pycuda.compiler import SourceModule
 
 os.chdir(cfg.PATH)
 
@@ -28,28 +27,22 @@ def HistEQ(img_in):
         cv2.imshow('Histogram equalized', img_out)
     return img_out
 
-mod = SourceModule("""
-    #include <stdint.h>
-    __global__ void ArCatMap(uint8_t *in, uint8_t *out)
-    {
-        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
-        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
-        int blocksize = blockDim.x * blockDim.y * blockDim.z;
-        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * blocksize  + threadIdx.x;
-        int OutDex = ((gridDim.x)*ny + nx) * blocksize + threadIdx.x;
-        out[OutDex] = in[InDex];
-    }
-  """)
-
 # Driver function
 def Encrypt():
     #Initialize Timer
     timer = np.zeros(5)
     overall_time = time.perf_counter()
     
+    # Check for intermediate directories
+    if not os.path.exists(cfg.TEMP):
+        os.makedirs(cfg.TEMP)
+
     # Open Image
     filename = cfg.IN
     img = cv2.imread(filename, 1)
+    if img is None:
+        print("File does not exist!")
+        raise SystemExit(0)
     dim = img.shape
 
     # Check image dimensions
@@ -75,16 +68,20 @@ def Encrypt():
     
     #Clear catmap debug files
     if cfg.DEBUG_CATMAP:
-        cf.CatmapClear()
+        if os.path.exists(cfg.ARTEMP):
+            cf.CatmapClear()
+        else:
+            os.makedirs(cfg.ARTEMP)
     
     timer[2] = time.perf_counter()
     # Ar Phase: Cat-map Iterations
     imgAr_In = np.asarray(imgAr).reshape(-1)
     gpuimgIn = cuda.mem_alloc(imgAr_In.nbytes)
     gpuimgOut = cuda.mem_alloc(imgAr_In.nbytes)
+    func = cf.sm.get_function("ArCatMap")
+    
     for i in range (1, random.randint(cfg.AR_MIN_ITER,cfg.AR_MAX_ITER)):
         cuda.memcpy_htod(gpuimgIn, imgAr_In)
-        func = mod.get_function("ArCatMap")
         func(gpuimgIn, gpuimgOut, grid=(dim[0],dim[1],1), block=(dim[2],1,1))
         cuda.memcpy_dtoh(imgAr_In, gpuimgOut)
         # Write intermediate files if debugging is enabled
@@ -104,7 +101,7 @@ def Encrypt():
 
     timer[4] = time.perf_counter()
     # Fractal XOR Phase
-    imgFr = cf.FracXor(cfg.MT, imghash)
+    imgFr = cf.FracXor(imgMT, imghash)
     timer[4] = time.perf_counter() - timer[4]
     cv2.imwrite(cfg.XOR, imgFr)
     overall_time = time.perf_counter() - overall_time

@@ -9,28 +9,20 @@ import CoreFunctions as cf  # Common functions
 #PyCUDA Import
 import pycuda.driver as cuda
 import pycuda.autoinit
-from pycuda.compiler import SourceModule
 
 os.chdir(cfg.PATH)
-
-mod = SourceModule("""
-    #include <stdint.h>
-    __global__ void ArCatMap(uint8_t *in, uint8_t *out)
-    {
-        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
-        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
-        int blocksize = blockDim.x * blockDim.y * blockDim.z;
-        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * blocksize  + threadIdx.x;
-        int OutDex = ((gridDim.x)*ny + nx) * blocksize + threadIdx.x;
-        out[OutDex] = in[InDex];
-    }
-  """)
 
 # Driver function
 def Decrypt():
     #Initialize Timer
     timer = np.zeros(4)
     overall_time = time.perf_counter()
+
+    #Open the image
+    imgFr = cv2.imread(cfg.XOR, 1)
+    if imgFr is None:
+        print("File does not exist!")
+        raise SystemExit(0)
 
     # Read hash from sent file
     f = open(cfg.HASH, "r")
@@ -39,7 +31,7 @@ def Decrypt():
 
     timer[0] = time.perf_counter()
     # Inverse Fractal XOR Phase
-    imgFr = cf.FracXor(cfg.XOR, srchash)
+    imgFr = cf.FracXor(imgFr, srchash)
     timer[0] = time.perf_counter() - timer[0]
     cv2.imwrite(cfg.UnXOR, imgFr)
 
@@ -61,10 +53,10 @@ def Decrypt():
     imgAr_In = np.asarray(imgAr).reshape(-1)
     gpuimgIn = cuda.mem_alloc(imgAr_In.nbytes)
     gpuimgOut = cuda.mem_alloc(imgAr_In.nbytes)
+    func = cf.sm.get_function("ArCatMap")
 
     while (cf.sha2HashImage(imgAr)!=srchash):
         cuda.memcpy_htod(gpuimgIn, imgAr_In)
-        func = mod.get_function("ArCatMap")
         func(gpuimgIn, gpuimgOut, grid=(dim[0],dim[1],1), block=(dim[2],1,1))
         cuda.memcpy_dtoh(imgAr_In, gpuimgOut)
         imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
