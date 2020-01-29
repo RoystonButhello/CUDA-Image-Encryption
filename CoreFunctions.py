@@ -1,15 +1,15 @@
-import cv2                  #OpenCV
-import os                   #Path setting and file-retrieval
-import glob                 #File counting
-import random               #Obviously neccessary
-import numpy as np          #See above
-import CONFIG               #Module with Debug flags and other constants
-import time                 #Literally just timing
-import hashlib              #For SHA256
+import cv2                  # OpenCV
+import os                   # Path setting and file-retrieval
+import glob                 # File counting
+import random               # Obviously neccessary
+import numpy as np          # See above
+import CONFIG               # Module with Debug flags and other constants
+import hashlib              # For SHA256
 
 os.chdir(CONFIG.PATH)
 
-def sha2Hash(filename):
+# Return SHA256 Hash of file as integer
+def sha2HashFile(filename):
     hashobj = hashlib.sha256()
     with open(filename,'rb') as f:
         while True:
@@ -17,6 +17,14 @@ def sha2Hash(filename):
             if not block:
                 break
             hashobj.update(block)
+    return int(hashobj.hexdigest(),16)
+
+# Returns SHA256 Hash of flattened OpenCV Image as integer
+def sha2HashImage(img, N=256):
+    cv2.resize(img,(N,N))
+    imgflat = img.flatten()
+    hashobj = hashlib.sha256()
+    hashobj.update(imgflat)
     return int(hashobj.hexdigest(),16)
 
 # Arnold's Cat Map
