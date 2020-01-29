@@ -1,11 +1,9 @@
 import os                   # Path setting and file-retrieval
 import cv2                  # OpenCV
-import glob                 # File counting
 import time                 # Timing Execution
 import random               # Obviously neccessary
 import numpy as np          # See above
-import hashlib              # For SHA256
-import CONFIG               # Debug flags and constants
+import CONFIG as cfg        # Debug flags and constants
 import CoreFunctions as cf  # Common functions
 
 #PyCUDA Import
@@ -13,7 +11,7 @@ import pycuda.driver as cuda
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
-os.chdir(CONFIG.PATH)
+os.chdir(cfg.PATH)
 
 mod = SourceModule("""
     #include <stdint.h>
@@ -32,48 +30,47 @@ mod = SourceModule("""
 def Decrypt():
     #Initialize Timer
     timer = np.zeros(4)
-    overall_time = time.time()
+    overall_time = time.perf_counter()
 
     # Read hash from sent file
-    f = open("hash.txt", "r")
+    f = open(cfg.HASH, "r")
     srchash = int(f.read())
     f.close()
 
-    timer[0] = time.time()
+    timer[0] = time.perf_counter()
     # Inverse Fractal XOR Phase
-    imgFr = cf.FracXor("5imgfractal.png", srchash)
-    timer[0] = time.time() - timer[0]
-    cv2.imwrite("6imgunfractal.png", imgFr)
+    imgFr = cf.FracXor(cfg.XOR, srchash)
+    timer[0] = time.perf_counter() - timer[0]
+    cv2.imwrite(cfg.UnXOR, imgFr)
 
-    timer[1] = time.time()
+    timer[1] = time.perf_counter()
     # Inverse MT Phase: Intra-column pixel unshuffle
     imgMT = cf.MTUnShuffle(imgFr, srchash)
-    timer[1] = time.time() - timer[1]
-    cv2.imwrite("7mtunshuffle.png", imgMT)
+    timer[1] = time.perf_counter() - timer[1]
+    cv2.imwrite(cfg.UnMT, imgMT)
     imgAr = imgMT
 
     #Clear catmap debug files
-    if CONFIG.DEBUG_CATMAP:
+    if cfg.DEBUG_CATMAP:
         cf.CatmapClear()
     
-    timer[2] = time.time()
+    timer[2] = time.perf_counter()
     # Ar Phase: Cat-map Iterations
-    cv2.imwrite("8output.png", imgAr)
+    cv2.imwrite(cfg.OUT, imgAr)
     dim = imgAr.shape
     imgAr_In = np.asarray(imgAr).reshape(-1)
     gpuimgIn = cuda.mem_alloc(imgAr_In.nbytes)
     gpuimgOut = cuda.mem_alloc(imgAr_In.nbytes)
 
-    while (cf.sha2Hash("8output.png")!=srchash):
+    while (cf.sha2HashImage(imgAr)!=srchash):
         cuda.memcpy_htod(gpuimgIn, imgAr_In)
         func = mod.get_function("ArCatMap")
         func(gpuimgIn, gpuimgOut, grid=(dim[0],dim[1],1), block=(dim[2],1,1))
         cuda.memcpy_dtoh(imgAr_In, gpuimgOut)
         imgAr = (np.reshape(imgAr_In,dim)).astype(np.uint8)
-        cv2.imwrite("8output.png", imgAr)
-    timer[2] = time.time() - timer[2]
-    cv2.imwrite("8output.png", imgAr)
-    overall_time = time.time() - overall_time
+    timer[2] = time.perf_counter() - timer[2]
+    cv2.imwrite(cfg.OUT, imgAr)
+    overall_time = time.perf_counter() - overall_time
 
     # Print timing statistics
     print("Fractal XOR Inversion completed in " + str(timer[0]) +"s")
