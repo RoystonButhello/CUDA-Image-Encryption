@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+
 #module to collect metrics of different images
 count=0
 #Returns correlation coefficent of any vectors 
@@ -50,25 +51,23 @@ dim=img_in.shape
 N=dim[0]
 l=0
 corr_x_y_arr=np.zeros([N*N])
-for i in range(0,10):
-	for j in  range(0,10):
+for i in range(0,9):
+	for j in  range(0,9):
 		l=l+1
-		corr_x_y=correl(im_rgb[i,j],im_rgb[i,j])
+		corr_x_y=correl(im_rgb[i,j],im_rgb[i+1,j+1])
 		corr_x_y_arr[l]=corr_x_y
 		print(corr_x_y)
 
-avg_corr_xy=np.sum(corr_x_y_arr)/(len(corr_x_y_arr))
+avg_corr_xy=np.sum(corr_x_y_arr)/N*N
 print("\navg_corr_x_y="+str(avg_corr_xy))
 
 """
 def mean2(x):
     y = np.sum(x) / np.size(x);
     return y
-
 def corr2(a,b):
     a = a - mean2(a)
     b = b - mean2(b)
-
     r = (a*b).sum() / math.sqrt((a*a).sum() * (b*b).sum());
     return r
 """
