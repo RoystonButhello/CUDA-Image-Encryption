@@ -1,11 +1,11 @@
 import cv2
 import numpy as np
 import math
-
 #module to collect metrics of different images
-count=0
+
+
 #Returns correlation coefficent of any vectors 
-def correl(vector_x,vector_y):
+def correlation(vector_x,vector_y):
 	N=len(vector_x)
 	i=0
 	#Covariance components
@@ -15,13 +15,8 @@ def correl(vector_x,vector_y):
 	sum_x=0
 	sum_y=0
 	
-	while i<N:
-		#sum of vector_x
-		sum_x=sum_x+vector_x[i]
-		#sum of vector_y
-		sum_y=sum_y+vector_y[i]
-		#sum of x*y
-		i=i+1
+	sum_x=np.sum(vector_x)
+	sum_y=np.sum(vector_y)	
 	
 	mean_x=sum_x/N;
 	mean_y=sum_y/N;
@@ -44,30 +39,24 @@ def correl(vector_x,vector_y):
 	corr_x_y=cov_x_y/sq_root_x_y
 	return corr_x_y
 
+#Returns the correlation of an image in horizontal direction
+def correlationHoriz(img,N):
+	corr_h_arr=np.zeros([N*N])
+	#print("\n length of corr_h_arr="+str(len(corr_h_arr)))
+	l=0
+	for i in range(0,N-1):
+		for j in range(0,N-1):
+			corr_h_arr[l]=correlation(img[i,j],img[i+1,j+1])
+			l=l+1
+			avg_corr_h=np.sum(corr_h_arr)/(len(corr_h_arr))
+	return avg_corr_h			
+
 img_in =cv2.imread("8output.png",1)
-im_rgb = cv2.cvtColor(img_in, cv2.COLOR_BGR2RGB)
-im_rgb=cv2.resize(im_rgb,(10,10))
-dim=img_in.shape 
+img_rgb = cv2.cvtColor(img_in, cv2.COLOR_BGR2RGB)
+img_rgb=cv2.resize(img_rgb,(480,480))
+dim=img_rgb.shape 
 N=dim[0]
-l=0
-corr_x_y_arr=np.zeros([N*N])
-for i in range(0,9):
-	for j in  range(0,9):
-		l=l+1
-		corr_x_y=correl(im_rgb[i,j],im_rgb[i+1,j+1])
-		corr_x_y_arr[l]=corr_x_y
-		print(corr_x_y)
 
-avg_corr_xy=np.sum(corr_x_y_arr)/N*N
-print("\navg_corr_x_y="+str(avg_corr_xy))
-
-"""
-def mean2(x):
-    y = np.sum(x) / np.size(x);
-    return y
-def corr2(a,b):
-    a = a - mean2(a)
-    b = b - mean2(b)
-    r = (a*b).sum() / math.sqrt((a*a).sum() * (b*b).sum());
-    return r
-"""
+avg_corr_h=correlationHoriz(img_rgb,N)
+#print(im_rgb[9,9])
+print("\navg_corr_h="+str(avg_corr_h))
