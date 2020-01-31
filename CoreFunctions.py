@@ -98,7 +98,7 @@ def FracXor(img_in, imghash):
     #Select a file for use based on hash
     fileCount = len(glob.glob1("fractals","*.png"))
     fracID = (imghash % fileCount) + 1
-    filename = "fractals\\" + str(fracID) + ".png"
+    filename = "fractals" + CONFIG.SEPARATOR + str(fracID) + ".png"
     #Read the file, resize it, then XOR
     fractal = cv2.imread(filename, 1)
     dim = img_in.shape
