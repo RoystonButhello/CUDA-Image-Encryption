@@ -69,10 +69,14 @@ def correlationVert(img,N):
 def MeanAbsoluteErr(img_plain,img_encrypted,M,N):
 	l=0
 	difference=np.zeros([M*N])
+	img_plain_sum=np.zeros([M*N])
+	img_encrypted_sum=np.zeros([M*N])
 	avg_mae=0
 	for i in range(0,M):
 		for j in range(0,N):	
-			difference[l]=(1/(M*N*3))*(abs(np.sum(img_plain[i,j])-np.sum(img_encrypted[i,j])))
+			img_plain_sum[l]=np.sum(img_plain[i,j])
+			img_encrypted_sum[l]=np.sum(img_encrypted[i,j])
+			difference[l]=(1/(M*N))*abs(img_plain_sum[l]-img_encrypted_sum[l])
 			l=l+1			
 	print("\nmae=\n")
 	print(difference)
@@ -83,31 +87,31 @@ def MeanAbsoluteErr(img_plain,img_encrypted,M,N):
 img_pln=cv2.imread("raytracer480.png",1)
 
 img_rgb_pln = cv2.cvtColor(img_pln, cv2.COLOR_BGR2RGB)
-img_rgb_pln=cv2.resize(img_rgb_pln,(480,480))
+img_rgb_pln=cv2.resize(img_rgb_pln,(10,10))
 dim_img_pln=img_rgb_pln.shape 
 N_img_pln=dim_img_pln[0]
 
-img_enc=cv2.imread("8output.png",1)
+img_enc=cv2.imread("5imgfractal.png",1)
 img_rgb_enc=cv2.cvtColor(img_enc,cv2.COLOR_BGR2RGB)
-img_rgb_enc=cv2.resize(img_rgb_enc,(480,480))
+img_rgb_enc=cv2.resize(img_rgb_enc,(10,10))
 dim_img_rgb_enc=img_rgb_enc.shape
 N_img_enc=dim_img_rgb_enc[0]
 
 time_array=np.zeros([3])
 
-st_1=time.time()
-avg_corr_h=correlationHoriz(img_rgb_pln,N_img_pln)
-time_array[0]=time.time()-st_1
+#st_1=time.time()
+#avg_corr_h=correlationHoriz(img_rgb_pln,N_img_pln)
+#time_array[0]=time.time()-st_1
 
 #st_2=time.time()
 #avg_corr_v=correlationVert(img_rgb_pln,N_img_pln)
 #time_array[1]=time.time()-st_2
 
-print("\ntime for h correlation="+str(time_array[0]))
+#print("\ntime for h correlation="+str(time_array[0]))
 #print("\ntime for v correlation="+str(time_array[1]))
 #print(im_rgb[9,9])
 
-print("\navg_corr_h="+str(avg_corr_h))
+#print("\navg_corr_h="+str(avg_corr_h))
 #print("\navg_corr_v="+str(avg_corr_v))
 
 st_3=time.time()
