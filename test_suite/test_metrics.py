@@ -52,10 +52,17 @@ def my_correl_diag(img,N):
 
 #Returns the Mean Absolute err between the plain and encrypted images
 def mean_absolute_err(img_p,img_e,N):
-	initial_mae = np.sum(np.absolute((img_p.astype(np.uint8)) - (img_e.astype(np.uint8))))
-	mae=initial_mae/(N*N)
-	return mae
-
+	initial_mae=0
+	final_mae=0
+	for i in range (0,N):
+		for j in range(0,N):
+			#for k in range(0,3):
+			initial_mae=np.absolute(img_p[i,j]-img_e[i,j])/(N*N*3)
+			final_mae=final_mae+initial_mae
+	avg_mae=np.sum(final_mae)/(len(mae))	
+	print("\nfinal_mae="+str(final_mae))			
+	print("\navg_mae="+str(avg_mae))
+	#return avg_mae
 #Returns image with one replaced pixel in given location  
 def replace_pixel(img_p,row,col,green,blue,red):
 	img_p[row,col,0]=green
@@ -82,10 +89,13 @@ def unified_average_changing_intensity(img_e1,img_e2,N):
 	for i in range(0,N):
 		for j in range(0,N):
 			for k in range(0,3):
-				uaci_calc=(np.absolute(img_e1[i,j,k]-img_e2[i,j,k]))/(N*N*255)
+				uaci_calc=(np.absolute(img_e1[i,j,k]-img_e2[i,j,k]))/(N*N*255*3)
 				uaci=uaci+uaci_calc
-	uaci=(uaci*100)/3			
-	return uaci			
+	uaci=(uaci*100)			
+	return uaci	
+
+
+
 
 img_1=cv2.imread("5imgfractal.png",1)
 img_e1=cv2.resize(img_1,(1024,1024))
@@ -97,8 +107,8 @@ img_2=cv2.imread("5imgfractal_1px_diff.png",1)
 img_e2=cv2.resize(img_2,(1024,1024))
 
 #Loading plain image
-#img_3=cv2.imread("raytracer480.png",1)
-#img_pln=cv2.resize(img_3,(480,480))
+img_3=cv2.imread("raytracer480.png",1)
+img_pln=cv2.resize(img_3,(1024,1024))
 
 
 #avg_corr_h=my_correl_horiz(img_e1,N)
@@ -106,8 +116,8 @@ img_e2=cv2.resize(img_2,(1024,1024))
 #avg_corr_d=my_correl_diag(img_pln,N)
 #print("\navg_corr_diag="+str(avg_corr_d))
 
-#mae=mean_absolute_err(img_pln,img_e1,N)
-#print("\navg_mae="+str(mae))
+mean_absolute_err(img_pln,img_e1,N)
+#print("\nmae="+str(mae))
 
 #replace_pixel(img_pln,0,2,10,33,49)
 
@@ -120,8 +130,7 @@ print("\nuaci="+str(uaci))
 #print(np.corrcoef(img[i,j],img[i+1,j+1]))
 
 """Correlation horiz=0.67...
-   Correlation_vertical=0.67
-   
-   #between img_enc and img_pln
-   MAE=271"""
+Correlation_vertical=0.67
+#between img_enc and img_pln
+MAE=271"""
 	
