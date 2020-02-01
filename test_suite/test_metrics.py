@@ -4,51 +4,49 @@ import math
 import time
 
 #module to collect metrics of different images
-#Returns the average horizontal auto correlation 
+#Returns the average horizontal auto correlation -under testing
 def my_correl_horiz(img,N):
-	l=0
+	corr_h_arr=np.zeros([(N-1)*(N-1)])
+	corr_mat=np.ones([2,2])
+	avg_corr_h=0
+	count_eq=0
 	count=0
-	arr_dim=N-1
-	two_d_mat=np.zeros([2,2])
-	corr_array=np.zeros([arr_dim*arr_dim])
+	total_corr_h=0
+	l=0
 	for i in range(0,N-1):
 		for j in range(0,N-1):
-			#if i==j:
-			two_d_mat=np.corrcoef(img[i,j],img[i+1,j+1])
-			if math.isnan(two_d_mat[0,1]) or math.isnan(two_d_mat[1,0]):
-				#count=count+1
-				corr_array[l]=0
-				l=l+1
-			else:
-				corr_array[l]=two_d_mat[0,1]
-				l=l+1
-	#print("\ncorrelation array=\n")
-	#print(corr_array)
-	#print("\ncount_zeros="+str(count))
-	#print("\nl="+str(l))
-	return (np.sum(corr_array)/(len(corr_array)))
 
-#Returns the average diagonal auto correlation 
-def my_correl_diag(img,N):
-	l=0
-	count=0
-	arr_dim=N-1
-	two_d_mat=np.zeros([2,2])
-	corr_array=np.zeros([arr_dim*arr_dim])
-	for i in range(0,N-1):
-		for j in range(0,N-1):
-			if i==j:
-				two_d_mat=np.corrcoef(img[i,j],img[i+1,j+1])
-			if math.isnan(two_d_mat[0,1]):
-				corr_array[l]=0
+			corr_mat=np.corrcoef(img[i,j],img[i+1,j+1])
+			if math.isnan(corr_mat[0,1]):
+				#nan and adjacent pixels are eual
+				if all(img[i,j])==all(img[i+1,j+1]):
+					corr_h_arr[l]=1
+					count_eq=count_eq+1
+					l=l+1
+				#nan and adjacent pixels are not equal
+				else:
+					count=count+1
+					corr_h_arr[l]=0	
+					l=l+1
+			else:	
+				corr_h_arr[l]=corr_mat[0,1]
 				l=l+1
-				count=count+1
-			else:
-				corr_array[l]=two_d_mat[0,1]
-				l=l+1
-	#print("\ncorrelation array=\n")
-	#print(corr_array)
+	total_corr_h=np.sum(corr_h_arr)
+	avg_corr_h=total_corr_h/(len(corr_h_arr))
+	print("\ncount_eq="+str(count_eq))
+	print("\ncount="+str(count))
+	print("\ntotal_corr_h="+str(total_corr_h))
+	print("\navg_corr_h="+str(avg_corr_h))
 
+
+
+#Get auto correlation of an image -under testing
+def get_auto_correlation(img):
+	img_nd=np.asarray(img,dtype=np.uint8)
+	#Flatten the image in row-major order
+	img_nd=img_nd.flatten(order="C")
+	corr_x_y=np.corrcoef(img_nd)
+	return corr_x_y
 
 #Returns the Mean Absolute err between the plain and encrypted images
 def mean_absolute_err(img_p,img_e,N):
@@ -59,10 +57,11 @@ def mean_absolute_err(img_p,img_e,N):
 			#for k in range(0,3):
 			initial_mae=np.absolute(img_p[i,j]-img_e[i,j])/(N*N*3)
 			final_mae=final_mae+initial_mae
-	avg_mae=np.sum(final_mae)/(len(mae))	
+	avg_mae=np.sum(final_mae)/(len(final_mae))	
 	print("\nfinal_mae="+str(final_mae))			
 	print("\navg_mae="+str(avg_mae))
 	#return avg_mae
+
 #Returns image with one replaced pixel in given location  
 def replace_pixel(img_p,row,col,green,blue,red):
 	img_p[row,col,0]=green
@@ -111,26 +110,18 @@ img_3=cv2.imread("raytracer480.png",1)
 img_pln=cv2.resize(img_3,(1024,1024))
 
 
-#avg_corr_h=my_correl_horiz(img_e1,N)
-#print("\navg_corr_horiz="+str(avg_corr_h))
-#avg_corr_d=my_correl_diag(img_pln,N)
-#print("\navg_corr_diag="+str(avg_corr_d))
-
-mean_absolute_err(img_pln,img_e1,N)
+#mean_absolute_err(img_pln,img_e1,N)
 #print("\nmae="+str(mae))
 
 #replace_pixel(img_pln,0,2,10,33,49)
 
-npcr=number_of_pixels_change_rate(img_e1,img_e2,N)
-print("\nnpcr="+str(npcr))
-uaci=unified_average_changing_intensity(img_e1,img_e2,N)
-print("\nuaci="+str(uaci))
+#npcr=number_of_pixels_change_rate(img_e1,img_e2,N)
+#print("\nnpcr="+str(npcr))
+
+#uaci=unified_average_changing_intensity(img_e1,img_e2,N)
+#print("\nuaci="+str(uaci))
 #print("\navg_uaci="+str(avg_uaci))
 #print("\n")
 #print(np.corrcoef(img[i,j],img[i+1,j+1]))
 
-"""Correlation horiz=0.67...
-Correlation_vertical=0.67
-#between img_enc and img_pln
-MAE=271"""
 	
