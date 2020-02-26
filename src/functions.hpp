@@ -17,30 +17,56 @@
   #include <bitset>   /*For to_string()*/
   #include <opencv2/opencv.hpp> /*For OpenCV*/
   #include <opencv2/highgui/highgui.hpp>
-
-  #define RAND_UPPER 32   
-  #define WRITE_ALPHA_BETA 0
-  #define WRITE_OTHER_CONSTANTS 1
-  #define SEED1 10
-  #define SEED2 32
+  #include <cuda.h>/*For CUDA*/
+  #include <cuda_runtime.h>
  
-  #define RESIZE_TO_DEBUG 1
-  #define DEBUG_CONSTANTS 1
-  #define DEBUG_VECTORS   1
-  #define DEBUG_IMAGES    0
+  /*Constants*/
+  #define RAND_UPPER         32   
+  #define SEED1              10
+  #define SEED2              32
+  #define CATMAP_ROUND_LOWER 8
+  #define CATMAP_ROUND_UPPER 16
+ 
+  /*Debug Flags*/
+  #define RESIZE_TO_DEBUG     1
+  #define DEBUG_CONSTANTS     0
+  #define DEBUG_VECTORS       1
+  #define DEBUG_IMAGES        0
+  #define PRINT_IMAGES        1
+  #define DEBUG_GPU_VECTORS   1 
+  
+  /*Modes*/
+  #define RESIZE_TO_MAXIMUM   1
+  #define RESIZE_TO_MINIMUM   0
   
   using namespace std;
   using namespace cv;
 
-  /*Function Prototypes*/
-  void flattenGrayScaleImage(cv::Mat image,std::vector<uint8_t> &img_vec);
+  /*Function prototypes*/
+  
+  /*Miscellaneous*/
+  bool checkDecimal(std::vector<float> arr,uint32_t total); 
   void printImageContents(cv::Mat image);
-  bool checkDecimal(std::vector<float> arr,uint32_t total);
-  void genRelocVec(std::vector<uint8_t> &U,std::vector<float> &P,uint16_t m,uint16_t n,uint8_t seed);
   void printFloatVector(std::vector<float> vect);
   void printInt8Vector(std::vector<uint8_t> vect);
+  
+  /*ENCRYPTION*/
+  
+  /*Phase 1 Basic operations*/
+  uint16_t max(uint16_t m,uint16_t n);
+  uint16_t min(uint16_t m,uint16_t n);
+  void getSquareImage(cv::Mat image,std::string filename,bool mode);
+  uint8_t getCatMapRounds(uint8_t lower_bound,uint8_t upper_bound,uint8_t seed); 
+  
+  /*Phase 2 generate relocation vectors and flatten image*/
+  void genRelocVec(uint8_t *&U,std::vector<float> &P,uint16_t m,uint16_t n,uint8_t seed);
+  void flattenImage(cv::Mat image,uint8_t *&img_vec);
+  
+  /*Phase 3 swap gpuimgIn and gpuimgOut */
+  void swapImgVectors(uint8_t *&gpuimgIn,uint8_t *&gpuimgOut,uint16_t size);
+   
     
-
+  /*Miscellaneous region begins*/
   bool checkDecimal(std::vector<float> arr,uint32_t TOTAL)
   {
     printf("\nIn checkDecimal\n");
@@ -73,25 +99,85 @@
   void printImageContents(cv::Mat image)
   {
     cout<<"\nImage Matrix=";
-    for(uint8_t i=0;i<image.rows;++i)
+    for(uint32_t i=0;i<image.rows;++i)
     { printf("\n");
       //printf("\ni=%d\t",i);
-      for(uint8_t j=0;j<image.cols;++j)
+      for(uint32_t j=0;j<image.cols;++j)
       {
-        //printf("\nj=%d\t",j);
-        printf("%d\t",image.at<uchar>(i,j)); 
-      }
+         for(uint32_t k=0;k<3;++k)
+         {
+          //printf("\nj=%d\t",j);
+          printf("%d\t",image.at<Vec3b>(i,j)[k]); 
+         } 
+       }
     }
   }  
- 
- void flattenGrayScaleImage(cv::Mat image,std::vector<uint8_t> &img_vec)
- {
-   ;
-    
- }
 
+/*Miscellaneous region ends*/ 
+
+ /*ENCRYPTION*/
  
- void genRelocVec(std::vector<uint8_t> &U,std::vector<float> &P,std::string filename,int16_t m,uint16_t n,uint8_t seed)
+ 
+ /*Phase 1 region begins*/
+ uint16_t max(uint16_t m,uint16_t n)
+ {
+   return (m > n ? m: n); 
+ }
+  
+ uint16_t min(uint16_t m,uint16_t n)
+ {
+   return (m < n ? m: n); 
+ }
+ 
+ void getSquareImage(cv::Mat image,std::string filename,bool mode)
+ {
+   uint16_t new_size=0;
+   uint16_t m=(uint16_t)image.rows;
+   uint16_t n=(uint16_t)image.cols;
+   std::string dimensions=std::string("");   
+   
+   dimensions.append(std::to_string(m));
+   dimensions.append("\n");
+   dimensions.append(std::to_string(n));
+   dimensions.append("\n");
+
+   std::ofstream file(filename);
+   if(!file)
+   {
+     cout<<"\nCould not create "<<filename<<"\nExiting...";
+     exit(0);
+   }
+   
+   file<<dimensions;
+   file.close();
+        
+   if(m!=n)
+   {
+     if(mode==RESIZE_TO_MAXIMUM)
+     {
+       new_size=max(m,n);
+       cv::resize(image,image,cv::Size(new_size,new_size));
+     }
+     
+     else
+     {
+       new_size=min(m,n);
+       cv::resize(image,image,cv::Size(new_size,new_size));
+     }
+   }
+ } 
+
+  uint8_t getCatMapRounds(uint8_t lower_bound,uint8_t upper_bound,uint8_t seed)
+  {
+    uint8_t number_of_rounds=0;
+    srand(seed);
+    number_of_rounds=8+(rand()%16);
+    return number_of_rounds;
+  }
+  /*Phase 1 region ends*/
+ 
+ /*Phase 2 region begins*/
+ void genRelocVec(uint8_t *&U,std::vector<float> &P,std::string filename,int16_t m,uint16_t n,uint8_t seed)
  {
    /*Initialize PRNGs*/
    srand(seed);
@@ -158,10 +244,41 @@
    /*Generate U Vector*/
    for(uint32_t i=0;i<m;++i)
    {
-    U[i]=fmod((P[i]*exponent),m);
+    U[i]=fmod((P[i]*exponent),n);
    }
    
-   
+ }
+
+ void flattenImage(cv::Mat image,uint8_t *&img_vec)
+ {
+   uint32_t l=0;
+   for(uint32_t i=0;i<(image.rows);++i)
+   {
+     for(uint32_t j=0;j<(image.cols);++j)
+     {
+        for(uint32_t k=0;k<3;++k)
+        {
+          img_vec[l]=image.at<Vec3b>(i,j)[k];
+          l++;
+        }
+     }
+     
+   }
+    
  } 
+ /*Phase 2 region ends*/
  
+ /*Phase 3 region begins */
+ void swapImgVectors(uint8_t *&gpuimgIn,uint8_t *&gpuimgOut,uint16_t size)
+ {
+   uint8_t temp=0; 
+   for(uint8_t i=0;i<size;++i)
+   {
+     temp=gpuimgIn[i];
+     gpuimgIn[i]=gpuimgOut[i];
+     gpuimgOut[i]=temp;
+   }
+ }
+ /*Phase 3 region ends*/
+
 #endif

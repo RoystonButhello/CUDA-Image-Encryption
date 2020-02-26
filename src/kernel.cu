@@ -1,17 +1,28 @@
   #include <cstdint>
  
-  __global__ void GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate)
+    __global__ void ArMapImg(uint8_t *in, uint8_t *out)
+    {
+        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
+        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
+        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * 3  + threadIdx.x;
+        int OutDex = ((gridDim.x)*ny + nx) * 3 + threadIdx.x;
+        out[OutDex] = in[InDex];
+    }
+
+    __global__ void WarmUp()
+    {
+      return;
+    }
+  
+  extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
   {
-        int colShift = colRotate[blockIdx.y];
-        int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
-        int InDex    = ((gridDim.y)*blockIdx.x + blockIdx.y) * 3  + threadIdx.x;
-        int OutDex   = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * 3  + threadIdx.x;
-        out[OutDex]  = in[InDex];
+    ArMapImg<<<blocks,block_size>>>(in,out);
+    cudaDeviceSynchronize();
   }
 
-  extern "C" void run_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
   {
-    GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
-    
+    WarmUp<<<blocks,block_size>>>();
+    cudaDeviceSynchronize();
   }
   

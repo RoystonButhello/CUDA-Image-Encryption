@@ -115,32 +115,41 @@
    }
     
     /*ARNOLD IMAGE MAPPING*/
-    cudaMalloc((void**)&gpuimgIn,total*3*sizeof(uint8_t));
-    cudaMalloc((void**)&gpuimgOut,total*3*sizeof(uint8_t));
+    cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
+    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
     
-    cudaMemcpy(gpuimgIn,img_vec,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpuimgOut,img_empty,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+    for (uint16_t i=0;i<total*3;++i)
+    {
+       gpuimgIn[i]=img_vec[i];
+       gpuimgOut[i]=0;
+    }
     
     dim3 grid_ar_map_img(m,n,1);
     dim3 block_ar_map_img(3,1,1);
     
-    run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
-    cudaMemcpy(img_vec,gpuimgOut,4*3*sizeof(uint8_t),cudaMemcpyDeviceToHost);
-     
+    
+    
+    for(int16_t i=0;i<3;++i)
+    { run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
+      for(uint16_t i=0;i<total*3;++i)
+      {
+        temp=gpuimgIn[i];
+        gpuimgIn[i]=gpuimgOut[i];
+        gpuimgOut[i]=temp;
+      }
+    }
+    
+    for(uint16_t i=0;i<total*3;++i)
+    {
+      img_vec[i]=gpuimgOut[i];
+    } 
    
    //swapImgVectors(gpuimgIn,gpuimgOut,total*3);
-    cout<<"\nimgvec after ArMapImg=";
+    cout<<"\nimgvec after ArMapImg and Swapping=";
     for(uint16_t i=0;i<total*3;++i)
     {
        printf("%d ",img_vec[i]);
     }
-  
-    for(uint8_t i=0;i<total*3;++i)
-    {
-      temp=img_vec[i];
-      img_vec[i]
-    }
-   
    
      
    return 0; 

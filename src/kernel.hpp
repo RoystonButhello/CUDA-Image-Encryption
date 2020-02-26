@@ -2,6 +2,10 @@
 #define KERNEL_H
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-extern "C" void run_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate,dim3 blocks,dim3 block_size);
+
+/*Phase 4 start Arnold mapping*/
+extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size);
+extern "C" void run_WarmUp(dim3 blocks,dim3 block_size);
+
 #endif
 
