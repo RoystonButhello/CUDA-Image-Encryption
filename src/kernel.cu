@@ -13,16 +13,27 @@
     {
       return;
     }
-  
-  extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
-  {
-    ArMapImg<<<blocks,block_size>>>(in,out);
-    cudaDeviceSynchronize();
-  }
+    
+    __global__ void abc(uint8_t *in, uint8_t *out, uint8_t *fractal)
+    {
+        int idx = blockIdx.x * 3 + threadIdx.x;
+        out[idx] = in[idx]^fractal[idx];
+    } 
 
-  extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
-  {
-    WarmUp<<<blocks,block_size>>>();
-    cudaDeviceSynchronize();
-  }
+   extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
+   {
+     ArMapImg<<<blocks,block_size>>>(in,out);
+     cudaDeviceSynchronize();
+   }
+
+   extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
+   {
+     WarmUp<<<blocks,block_size>>>();
+     cudaDeviceSynchronize();
+   }
   
+  extern "C" void run_FracXor(uint8_t *in,uint8_t *out,uint8_t *fractal,dim3 blocks,dim3 block_size)
+  {
+    abc<<<blocks,block_size>>>(in,out,fractal);
+    cudaDeviceSynchronize();  
+  }

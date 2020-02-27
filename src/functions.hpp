@@ -65,7 +65,10 @@
   /*Phase 3 swap gpuimgIn and gpuimgOut */
   void swapImgVectors(uint8_t *&gpuimgIn,uint8_t *&gpuimgOut,uint16_t size);
    
-    
+  /*Phase 6 get Fractal*/
+  void getFractal(cv::Mat &fractal,uint16_t m,uint16_t n);  
+
+
   /*Miscellaneous region begins*/
   bool checkDecimal(std::vector<float> arr,uint32_t TOTAL)
   {
@@ -281,4 +284,13 @@
  }
  /*Phase 3 region ends*/
 
+ /*Phase 6 region begins*/
+ 
+ void getFractal(cv::Mat &image,uint16_t m,uint16_t n)
+ {
+   cv::resize(image,image,cv::Size(m,n));
+
+ } 
+
+ /*Phase 6 region ends*/
 #endif
