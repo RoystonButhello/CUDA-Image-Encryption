@@ -63,7 +63,6 @@
   void flattenImage(cv::Mat image,uint8_t *&img_vec);
   
   /*Phase 3 swap gpuimgIn and gpuimgOut */
-  void swapImgVectors(uint8_t *&gpuimgIn,uint8_t *&gpuimgOut,uint16_t size);
    
   /*Phase 6 get Fractal*/
   void getFractal(cv::Mat &fractal,uint16_t m,uint16_t n);  
@@ -272,16 +271,7 @@
  /*Phase 2 region ends*/
  
  /*Phase 3 region begins */
- void swapImgVectors(uint8_t *&gpuimgIn,uint8_t *&gpuimgOut,uint16_t size)
- {
-   uint8_t temp=0; 
-   for(uint8_t i=0;i<size;++i)
-   {
-     temp=gpuimgIn[i];
-     gpuimgIn[i]=gpuimgOut[i];
-     gpuimgOut[i]=temp;
-   }
- }
+
  /*Phase 3 region ends*/
 
  /*Phase 6 region begins*/

@@ -14,11 +14,20 @@
       return;
     }
     
-    __global__ void abc(uint8_t *in, uint8_t *out, uint8_t *fractal)
+    __global__ void FracXor(uint8_t *in, uint8_t *out, uint8_t *fractal)
     {
         int idx = blockIdx.x * 3 + threadIdx.x;
         out[idx] = in[idx]^fractal[idx];
     } 
+
+    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint8_t *colRotate, uint8_t *rowRotate)
+    {
+        int colShift = colRotate[blockIdx.y];
+        int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
+        int InDex    = ((gridDim.y)*blockIdx.x + blockIdx.y) * 3  + threadIdx.x;
+        int OutDex   = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * 3  + threadIdx.x;
+        out[OutDex]  = in[InDex];
+    }
 
    extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
    {
@@ -34,6 +43,13 @@
   
   extern "C" void run_FracXor(uint8_t *in,uint8_t *out,uint8_t *fractal,dim3 blocks,dim3 block_size)
   {
-    abc<<<blocks,block_size>>>(in,out,fractal);
+    FracXor<<<blocks,block_size>>>(in,out,fractal);
     cudaDeviceSynchronize();  
   }
+
+  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint8_t *colRotate,uint8_t *rowRotate,dim3 blocks,dim3 block_size)
+  {
+    Enc_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
+    cudaDeviceSynchronize();
+  }
+

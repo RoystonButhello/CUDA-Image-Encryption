@@ -1,9 +1,11 @@
   #include <iostream> /*For IO*/
-  #include <cstdint>  /*For standardized data types*/
+  #include <cstdint>  /*For standard variable types*/
   #include "functions.hpp"
   #include "kernel.hpp"
+  
   using namespace std;
   using namespace cv;
+  
   int main()
   { 
     
@@ -53,14 +55,15 @@
     
     for(uint16_t i=0;i<m;++i)
     {
-      U[i]=0;
-      V[i]=0;
+      U[i]=i;
+      V[i]=i;
     }    
     
     for(uint16_t i=0;i<total*3;++i)
     {
       img_vec[i]=0;
       img_empty[i]=0;
+      fractal_vec[i]=0;
     } 
     
     /*GPU vector declarations*/
@@ -74,8 +77,8 @@
     flattenImage(image,img_vec);  
    
     /*GENERATE RELOCATION VECTORS*/
-    genRelocVec(U,P1,"constants1.txt",m,n,SEED1);
-    genRelocVec(V,P2,"constants2.txt",n,m,SEED2);
+    //genRelocVec(U,P1,"constants1.txt",m,n,SEED1);
+    //genRelocVec(V,P2,"constants2.txt",n,m,SEED2);
     
     /*Checking P1,P2,U and V*/
     if (DEBUG_VECTORS==1)
@@ -159,8 +162,6 @@
     }
    
     
-   
-   
    /*FRACTAL XORING*/
    getFractal(fractal,m,n);
    
@@ -206,6 +207,47 @@
        printf("%d ",img_vec[i]);
      }
    }
+   
+   /*ARNOLD MAP ENCRYPTION*/
+   cudaMallocManaged((void**)&gpuU,m*sizeof(uint8_t));
+   cudaMallocManaged((void**)&gpuV,m*sizeof(uint8_t));
+   
+   for(uint16_t i=0;i<m;++i)
+   {
+     gpuU[i]=U[i];
+     gpuV[i]=V[i];
+   }
+
+   dim3 grid_enc_gen_cat_map(m,n,1);
+   dim3 block_enc_gen_cat_map(3,1,1);
+   
+   
+   
+  for(uint16_t i=0;i<3;++i)
+  {
+   run_EncGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_enc_gen_cat_map,block_enc_gen_cat_map);
+   for(uint16_t i=0;i<total*3;++i)
+   {
+     temp=gpuimgIn[i];
+     gpuimgIn[i]=gpuimgOut[i];
+     gpuimgOut[i]=temp;
+   }
+  }
+   
+   for(uint16_t i=0;i<total*3;++i)
+   {
+     img_vec[i]=gpuimgOut[i]; 
+   }
+   
+   if(DEBUG_VECTORS==1)
+   {
+     cout<<"\nimgvec after ArMapImg, 3 shuffles,FracXor,shuffle, 3 rounds of Enc_GenCatMap and 3 shuffles=";
+     for(uint16_t i=0;i<total*3;++i)
+     {
+       printf("%d ",img_vec[i]);
+     }
+   }
+   
    
    return 0; 
   }
