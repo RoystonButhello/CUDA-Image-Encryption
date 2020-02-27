@@ -20,7 +20,7 @@
         out[idx] = in[idx]^fractal[idx];
     } 
 
-    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint8_t *colRotate, uint8_t *rowRotate)
+    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint16_t *colRotate, uint16_t *rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -47,7 +47,7 @@
     cudaDeviceSynchronize();  
   }
 
-  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint8_t *colRotate,uint8_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size)
   {
     Enc_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
     cudaDeviceSynchronize();

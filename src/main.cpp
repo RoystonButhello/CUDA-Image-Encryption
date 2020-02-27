@@ -11,11 +11,12 @@
     
     uint16_t m=0,n=0,total=0;
     uint8_t number_cat_map_rounds=0,temp=0;
+    std::string type=std::string("");
     
     cv::Mat image,fractal;
     
     /*LOAD AND SQUARE IMAGE. GET CATMAP ROUNDS*/
-    image=cv::imread("lena.png",cv::IMREAD_COLOR);
+    image=cv::imread("airplane.png",cv::IMREAD_COLOR);
     fractal=cv::imread("Gradient.png",cv::IMREAD_COLOR);
     
     if(RESIZE_TO_DEBUG==1)
@@ -29,6 +30,9 @@
     n=(uint16_t)image.cols;
     
     cout<<"\nm= "<<m<<"\tn= "<<n;
+    type=type2str(image.type());
+    cout<<"\nimage type= "<<type;
+    
     total=(m*n);
     bool isNotDecimal=0;
 
@@ -44,41 +48,45 @@
     /*Declarations*/
     
     /*CPU vector declarations and allocations*/
-    std::vector<float> P1(total);
-    std::vector<float> P2(total);
-    
+    double *P1=(double*)malloc(sizeof(double)*total);
+    double *P2=(double*)malloc(sizeof(double)*total);
     uint8_t *img_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
     uint8_t *img_empty=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
-    uint8_t *U=(uint8_t*)malloc(sizeof(uint8_t)*m);
-    uint8_t *V=(uint8_t*)malloc(sizeof(uint8_t)*m);
+    uint16_t *U=(uint16_t*)malloc(sizeof(uint16_t)*m);
+    uint16_t *V=(uint16_t*)malloc(sizeof(uint16_t)*m);
     uint8_t *fractal_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
     
-    for(uint16_t i=0;i<m;++i)
+    for(uint32_t i=0;i<m;++i)
     {
       U[i]=i;
       V[i]=i;
     }    
     
-    for(uint16_t i=0;i<total*3;++i)
+    for(uint32_t i=0;i<total*3;++i)
     {
       img_vec[i]=0;
       img_empty[i]=0;
       fractal_vec[i]=0;
     } 
     
+    for(uint32_t i=0;i<total;++i)
+    {
+      P1[i]=0;
+      P2[i]=0;
+    }
     /*GPU vector declarations*/
     uint8_t *gpuimgIn;
     uint8_t *gpuimgOut;
-    uint8_t *gpuU;
-    uint8_t *gpuV;
+    uint16_t *gpuU;
+    uint16_t *gpuV;
     uint8_t *gpuFrac;
      
     /*FLATTEN IMAGE*/
     flattenImage(image,img_vec);  
    
     /*GENERATE RELOCATION VECTORS*/
-    //genRelocVec(U,P1,"constants1.txt",m,n,SEED1);
-    //genRelocVec(V,P2,"constants2.txt",n,m,SEED2);
+    //genRelocVec(U,P1,m,n,"constants1.txt");
+    //genRelocVec(U,P1,m,n,"constants2.txt");
     
     /*Checking P1,P2,U and V*/
     if (DEBUG_VECTORS==1)
@@ -129,7 +137,7 @@
     cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
     cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
     
-    for (uint16_t i=0;i<total*3;++i)
+    for (uint32_t i=0;i<total*3;++i)
     {
        gpuimgIn[i]=img_vec[i];
        gpuimgOut[i]=0;
@@ -140,9 +148,9 @@
     
     
     
-    for(int16_t i=0;i<3;++i)
+    for(uint32_t i=0;i<3;++i)
     { run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
-      for(uint16_t i=0;i<total*3;++i)
+      for(uint32_t i=0;i<total*3;++i)
       {
         temp=gpuimgIn[i];
         gpuimgIn[i]=gpuimgOut[i];
@@ -150,13 +158,13 @@
       }
     }
     
-    for(uint16_t i=0;i<total*3;++i)
+    for(uint32_t i=0;i<total*3;++i)
     {
       img_vec[i]=gpuimgOut[i];
     } 
    
     cout<<"\nimgvec after ArMapImg and Swapping=";
-    for(uint16_t i=0;i<total*3;++i)
+    for(uint32_t i=0;i<total*3;++i)
     {
        printf("%d ",img_vec[i]);
     }
@@ -169,7 +177,7 @@
    if(DEBUG_VECTORS==1)
    {
      cout<<"\nfractal_vec=";
-     for(uint16_t i=0;i<total*3;++i)
+     for(uint32_t i=0;i<total*3;++i)
      {
        printf("%d ",fractal_vec[i]);
      }
@@ -177,7 +185,7 @@
    
    cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
    
-   for(uint16_t i=0;i<total*3;++i)
+   for(uint32_t i=0;i<total*3;++i)
    {
      gpuFrac[i]=fractal_vec[i];
    }
@@ -187,32 +195,32 @@
    run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
    
    
-   for(uint16_t i=0;i<total*3;++i)
+   for(uint32_t i=0;i<total*3;++i)
    {
      temp=gpuimgIn[i];
      gpuimgIn[i]=gpuimgOut[i];
      gpuimgOut[i]=temp;
    }
     
-   for(uint16_t i=0;i<total*3;++i)
+   for(uint32_t i=0;i<total*3;++i)
    {
      img_vec[i]=gpuimgOut[i];
    }
    
    if(DEBUG_VECTORS==1)
    {
-     cout<<"\nimg_vec after ArMapImg, 3 shuffles and fractal xor=";
-     for(uint16_t i=0;i<total*3;++i)
+     cout<<"\nimg_vec after ArMapImg, 3 shuffles and fractal xor and swapping=";
+     for(uint32_t i=0;i<total*3;++i)
      {
        printf("%d ",img_vec[i]);
      }
    }
    
    /*ARNOLD MAP ENCRYPTION*/
-   cudaMallocManaged((void**)&gpuU,m*sizeof(uint8_t));
-   cudaMallocManaged((void**)&gpuV,m*sizeof(uint8_t));
+   cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
+   cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
    
-   for(uint16_t i=0;i<m;++i)
+   for(uint32_t i=0;i<m;++i)
    {
      gpuU[i]=U[i];
      gpuV[i]=V[i];
@@ -223,10 +231,10 @@
    
    
    
-  for(uint16_t i=0;i<3;++i)
+  for(uint32_t i=0;i<3;++i)
   {
    run_EncGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_enc_gen_cat_map,block_enc_gen_cat_map);
-   for(uint16_t i=0;i<total*3;++i)
+   for(uint32_t i=0;i<total*3;++i)
    {
      temp=gpuimgIn[i];
      gpuimgIn[i]=gpuimgOut[i];
@@ -234,7 +242,7 @@
    }
   }
    
-   for(uint16_t i=0;i<total*3;++i)
+   for(uint32_t i=0;i<total*3;++i)
    {
      img_vec[i]=gpuimgOut[i]; 
    }
@@ -242,13 +250,16 @@
    if(DEBUG_VECTORS==1)
    {
      cout<<"\nimgvec after ArMapImg, 3 shuffles,FracXor,shuffle, 3 rounds of Enc_GenCatMap and 3 shuffles=";
-     for(uint16_t i=0;i<total*3;++i)
+     for(uint32_t i=0;i<total*3;++i)
      {
        printf("%d ",img_vec[i]);
      }
    }
    
-   
+   /*Converting img_reshape to Mat image*/
+   cv::Mat img_reshape(m,n,CV_8UC3,img_vec);
+   printImageContents(img_reshape);
+   cv::imwrite("airplane_encrypted.png",img_reshape);
    return 0; 
   }
   

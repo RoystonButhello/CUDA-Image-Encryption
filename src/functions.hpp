@@ -47,9 +47,10 @@
   /*Miscellaneous*/
   bool checkDecimal(std::vector<float> arr,uint32_t total); 
   void printImageContents(cv::Mat image);
-  void printFloatVector(std::vector<float> vect);
+  void printFloatVector(double *vect);
   void printInt8Vector(std::vector<uint8_t> vect);
-  
+  std::string type2str(int type);
+
   /*ENCRYPTION*/
   
   /*Phase 1 Basic operations*/
@@ -59,14 +60,16 @@
   uint8_t getCatMapRounds(uint8_t lower_bound,uint8_t upper_bound,uint8_t seed); 
   
   /*Phase 2 generate relocation vectors and flatten image*/
-  void genRelocVec(uint8_t *&U,std::vector<float> &P,uint16_t m,uint16_t n,uint8_t seed);
+  void genRelocVec(uint16_t *&U,double *&P,uint16_t m,uint16_t n,std::string filename);
   void flattenImage(cv::Mat image,uint8_t *&img_vec);
   
   /*Phase 3 swap gpuimgIn and gpuimgOut */
    
   /*Phase 6 get Fractal*/
   void getFractal(cv::Mat &fractal,uint16_t m,uint16_t n);  
-
+  
+  /*Phase 8 reshape array to image*/
+  void reshapeImageVector(cv::Mat &image,uint8_t *&img_vec,uint16_t m,uint16_t n);
 
   /*Miscellaneous region begins*/
   bool checkDecimal(std::vector<float> arr,uint32_t TOTAL)
@@ -82,9 +85,9 @@
     return 0;
   }
   
- void printFloatVector(std::vector<float> vect)
+ void printFloatVector(double *vect)
  {
-  for(uint32_t i=0;i<vect.size();++i )
+  for(uint32_t i=0;i<16;++i )
   {
    printf("%f ",vect[i]);
   }
@@ -114,6 +117,29 @@
        }
     }
   }  
+
+std::string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
+}
 
 /*Miscellaneous region ends*/ 
 
@@ -178,31 +204,34 @@
   }
   /*Phase 1 region ends*/
  
- /*Phase 2 region begins*/
- void genRelocVec(uint8_t *&U,std::vector<float> &P,std::string filename,int16_t m,uint16_t n,uint8_t seed)
+ void genRelocVec(uint16_t *&U,double *&P,uint16_t m,uint16_t n,std::string filename)
  {
    /*Initialize PRNGs*/
-   srand(seed);
-   double unzero=0.0000001;
-   uint16_t total=(m*n);
-   uint16_t mid=((total)/2);
-   
+    double unzero = 0.0000000001;
+    mt19937 seeder(time(0));
+    uniform_int_distribution<int> intGen(1, 32);
+    uniform_real_distribution<double> realGen(unzero, 1);
+    uint16_t total=0,mid=0;
+    total=(m*n);
+    mid=(m*n)/2;
+    int exponent = (int)pow(10, 8);
+    
+
    if(m%2!=0)
    {
      mid=mid+1;
    }
    
-   uint64_t exponent=100000000000000;
    
    std::string parameters=std::string("");
    
    /*Initialize random parameters*/
-   uint8_t a=2+(rand()%32);
-   uint8_t b=2+(rand()%32);
-   uint16_t c=1+(a*b);
-   uint8_t  offset=1+(rand()%32);
-   double x=0 + rand() / ( RAND_MAX / (0.0001 - 1.0 + 1.0) + 1.0);
-   double y=0 + rand() / ( RAND_MAX / (0.0001 - 1.0 + 1.0) + 1.0);
+    auto a = intGen(seeder);
+    auto b = intGen(seeder);
+    auto c = a * b + 1;
+    auto x = realGen(seeder);
+    auto y = realGen(seeder);
+    auto offset = intGen(seeder);
    
    /*Converting parameters to string and writing to file*/
    parameters.append(std::to_string(a));
@@ -246,7 +275,7 @@
    /*Generate U Vector*/
    for(uint32_t i=0;i<m;++i)
    {
-    U[i]=fmod((P[i]*exponent),n);
+    U[i]=(int)fmod((P[i]*exponent),n);
    }
    
  }
@@ -283,4 +312,24 @@
  } 
 
  /*Phase 6 region ends*/
+
+ /*Phase 8 region begins*/
+ void reshapeImageVector(cv::Mat &image,uint8_t *&img_vec,uint16_t m,uint16_t n)
+ {
+   uint32_t l=0;
+   for(uint32_t i=0;i<m;++i)
+   {
+     for(uint32_t j=0;j<n;++j)
+     {
+       for(uint32_t k=0;k<3;++k)
+       {
+         image.at<Vec3b>(i,j)[k]=img_vec[l];
+         l++;
+       } 
+     }
+   } 
+ }
+/*Phase 8 region ends*/
+
+
 #endif

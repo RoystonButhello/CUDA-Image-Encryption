@@ -9,7 +9,7 @@ extern "C" void run_WarmUp(dim3 blocks,dim3 block_size);
 /*Phase 6 start fractal XORing*/
 extern "C" void run_FracXor(uint8_t *in,uint8_t *out,uint8_t *fractal,dim3 blocks,dim3 block_size);
 /*Phase 7 start Arnold Map Encryption*/
-extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint8_t *colRotate,uint8_t *rowRotate,dim3 blocks,dim3 block_size);
+extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size);
 
 #endif
 
