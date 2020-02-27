@@ -17,7 +17,7 @@
   #include <bitset>   /*For to_string()*/
   #include <opencv2/opencv.hpp> /*For OpenCV*/
   #include <opencv2/highgui/highgui.hpp>
-  #include <cuda.h>/*For CUDA*/
+  #include <cuda.h> /*For CUDA*/
   #include <cuda_runtime.h>
  
   /*Constants*/
@@ -67,9 +67,9 @@
    
   /*Phase 6 get Fractal*/
   void getFractal(cv::Mat &fractal,uint16_t m,uint16_t n);  
-  
-  /*Phase 8 reshape array to image*/
-  void reshapeImageVector(cv::Mat &image,uint8_t *&img_vec,uint16_t m,uint16_t n);
+    
+
+
 
   /*Miscellaneous region begins*/
   bool checkDecimal(std::vector<float> arr,uint32_t TOTAL)
@@ -311,25 +311,6 @@ std::string type2str(int type) {
 
  } 
 
- /*Phase 6 region ends*/
-
- /*Phase 8 region begins*/
- void reshapeImageVector(cv::Mat &image,uint8_t *&img_vec,uint16_t m,uint16_t n)
- {
-   uint32_t l=0;
-   for(uint32_t i=0;i<m;++i)
-   {
-     for(uint32_t j=0;j<n;++j)
-     {
-       for(uint32_t k=0;k<3;++k)
-       {
-         image.at<Vec3b>(i,j)[k]=img_vec[l];
-         l++;
-       } 
-     }
-   } 
- }
-/*Phase 8 region ends*/
 
 
 #endif
