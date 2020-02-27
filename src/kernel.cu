@@ -38,6 +38,15 @@
         out[OutDex]  = in[InDex];
     }
    
+    
+    __global__ void ArMapTable(uint32_t *in, uint32_t *out)
+    {
+        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
+        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
+        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x);
+        int OutDex = ((gridDim.x)*ny + nx);
+        out[OutDex] = in[InDex];
+    }
    
 
    extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
@@ -68,4 +77,10 @@
   {
      Dec_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
      cudaDeviceSynchronize();    
+  }
+
+  extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 block_size)
+  {
+    ArMapTable<<<blocks,block_size>>>(in,out);
+    cudaDeviceSynchronize();
   }

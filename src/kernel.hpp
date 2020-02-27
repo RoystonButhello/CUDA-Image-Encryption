@@ -12,6 +12,7 @@ extern "C" void run_FracXor(uint8_t *in,uint8_t *out,uint8_t *fractal,dim3 block
 extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size);
 /*Phase 8 start Arnold Map Decryption*/
 extern "C" void run_DecGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size);
-
+/*Phase 9 start mapping image to Arnold Map Table*/
+extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 block_size);
 #endif
 
