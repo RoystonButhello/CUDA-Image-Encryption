@@ -165,16 +165,14 @@ int main()
       gpuimgOut[i]=temp;
     }     
   }
-  
-  if(DEBUG_VECTORS==1)
-  {
-     
-     
+    
     for(uint32_t i=0;i<total*3;++i)
     {
       img_vec[i]=gpuimgOut[i];
     }
   
+  if(DEBUG_VECTORS==1)
+  {
     cout<<"\nimg_vec after Dec_GenCatMap=";
     for(uint32_t i=0;i<total*3;++i)
     {

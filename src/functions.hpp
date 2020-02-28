@@ -33,7 +33,7 @@
   /*Debug Flags*/
   #define RESIZE_TO_DEBUG     1
   #define DEBUG_CONSTANTS     0
-  #define DEBUG_VECTORS       1
+  #define DEBUG_VECTORS       0
   #define DEBUG_IMAGES        1
   #define PRINT_IMAGES        0
   #define DEBUG_GPU_VECTORS   0 
