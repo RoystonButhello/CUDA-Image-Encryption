@@ -48,6 +48,12 @@
         out[OutDex] = in[InDex];
     }
    
+    __global__ void ArMapTabletoImg(uint8_t *in, uint8_t *out, uint32_t *table)
+    {
+        uint32_t InDex = blockIdx.x * 3 + threadIdx.x;
+        uint32_t OutDex = table[blockIdx.x] * 3 + threadIdx.x;
+        out[OutDex] = in[InDex];
+    }
 
    extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
    {
@@ -82,5 +88,11 @@
   extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 block_size)
   {
     ArMapTable<<<blocks,block_size>>>(in,out);
+    cudaDeviceSynchronize();
+  }
+
+  extern "C" void run_ArMapTabletoImg(uint8_t *in,uint8_t *out,uint32_t *table,dim3 blocks,dim3 block_size)
+  {
+    ArMapTabletoImg<<<blocks,block_size>>>(in,out,table);
     cudaDeviceSynchronize();
   }

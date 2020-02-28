@@ -10,14 +10,21 @@ int main()
 {
   cv::Mat image,fractal;
   image=imread("airplane_encrypted.png",IMREAD_COLOR);
-  fractal=imread("Gradient.png",IMREAD_COLOR);  
+  //fractal=imread("Gradient.png",IMREAD_COLOR);  
 
   uint16_t m=0,n=0,mid=0,total=0;
   std::string type=std::string("");
   
+  /*LOAD AND SQUARE IMAGE. GET CATMAP ROUNDS*/
+  mt19937 seeder(time(0));
+  uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
+  auto rounds=intGen(seeder);
   
-  cv::resize(image,image,cv::Size(4,4));
-  cv::resize(fractal,fractal,cv::Size(4,4));  
+  if(RESIZE_TO_DEBUG==1)
+  {
+    cv::resize(image,image,cv::Size(100,100));
+    //cv::resize(fractal,fractal,cv::Size(249,249));
+  } 
   
   m=(uint16_t)image.rows;
   n=(uint16_t)image.cols;
@@ -27,7 +34,8 @@ int main()
 
   cout<<"\nm= "<<m<<"\nn= "<<n;
   type=type2str(image.type());
-  cout<<"\nimage type= "<<type;  
+  cout<<"\nimage type= "<<type;
+  cout<<"\ntotal="<<total;  
 
   /*Declarations*/
     
@@ -50,39 +58,79 @@ int main()
   uint32_t *gpuShuffOut;
   uint16_t *gpuU;
   uint16_t *gpuV;
+  uint32_t *gpuShuffle;
 
    cout<<"\nAfter GPU Declarations";
   /*BASIC OPERATIONS*/
   
-  printImageContents(image);
+  if(DEBUG_VECTORS==1)
+  {  cout<<"\nflattened image=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",img_vec[i]);
+    }
   
-  flattenImage(image,img_vec);
-  
-  
-  
-  cout<<"\nflattened image=";
-  for(uint32_t i=0;i<total*3;++i)
-  {
-    printf("%d ",img_vec[i]);
-  }
-  
-  for(uint32_t i=0;i<m;++i)
-  {
-    U[i]=i;
-    V[i]=i;
-  }
+    for(uint32_t i=0;i<m;++i)
+    {
+      U[i]=0;
+      V[i]=0;
+    }
 
-  for(uint32_t i=0;i<total;++i)
+    for(uint32_t i=0;i<total;++i)
+    {
+      P1[i]=0;
+      P2[i]=0;
+    }
+  }  
+
+  /*GENERATE RELOCATION VECTORS*/
+  genRelocVecDec(U,P1,m,n,"constants1.txt");
+  genRelocVecDec(V,P2,n,m,"constants2.txt");
+  
+  if (DEBUG_VECTORS==1)
+    {
+      cout<<"\nP1=";
+      printFloatVector(P1);
+    
+      cout<<"\nU=";
+      for(uint32_t i=0;i<m;++i)
+      {
+        printf("%d ",U[i]);
+      }
+    
+      cout<<"\nP2=";
+      printFloatVector(P2);
+      cout<<"\nV=";
+    
+      for(uint32_t i=0;i<m;++i)
+      {
+        printf("%d ",V[i]);
+      }
+      
+      cout<<"\n";
+  }
+    
+  if(PRINT_IMAGES==1)
   {
-    P1[i]=0;
-    P2[i]=0;
+    printImageContents(image);
+  }
+  flattenImage(image,img_vec);
+  if(DEBUG_VECTORS==1)
+  { cout<<"\nimg_vec before Dec_GenCatMap";
+    for(int i=0;i<total*3;++i)
+    {
+      printf("%d ",img_vec[i]);
+    }
   }
   
-  /*GPU WARMUP*/
+  
+ 
+  
+  /*GPU WARMUP*
   dim3 grid_gpu_warm_up(1,1,1);
   dim3 block_gpu_warm_up(1,1,1);
   
-  run_WarmUp(grid_gpu_warm_up,block_gpu_warm_up);
+  run_WarmUp(grid_gpu_warm_up,block_gpu_warm_up);*/
    
   
   /*ARNOLD MAP DECRYPTION*/
@@ -108,7 +156,7 @@ int main()
   
   
   uint8_t temp=0;
-  for(uint32_t i=0;i<3;++i)
+  for(uint32_t i=0;i<PERM_ROUNDS;++i)
   {run_DecGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_dec_gen_cat_map,block_dec_gen_cat_map);
     for(uint32_t i=0;i<total*3;++i)
     {
@@ -118,18 +166,41 @@ int main()
     }     
   }
   
-  for(uint32_t i=0;i<total*3;++i)
+  if(DEBUG_VECTORS==1)
   {
-    img_vec[i]=gpuimgOut[i];
+     
+     
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      img_vec[i]=gpuimgOut[i];
+    }
+  
+    cout<<"\nimg_vec after Dec_GenCatMap=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",img_vec[i]);
+    }
+    
+     
+     std::ofstream file("img_vec_dec.txt");
+     std::string image_elements=std::string("");
+     if(!file)
+     {
+       cout<<"Could not create img_vec_dec.txt\nExiting...";
+       exit(1);
+     }
+     
+     for(uint32_t i=0;i<total*3;++i)
+     {
+       image_elements.append(std::to_string(img_vec[i]));
+       image_elements.append("\n");
+     }
+     
+     file<<image_elements;
+     file.close();
   }
   
-  cout<<"\nimg_vec after 3 rounds of Dec_GenCatMap and 3 rounds of shuffling=";
-  for(uint32_t i=0;i<total*3;++i)
-  {
-    printf("%d ",img_vec[i]);
-  }  
-
-  /*FRACTAL XORING*/
+  /*FRACTAL XORING
   cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
   
   flattenImage(fractal,fractal_vec);
@@ -160,9 +231,9 @@ int main()
   for(uint32_t i=0;i<total*3;++i)
   {
     printf("%d ",img_vec[i]);
-  }
+  }*/
 
-  /*MAPPING IMAGE TO ARNOLD MAP TABLE*/
+  /*MAPPING IMAGE TO ARNOLD MAP TABLE
   cudaMallocManaged((void**)&gpuShuffIn,total*sizeof(uint32_t));
   cudaMallocManaged((void**)&gpuShuffOut,total*sizeof(uint32_t));
 
@@ -179,7 +250,7 @@ int main()
   dim3 grid_ar_map_table(m,n,1);
   dim3 block_ar_map_table(1,1,1);
   
-  for(uint32_t i=0;i<11;++i)
+  for(uint32_t i=0;i<rounds;++i)
   {
     run_ArMapTable(gpuShuffIn,gpuShuffOut,grid_ar_map_table,block_ar_map_table);
     for(uint32_t i=0;i<total;++i)
@@ -195,14 +266,49 @@ int main()
     img_shuffle[i]=gpuShuffIn[i];
   }
   
-  cout<<"\nAfter 3 rounds of DecGenCat Map, 3 rounds of shuffle, one round of fractal xor, one round of shuffle, 3 rounds of ArMapTable, 3 rounds of Shuffle=,img_shuffle=";
+ if(DEBUG_VECTORS==1)
+ {
+   cout<<"\nAfter ArMapTable=";
 
+   for(uint32_t i=0;i<total;++i)
+   {
+     printf("%d ",img_shuffle[i]);
+   }
+ }*/
+
+ /*ARNOLD IMAGE MAP TO TABLE
+ cudaMallocManaged((void**)&gpuShuffle,total*sizeof(uint32_t));
+ 
  for(uint32_t i=0;i<total;++i)
  {
-   printf("%d ",img_shuffle[i]);
+  gpuShuffle[i]=gpuShuffIn[i];
+ 
  }
+ 
+ dim3 grid_ar_map_table_to_img(m*n,1,1);
+ dim3 block_ar_map_table_to_img(3,1,1);
+ 
+ run_ArMapTabletoImg(gpuimgIn,gpuimgOut,gpuShuffle,grid_ar_map_table_to_img,block_ar_map_table_to_img);
+ 
+ for(uint32_t i=0;i<total*3;++i)
+ {
+   img_vec[i]=gpuimgOut[i];
+ }  
+ 
+  if(DEBUG_VECTORS==1)
+  { 
+    cout<<"\nimg_vec after ArMapTableTImg=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",img_vec[i]);
+    }
+  }*/
 
-  
+  if(DEBUG_IMAGES==1)
+  {
+     cv::Mat img_reshape(m,n,CV_8UC3,img_vec);
+     cv::imwrite("airplane_decrypted.png",img_reshape);
+  }
   
   return 0;
 }

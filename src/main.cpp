@@ -13,18 +13,24 @@
     uint8_t number_cat_map_rounds=0,temp=0;
     std::string type=std::string("");
     
-    cv::Mat image,fractal;
+    cv::Mat image;
+    cv::Mat fractal;
     
     /*LOAD AND SQUARE IMAGE. GET CATMAP ROUNDS*/
     image=cv::imread("airplane.png",cv::IMREAD_COLOR);
-    fractal=cv::imread("Gradient.png",cv::IMREAD_COLOR);
+    //fractal=cv::imread("Gradient.png",cv::IMREAD_COLOR);
     
+    mt19937 seeder1(time(0));
+    uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
+    auto rounds=intGen(seeder1); 
+   
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(4,4));
+      cv::resize(image,image,cv::Size(100,100));
+      //cv::resize(fractal,fractal,cv::Size(4,4));
     }
     
-    //getSquareImage(image,"original_dimensions.txt",RESIZE_TO_MAXIMUM);
+    getSquareImage(image,"original_dimensions.txt",RESIZE_TO_MAXIMUM);
     
     m=(uint16_t)image.rows;
     n=(uint16_t)image.cols;
@@ -32,17 +38,12 @@
     cout<<"\nm= "<<m<<"\tn= "<<n;
     type=type2str(image.type());
     cout<<"\nimage type= "<<type;
-    
     total=(m*n);
+    cout<<"\ntotal="<<total;  
+    
+   
     bool isNotDecimal=0;
 
-    //number_cat_map_rounds=getCatMapRounds(CATMAP_ROUND_LOWER,CATMAP_ROUND_UPPER,SEED1);
-    
-    if (DEBUG_CONSTANTS==1)
-    {
-      cout<<"\nNumber of Cat Map rounds="<<number_cat_map_rounds;
-    }
-    
     
     
     /*Declarations*/
@@ -55,11 +56,13 @@
     uint16_t *U=(uint16_t*)malloc(sizeof(uint16_t)*m);
     uint16_t *V=(uint16_t*)malloc(sizeof(uint16_t)*m);
     uint8_t *fractal_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    uint8_t *original_img_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    
     
     for(uint32_t i=0;i<m;++i)
     {
-      U[i]=i;
-      V[i]=i;
+      U[i]=0;
+      V[i]=0;
     }    
     
     for(uint32_t i=0;i<total*3;++i)
@@ -74,6 +77,7 @@
       P1[i]=0;
       P2[i]=0;
     }
+    cout<<"\nFInished initializing P1,P2,img_vec,fractal_vec,U,V";
     /*GPU vector declarations*/
     uint8_t *gpuimgIn;
     uint8_t *gpuimgOut;
@@ -82,11 +86,12 @@
     uint8_t *gpuFrac;
      
     /*FLATTEN IMAGE*/
-    flattenImage(image,img_vec);  
+    flattenImage(image,img_vec); 
    
-    /*GENERATE RELOCATION VECTORS*/
-    //genRelocVec(U,P1,m,n,"constants1.txt");
-    //genRelocVec(U,P1,m,n,"constants2.txt");
+   /*GENERATE RELOCATION VECTORS*/
+   genRelocVecEnc(U,P1,m,n,"constants1.txt");
+   genRelocVecEnc(V,P2,n,m,"constants2.txt");
+   cout<<"\nGenerated Relocation Vectors"; 
     
     /*Checking P1,P2,U and V*/
     if (DEBUG_VECTORS==1)
@@ -100,7 +105,7 @@
         printf("%d ",U[i]);
       }
     
-      cout<<"\n";
+      cout<<"\nP2=";
       printFloatVector(P2);
       cout<<"\nV=";
     
@@ -119,23 +124,49 @@
      printImageContents(image);
    }
     
-   if(PRINT_IMAGES==1) 
+   if(DEBUG_VECTORS==1) 
    {
-     cout<<"\nimg_vec=";
+     
+     
+     cout<<"\nimg_vec before Enc_GenCatMap=";
      for(uint32_t i=0;i<total*3;++i)
      {
+        
         printf("%d ",img_vec[i]);
      }
-   }
-    /*WARMUP*/
+     
+
+     std::ofstream file("img_vec.txt");
+     std::string image_elements=std::string("");
+     if(!file)
+     {
+       cout<<"Could not create img_vec.txt\nExiting...";
+       exit(1);
+     }
+     
+     for(uint32_t i=0;i<total*3;++i)
+     {
+       image_elements.append(std::to_string(img_vec[i]));
+       image_elements.append("\n");
+     }
+     
+     file<<image_elements;
+     file.close();
+   
+  }
+   
+   
+   
+    /*WARMUP
     dim3 grid_warm_up(1,1,1);
     dim3 block_warm_up(1,1,1);
     
-    run_WarmUp(grid_warm_up,block_warm_up);
+    run_WarmUp(grid_warm_up,block_warm_up);*/
     
     /*ARNOLD IMAGE MAPPING*/
+    
     cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
-    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
+    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t)); 
     
     for (uint32_t i=0;i<total*3;++i)
     {
@@ -143,13 +174,14 @@
        gpuimgOut[i]=0;
     }
     
-    dim3 grid_ar_map_img(m,n,1);
+    /*dim3 grid_ar_map_img(m,n,1);
     dim3 block_ar_map_img(3,1,1);
     
+    cout<<"\nBefore Armapimg kernel call"; 
     
-    
-    for(uint32_t i=0;i<3;++i)
-    { run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
+    for(uint32_t i=0;i<max((uint8_t)rounds,5);++i)
+    { cout<<"\nIn Armapimg kernel call loop";
+      run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
       for(uint32_t i=0;i<total*3;++i)
       {
         temp=gpuimgIn[i];
@@ -163,14 +195,16 @@
       img_vec[i]=gpuimgOut[i];
     } 
    
-    cout<<"\nimgvec after ArMapImg and Swapping=";
-    for(uint32_t i=0;i<total*3;++i)
+    if(DEBUG_VECTORS==1)
     {
-       printf("%d ",img_vec[i]);
-    }
-   
+      cout<<"\nimgvec after ArMapImg and Swapping=";
+      for(uint32_t i=0;i<total*3;++i)
+      {
+         printf("%d ",img_vec[i]);
+      }
+    }*/
     
-   /*FRACTAL XORING*/
+   /*FRACTAL XORING*
    getFractal(fractal,m,n);
    
    flattenImage(fractal,fractal_vec);
@@ -214,7 +248,7 @@
      {
        printf("%d ",img_vec[i]);
      }
-   }
+   }*/
    
    /*ARNOLD MAP ENCRYPTION*/
    cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
@@ -231,7 +265,7 @@
    
    
    
-  for(uint32_t i=0;i<3;++i)
+  for(uint32_t i=0;i<PERM_ROUNDS;++i)
   {
    run_EncGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_enc_gen_cat_map,block_enc_gen_cat_map);
    for(uint32_t i=0;i<total*3;++i)
@@ -249,7 +283,7 @@
    
    if(DEBUG_VECTORS==1)
    {
-     cout<<"\nimgvec after ArMapImg, 3 shuffles,FracXor,shuffle, 3 rounds of Enc_GenCatMap and 3 shuffles=";
+     cout<<"\nimg_vec after Enc_GenCatMap=";
      for(uint32_t i=0;i<total*3;++i)
      {
        printf("%d ",img_vec[i]);
@@ -257,9 +291,11 @@
    }
    
    /*Converting img_reshape to Mat image*/
-   cv::Mat img_reshape(m,n,CV_8UC3,img_vec);
-   printImageContents(img_reshape);
-   cv::imwrite("airplane_encrypted.png",img_reshape);
+   if(DEBUG_IMAGES==1)
+   {
+     cv::Mat img_reshape(m,n,CV_8UC3,img_vec);
+     cv::imwrite("airplane_encrypted.png",img_reshape);
+   }
    return 0; 
   }
   
