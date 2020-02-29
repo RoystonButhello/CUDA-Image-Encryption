@@ -27,7 +27,7 @@
     if(RESIZE_TO_DEBUG==1)
     {
       cv::resize(image,image,cv::Size(100,100));
-      //cv::resize(fractal,fractal,cv::Size(4,4));
+      //cv::resize(fractal,fractal,cv::Size(100,100));
     }
     
     getSquareImage(image,"original_dimensions.txt",RESIZE_TO_MAXIMUM);
@@ -179,7 +179,7 @@
     
     cout<<"\nBefore Armapimg kernel call"; 
     
-    for(uint32_t i=0;i<max((uint8_t)rounds,5);++i)
+    for(uint32_t i=0;i<max((uint16_t)rounds,5);++i)
     { cout<<"\nIn Armapimg kernel call loop";
       run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
       for(uint32_t i=0;i<total*3;++i)
@@ -197,58 +197,48 @@
    
     if(DEBUG_VECTORS==1)
     {
-      cout<<"\nimgvec after ArMapImg and Swapping=";
+      cout<<"\nimgvec after ArMapImg and Shuffle=";
       for(uint32_t i=0;i<total*3;++i)
       {
          printf("%d ",img_vec[i]);
       }
     }*/
     
-   /*FRACTAL XORING*
-   getFractal(fractal,m,n);
+   /*FRACTAL XORING*/
+  flattenImage(fractal,fractal_vec);
+
+  cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
+  
+  for(int i=0;i<total*3;++i)
+  {
+    gpuimgIn[i]=img_vec[i];
+  }  
+  
+  
+  for(int i=0;i<total*3;++i)
+  {
+    gpuFrac[i]=fractal_vec[i];
+  }
+  
+  dim3 grid_frac_xor(m*n,1,1);
+  dim3 block_frac_xor(3,1,1);
+  
+  run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
+  
+  
+  for(int i=0;i<total*3;++i)
+  {
+    temp=gpuimgIn[i];
+    gpuimgIn[i]=gpuimgOut[i];
+    gpuimgOut[i]=temp;
+  }  
+
+  for(int i=0;i<total*3;++i)
+  {
+    img_vec[i]=gpuimgOut[i];
+  }
    
-   flattenImage(fractal,fractal_vec);
-   if(DEBUG_VECTORS==1)
-   {
-     cout<<"\nfractal_vec=";
-     for(uint32_t i=0;i<total*3;++i)
-     {
-       printf("%d ",fractal_vec[i]);
-     }
-   }
    
-   cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
-   
-   for(uint32_t i=0;i<total*3;++i)
-   {
-     gpuFrac[i]=fractal_vec[i];
-   }
-   
-   dim3 grid_frac_xor(m*n,1,1);
-   dim3 block_frac_xor(3,1,1);
-   run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
-   
-   
-   for(uint32_t i=0;i<total*3;++i)
-   {
-     temp=gpuimgIn[i];
-     gpuimgIn[i]=gpuimgOut[i];
-     gpuimgOut[i]=temp;
-   }
-    
-   for(uint32_t i=0;i<total*3;++i)
-   {
-     img_vec[i]=gpuimgOut[i];
-   }
-   
-   if(DEBUG_VECTORS==1)
-   {
-     cout<<"\nimg_vec after ArMapImg, 3 shuffles and fractal xor and swapping=";
-     for(uint32_t i=0;i<total*3;++i)
-     {
-       printf("%d ",img_vec[i]);
-     }
-   }*/
    
    /*ARNOLD MAP ENCRYPTION*/
    cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
