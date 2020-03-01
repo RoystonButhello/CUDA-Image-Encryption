@@ -18,19 +18,19 @@
     
     /*LOAD AND SQUARE IMAGE. GET CATMAP ROUNDS*/
     image=cv::imread("airplane.png",cv::IMREAD_COLOR);
-    //fractal=cv::imread("Gradient.png",cv::IMREAD_COLOR);
+    fractal=cv::imread("Gradient.png",cv::IMREAD_COLOR);
     
-    mt19937 seeder1(time(0));
-    uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
-    auto rounds=intGen(seeder1); 
+    //mt19937 seeder1(time(0));
+    //uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
+    //auto rounds=intGen(seeder1); 
    
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(100,100));
-      //cv::resize(fractal,fractal,cv::Size(100,100));
+      cv::resize(image,image,cv::Size(50,50));
+      cv::resize(fractal,fractal,cv::Size(50,50));
     }
     
-    getSquareImage(image,"original_dimensions.txt",RESIZE_TO_MAXIMUM);
+    //getSquareImage(image,"original_dimensions.txt",RESIZE_TO_MAXIMUM);
     
     m=(uint16_t)image.rows;
     n=(uint16_t)image.cols;
@@ -86,7 +86,8 @@
     uint8_t *gpuFrac;
      
     /*FLATTEN IMAGE*/
-    flattenImage(image,img_vec); 
+    flattenImage(image,img_vec);
+    flattenImage(fractal,fractal_vec); 
    
    /*GENERATE RELOCATION VECTORS*/
    genRelocVecEnc(U,P1,m,n,"constants1.txt");
@@ -97,7 +98,10 @@
     if (DEBUG_VECTORS==1)
     {
       cout<<"\nP1=";
-      printFloatVector(P1);
+      for(int i=0;i<total;++i)
+      {
+        printf(" %F",P1[i]);
+      }
     
       cout<<"\nU=";
       for(uint32_t i=0;i<m;++i)
@@ -106,7 +110,11 @@
       }
     
       cout<<"\nP2=";
-      printFloatVector(P2);
+      for(int i=0;i<total;++i)
+      {
+        printf(" %F",P2[i]);
+      }
+      
       cout<<"\nV=";
     
       for(uint32_t i=0;i<m;++i)
@@ -136,7 +144,7 @@
      }
      
 
-     std::ofstream file("img_vec.txt");
+     /*std::ofstream file("img_vec.txt");
      std::string image_elements=std::string("");
      if(!file)
      {
@@ -151,7 +159,7 @@
      }
      
      file<<image_elements;
-     file.close();
+     file.close();*/
    
   }
    
@@ -163,86 +171,58 @@
     
     run_WarmUp(grid_warm_up,block_warm_up);*/
     
-    /*ARNOLD IMAGE MAPPING*/
+    /*FRACTAL XORING*/
     
     cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
-    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t)); 
+    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
+    cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
+    cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
+    cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t)); 
     
     for (uint32_t i=0;i<total*3;++i)
     {
        gpuimgIn[i]=img_vec[i];
+       gpuFrac[i]=fractal_vec[i];
        gpuimgOut[i]=0;
     }
     
-    /*dim3 grid_ar_map_img(m,n,1);
-    dim3 block_ar_map_img(3,1,1);
-    
-    cout<<"\nBefore Armapimg kernel call"; 
-    
-    for(uint32_t i=0;i<max((uint16_t)rounds,5);++i)
-    { cout<<"\nIn Armapimg kernel call loop";
-      run_ArMapImg(gpuimgIn,gpuimgOut,grid_ar_map_img,block_ar_map_img);
-      for(uint32_t i=0;i<total*3;++i)
-      {
-        temp=gpuimgIn[i];
-        gpuimgIn[i]=gpuimgOut[i];
-        gpuimgOut[i]=temp;
-      }
-    }
-    
-    for(uint32_t i=0;i<total*3;++i)
+    dim3 grid_frac_xor(m*n,1,1);
+    dim3 block_frac_xor(3,1,1);
+  
+    run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
+    //cout<<"\nAfter fracxor";
+    //uint8_t temp=0;
+    swap(gpuimgIn,gpuimgOut);
+  
+    /*for(int i=0;i<total*3;++i)
     {
-      img_vec[i]=gpuimgOut[i];
-    } 
-   
+      img_vec[i]=gpuimgIn[i];
+    }*/
+
     if(DEBUG_VECTORS==1)
     {
-      cout<<"\nimgvec after ArMapImg and Shuffle=";
+      cout<<"\ngpuimgIn in fracxor Encrypt=";
+      for(uint32_t i=0;i<total*3;++i)
+      {
+        printf("%d ",gpuimgIn[i]);
+      }
+    
+      cout<<"\ngpuimgOut in fracxor Encrypt=";
+      for(uint32_t i=0;i<total*3;++i)
+      {
+        printf("%d ",gpuimgOut[i]);
+      }
+    
+      /*cout<<"\nEncrypted img_vec=";
       for(uint32_t i=0;i<total*3;++i)
       {
          printf("%d ",img_vec[i]);
-      }
-    }*/
+      }*/
+      
+  }
+
     
-   /*FRACTAL XORING*/
-  flattenImage(fractal,fractal_vec);
-
-  cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
-  
-  for(int i=0;i<total*3;++i)
-  {
-    gpuimgIn[i]=img_vec[i];
-  }  
-  
-  
-  for(int i=0;i<total*3;++i)
-  {
-    gpuFrac[i]=fractal_vec[i];
-  }
-  
-  dim3 grid_frac_xor(m*n,1,1);
-  dim3 block_frac_xor(3,1,1);
-  
-  run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
-  
-  
-  for(int i=0;i<total*3;++i)
-  {
-    temp=gpuimgIn[i];
-    gpuimgIn[i]=gpuimgOut[i];
-    gpuimgOut[i]=temp;
-  }  
-
-  for(int i=0;i<total*3;++i)
-  {
-    img_vec[i]=gpuimgOut[i];
-  }
-   
-   
-   
    /*ARNOLD MAP ENCRYPTION*/
-   cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
-   cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
    
    for(uint32_t i=0;i<m;++i)
    {
@@ -250,36 +230,44 @@
      gpuV[i]=V[i];
    }
 
+   /*for(uint32_t i=0;i<(total*3);++i)
+   {
+     gpuimgIn[i]=img_vec[i];
+   }*/
+
    dim3 grid_enc_gen_cat_map(m,n,1);
    dim3 block_enc_gen_cat_map(3,1,1);
    
-   
-   
-  for(uint32_t i=0;i<PERM_ROUNDS;++i)
+    
+  for(uint32_t i=0;i<2;++i)
   {
    run_EncGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_enc_gen_cat_map,block_enc_gen_cat_map);
-   for(uint32_t i=0;i<total*3;++i)
-   {
-     temp=gpuimgIn[i];
-     gpuimgIn[i]=gpuimgOut[i];
-     gpuimgOut[i]=temp;
-   }
+   swap(gpuimgIn,gpuimgOut);
+  
   }
+    swap(gpuimgIn,gpuimgOut);
+
+   if(DEBUG_VECTORS==1)
+   {
+     cout<<"\ngpuimgIn after fractal xor and encryption=";
+     for(int i=0;i<total*3;++i)
+     {
+       printf("%d ",gpuimgIn[i]);
+     }
+     
+     cout<<"\ngpuimgOut after fractal xor and encryption=";
+     for(int i=0;i<total*3;++i)
+     {
+       printf("%d ",gpuimgOut[i]);
+     }
+
+   }
    
    for(uint32_t i=0;i<total*3;++i)
    {
      img_vec[i]=gpuimgOut[i]; 
    }
-   
-   if(DEBUG_VECTORS==1)
-   {
-     cout<<"\nimg_vec after Enc_GenCatMap=";
-     for(uint32_t i=0;i<total*3;++i)
-     {
-       printf("%d ",img_vec[i]);
-     }
-   }
-   
+  
    /*Converting img_reshape to Mat image*/
    if(DEBUG_IMAGES==1)
    {

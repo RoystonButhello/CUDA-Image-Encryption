@@ -10,20 +10,20 @@ int main()
 {
   cv::Mat image,fractal;
   image=imread("airplane_encrypted.png",IMREAD_COLOR);
-  //fractal=imread("Gradient.png",IMREAD_COLOR);  
+  fractal=imread("Gradient.png",IMREAD_COLOR);  
 
-  uint16_t m=0,n=0,mid=0,total=0;
+  uint16_t m=0,n=0,mid=0,total=0,temp=0;
   std::string type=std::string("");
   
   /*LOAD AND SQUARE IMAGE. GET CATMAP ROUNDS*/
-  mt19937 seeder(time(0));
-  uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
-  auto rounds=intGen(seeder);
+  //mt19937 seeder(time(0));
+  //uniform_int_distribution<int> intGen(CATMAP_ROUND_LOWER, CATMAP_ROUND_UPPER);
+  //auto rounds=intGen(seeder);
   
   if(RESIZE_TO_DEBUG==1)
   {
-    cv::resize(image,image,cv::Size(100,100));
-    //cv::resize(fractal,fractal,cv::Size(249,249));
+    cv::resize(image,image,cv::Size(50,50));
+    cv::resize(fractal,fractal,cv::Size(50,50));
   } 
   
   m=(uint16_t)image.rows;
@@ -62,7 +62,9 @@ int main()
 
    cout<<"\nAfter GPU Declarations";
   /*BASIC OPERATIONS*/
-  
+  flattenImage(image,img_vec);
+  flattenImage(fractal,fractal_vec);  
+
   if(DEBUG_VECTORS==1)
   {  cout<<"\nflattened image=";
     for(uint32_t i=0;i<total*3;++i)
@@ -87,10 +89,14 @@ int main()
   genRelocVecDec(U,P1,m,n,"constants1.txt");
   genRelocVecDec(V,P2,n,m,"constants2.txt");
   
-  if (DEBUG_VECTORS==1)
+  /*Checking P1,P2,U and V*/
+    if (DEBUG_VECTORS==1)
     {
       cout<<"\nP1=";
-      printFloatVector(P1);
+      for(int i=0;i<total;++i)
+      {
+        printf(" %F",P1[i]);
+      }
     
       cout<<"\nU=";
       for(uint32_t i=0;i<m;++i)
@@ -99,7 +105,11 @@ int main()
       }
     
       cout<<"\nP2=";
-      printFloatVector(P2);
+      for(int i=0;i<total;++i)
+      {
+        printf(" %F",P2[i]);
+      }
+      
       cout<<"\nV=";
     
       for(uint32_t i=0;i<m;++i)
@@ -114,7 +124,7 @@ int main()
   {
     printImageContents(image);
   }
-  flattenImage(image,img_vec);
+
   if(DEBUG_VECTORS==1)
   { cout<<"\nimg_vec before Dec_GenCatMap";
     for(int i=0;i<total*3;++i)
@@ -131,13 +141,14 @@ int main()
   dim3 block_gpu_warm_up(1,1,1);
   
   run_WarmUp(grid_gpu_warm_up,block_gpu_warm_up);*/
-   
+  //uint8_t temp=0; 
   
   /*ARNOLD MAP DECRYPTION*/
   cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
   cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
   cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
   cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
+  cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
   
   for(uint32_t i=0;i<total*3;++i)
   {
@@ -155,21 +166,20 @@ int main()
   
   
   
-  uint8_t temp=0;
-  for(uint32_t i=0;i<PERM_ROUNDS;++i)
+  
+  for(uint32_t i=0;i<2;++i)
   {run_DecGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_dec_gen_cat_map,block_dec_gen_cat_map);
-    for(uint32_t i=0;i<total*3;++i)
-    {
-      temp=gpuimgIn[i];
-      gpuimgIn[i]=gpuimgOut[i];
-      gpuimgOut[i]=temp;
-    }     
+   swap(gpuimgIn,gpuimgOut); 
   }
-    
-    for(uint32_t i=0;i<total*3;++i)
+  
+  swap(gpuimgIn,gpuimgOut);
+
+  
+  
+    /*for(uint32_t i=0;i<total*3;++i)
     {
       img_vec[i]=gpuimgOut[i];
-    }
+    }*/
   
   if(DEBUG_VECTORS==1)
   {
@@ -179,8 +189,19 @@ int main()
       printf("%d ",img_vec[i]);
     }
     
+    cout<<"\ngpuimgIn after dec_GenCatMap=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",gpuimgIn[i]);
+    }
      
-     std::ofstream file("img_vec_dec.txt");
+    cout<<"\ngpuimgOut after dec_GenCatMap=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",gpuimgOut[i]);
+    }     
+
+     /*std::ofstream file("img_vec_dec.txt");
      std::string image_elements=std::string("");
      if(!file)
      {
@@ -195,112 +216,52 @@ int main()
      }
      
      file<<image_elements;
-     file.close();
+     file.close();*/
   }
   
-  /*FRACTAL XORING
-  cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
+  /*FRACTAL XORING*/
   
-  flattenImage(fractal,fractal_vec);
-  
-  for(uint32_t i=0;i<total*3;++i)
+  for(int i=0;i<total*3;++i)
   {
     gpuFrac[i]=fractal_vec[i];
   }
-
+  
   dim3 grid_frac_xor(m*n,1,1);
   dim3 block_frac_xor(3,1,1);
   
-  run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
+  run_FracXor(gpuimgOut,gpuimgIn,gpuFrac,grid_frac_xor,block_frac_xor);
+  temp=0;
+  swap(gpuimgOut,gpuimgIn); 
   
-  for(uint32_t i=0;i<total*3;++i)
-  {
-    temp=gpuimgIn[i];
-    gpuimgIn[i]=gpuimgOut[i];
-    gpuimgOut[i]=temp;
-  }
-  
-  for(uint32_t i=0;i<total*3;++i)
+
+  for(int i=0;i<total*3;++i)
   {
     img_vec[i]=gpuimgOut[i];
   }
 
-  cout<<"\nAfter 3 rounds of Dec_GenCatMap, 3 rounds of shuffle, one round of fractal xor and one round of shuffle, img_vec=";
-  for(uint32_t i=0;i<total*3;++i)
-  {
-    printf("%d ",img_vec[i]);
-  }*/
-
-  /*MAPPING IMAGE TO ARNOLD MAP TABLE
-  cudaMallocManaged((void**)&gpuShuffIn,total*sizeof(uint32_t));
-  cudaMallocManaged((void**)&gpuShuffOut,total*sizeof(uint32_t));
-
-  for(uint32_t i=0;i<total;++i)
-  {
-    img_shuffle[i]=i;
-  }
   
-  for(uint32_t i=0;i<total;++i)
-  {
-    gpuShuffIn[i]=img_shuffle[i];
-  }
-  
-  dim3 grid_ar_map_table(m,n,1);
-  dim3 block_ar_map_table(1,1,1);
-  
-  for(uint32_t i=0;i<rounds;++i)
-  {
-    run_ArMapTable(gpuShuffIn,gpuShuffOut,grid_ar_map_table,block_ar_map_table);
-    for(uint32_t i=0;i<total;++i)
-    {
-      temp=gpuShuffIn[i];
-      gpuShuffIn[i]=gpuShuffOut[i];
-      gpuShuffOut[i]=temp;
-    }
-  }
-  
-  for(uint32_t i=0;i<total;++i)
-  {
-    img_shuffle[i]=gpuShuffIn[i];
-  }
-  
- if(DEBUG_VECTORS==1)
- {
-   cout<<"\nAfter ArMapTable=";
-
-   for(uint32_t i=0;i<total;++i)
-   {
-     printf("%d ",img_shuffle[i]);
-   }
- }*/
-
- /*ARNOLD IMAGE MAP TO TABLE
- cudaMallocManaged((void**)&gpuShuffle,total*sizeof(uint32_t));
- 
- for(uint32_t i=0;i<total;++i)
- {
-  gpuShuffle[i]=gpuShuffIn[i];
- 
- }
- 
- dim3 grid_ar_map_table_to_img(m*n,1,1);
- dim3 block_ar_map_table_to_img(3,1,1);
- 
- run_ArMapTabletoImg(gpuimgIn,gpuimgOut,gpuShuffle,grid_ar_map_table_to_img,block_ar_map_table_to_img);
- 
- for(uint32_t i=0;i<total*3;++i)
- {
-   img_vec[i]=gpuimgOut[i];
- }  
- 
   if(DEBUG_VECTORS==1)
-  { 
-    cout<<"\nimg_vec after ArMapTableTImg=";
+  {
+    cout<<"\ngpuimgIn in fracxor Decrypt=";
     for(uint32_t i=0;i<total*3;++i)
     {
-      printf("%d ",img_vec[i]);
+      printf("%d ",gpuimgIn[i]);
     }
-  }*/
+    
+    cout<<"\ngpuimgOut in fracxor Decrypt=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+      printf("%d ",gpuimgOut[i]);
+    }
+    
+    cout<<"\nDecrypted img_vec=";
+    for(uint32_t i=0;i<total*3;++i)
+    {
+       printf("%d ",img_vec[i]);
+    }
+      
+  }
+  
 
   if(DEBUG_IMAGES==1)
   {

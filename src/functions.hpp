@@ -33,7 +33,7 @@
   /*Debug Flags*/
   #define RESIZE_TO_DEBUG     1
   #define DEBUG_CONSTANTS     0
-  #define DEBUG_VECTORS       0
+  #define DEBUG_VECTORS       1
   #define DEBUG_IMAGES        1
   #define PRINT_IMAGES        0
   #define DEBUG_GPU_VECTORS   0 
@@ -203,7 +203,9 @@ std::string type2str(int type) {
  {
    /*Initialize PRNGs*/
     double unzero = 0.0000000001;
-    mt19937 seeder(time(0));
+    std::random_device r;
+    std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+    mt19937 seeder(seed);
     uniform_int_distribution<int> intGen(1, 32);
     uniform_real_distribution<double> realGen(unzero, 1);
     //int a=2,b=15,c=31,offset=32;
