@@ -18,19 +18,18 @@ using namespace std;
 using namespace thrust;
 using namespace chrono;
 
-thrust::host_vector<int> genRelocVec(int, int, double*);
+thrust::host_vector<int> genRelocVec(int, int, vector<double>&);
 void columnRotator(Mat3b, Mat3b, int, int, int);
 void rowRotator(Mat3b, Mat3b, int, int, int);
 
 int main()
 {
     // Initiliaze file-related strings
-    string src("images/");
-    string temp("temp/");
+    string src = "images/";
+    string temp = "temp/";
     string target = "cat.png";
-    string fn_img_in(src + target);
-    string fn_img_out(fn_img_in);
-    fn_img_out.insert(fn_img_out.length() - 4, "_ENC");
+    string fn_img_in = src + target;
+    string fn_img_out = fn_img_in + "_ENC";
     string fn_vars = temp + "vars.txt";
 
     int rounds = 4;
@@ -46,16 +45,17 @@ int main()
     int M = imgin.rows, N = imgin.cols; // Read image dimensions
 
     // Generate permutation and diffusion vectors
-    double* colRotate = NULL, * rowRotate = NULL;
-    auto U = genRelocVec(M, N, colRotate);
-    auto V = genRelocVec(N, M, rowRotate);
+    vector<double> P1(M * N * 2);
+    vector<double> P2(M * N * 2);
+    auto U = genRelocVec(M, N, P1);
+    auto V = genRelocVec(N, M, P2);
 
-    Mat3b imgout(M, N); // Temporary matrix to store results
+    Mat3b imgout(M, N); // Intermediary Matrix
 
     //auto start = steady_clock::now();
     //cout << "genRelocVec: " << duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms\n";
 
-    /*// Permutation
+    // Permutation
     for (int i = 0; i < rounds; i++)
     {
         for (int j = 0; j < N; j++) // For each column
@@ -67,12 +67,33 @@ int main()
         {
             rowRotator(imgin, imgout.row(j), j, V[j], N);
         }
-    }*/
+    }
+    
+    /*
+    // Convert image to (effectively) an array
+    auto imgVec = imgin.reshape(1, M*N); 
+
+    // Allocate memory for diffusion vectors
+    int len = M * N;
+    Mat3b fDiff(len, 1);
+    Mat3b rDiff(len, 1);
+
+    // Initiliaze diffusion parameters
+    random_device randev;
+    mt19937 seeder(randev());
+    uniform_int_distribution<uint8_t> intGen(0, 8);
+    auto alpha = intGen(seeder);
+    auto beta = intGen(seeder);
+    auto f = intGen(seeder);
+    auto r = intGen(seeder);
+
+    imgin = imgVec.reshape(N,M);
+    */
 
     cv::imshow("Encrypted", imgin);
     cv::imwrite(fn_img_out, imgin);
-
-    /*// Unpermutation
+    
+    // Unpermutation
     for (int i = 0; i < rounds; i++)
     {
         for (int j = 0; j < M; j++)
@@ -84,18 +105,19 @@ int main()
         {
             columnRotator(imgin, imgout.col(j), j, -U[j], M);
         }
-    }*/
-
+    }
+    
     cv::imshow("Decrypted", imgin);
     waitKey(0);
     return 0;
 }
 
-thrust::host_vector<int> genRelocVec(int M, int N, double* randomReal)
+thrust::host_vector<int> genRelocVec(int M, int N, vector<double> &randomReal)
 {
     //Initiliaze Generators
     double unzero = 0.0000000001;
-    mt19937 seeder(time(0));
+    random_device randev;
+    mt19937 seeder(randev());
     uniform_int_distribution<int> intGen(1, 32);
     uniform_real_distribution<double> realGen(unzero, 1);
 
@@ -116,7 +138,6 @@ thrust::host_vector<int> genRelocVec(int M, int N, double* randomReal)
 
     //Generate vector of real numbers in the interval (0,1)
     int limit = M * N;
-    randomReal = new double[2 * limit];
     for (int i = 0; i < limit; i++)
     {
         x = fmod(x + a * y, 1) + unzero;
