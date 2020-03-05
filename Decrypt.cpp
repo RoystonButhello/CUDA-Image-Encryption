@@ -15,7 +15,7 @@ int main()
      
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(200,200));
+      cv::resize(image,image,cv::Size(256,256));
       
     }
     

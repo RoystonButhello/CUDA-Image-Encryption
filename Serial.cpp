@@ -15,10 +15,11 @@ int main()
      
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(200,200));
+      cv::resize(image,image,cv::Size(256,256));
     }
     
-    uint16_t m=0,n=0,total=0,cnt=0;
+    uint16_t m=0,n=0,cnt=0;
+    uint32_t total=0;
     uint32_t alpha=0,tme_8=0,manip_sys_time=0;
     uint64_t tme=0;
     uint16_t middle_element=0,xor_position=0;
@@ -127,6 +128,7 @@ int main()
     //printf("\nxor_position= %d",xor_position); */    
 
     //Xoring image vector
+    
     xorImageEnc(img_vec,img_xor_vec,m,n);
     
     if(DEBUG_VECTORS==1)

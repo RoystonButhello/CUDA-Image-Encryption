@@ -114,7 +114,8 @@ uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 /*Self XOR Transform Phase Starts*/
 void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec)
 {
-  int16_t m=0,n=0,total=0;
+  uint16_t m=0,n=0;
+  uint32_t total=0;
   m=(uint16_t)image.rows;
   n=(uint16_t)image.cols;
   total=m*n;
