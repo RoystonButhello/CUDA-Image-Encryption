@@ -15,10 +15,10 @@ int main()
      
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(256,256));
+      cv::resize(image,image,cv::Size(2048,2048));
     }
     
-    uint16_t m=0,n=0,cnt=0;
+    uint32_t m=0,n=0,cnt=0;
     uint32_t total=0;
     uint32_t alpha=0,tme_8=0,manip_sys_time=0;
     uint64_t tme=0;

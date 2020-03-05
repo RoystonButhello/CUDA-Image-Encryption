@@ -15,20 +15,20 @@ int main()
      
     if(RESIZE_TO_DEBUG==1)
     {
-      cv::resize(image,image,cv::Size(256,256));
+      cv::resize(image,image,cv::Size(2048,2048));
       
     }
     
-    uint16_t m=0,n=0,total=0,cnt=0,cnt_file=0;
+    uint32_t m=0,n=0,total=0,cnt=0,cnt_file=0;
     uint32_t alpha=0,tme_8=0,manip_sys_time=0,element=0;
     uint64_t tme=0;
     uint16_t middle_element=0,xor_position=0;
     
     // Read image dimensions
-    m = (uint16_t)image.rows; 
-    n = (uint16_t)image.cols;
+    m = (uint32_t)image.rows; 
+    n = (uint32_t)image.cols;
     total=m*n;
-    uint16_t channels=(uint16_t)image.channels();  
+    uint32_t channels=(uint32_t)image.channels();  
     
     /*Declarations*/
     uint8_t *img_arr=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
