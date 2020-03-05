@@ -20,6 +20,7 @@
   #include <opencv2/highgui/highgui.hpp>
   #include <cuda.h>
   #include <cuda_runtime.h>
+  #include "kernel.hpp"
  
   /*Constants*/
   #define RAND_UPPER         32   
@@ -216,6 +217,12 @@ std::string type2str(int type) {
     int exponent = (int)pow(10, 8);
     cout<<"\nmid="<<mid<<"\ntotal="<<total;
     
+    double *gpuP;
+    uint16_t *gpuU;
+    double gpuM=(double)m;
+
+    cudaMallocManaged((void**)&gpuP,sizeof(double)*total);
+    cudaMallocManaged((void**)&gpuU,sizeof(uint16_t)*m);
 
    if(m%2!=0)
    {
@@ -275,12 +282,24 @@ std::string type2str(int type) {
      P[2*i+1]=y;
      
    }
-   
+
    /*Generate U Vector*/
+   for(uint32_t i=0;i<total;++i)
+   {
+     gpuP[i]=P[i];
+   }   
+   
+   uint16_t number_of_threads=m/4; 
+   dim3 grid_generate_u(4,1,1);
+   dim3 block_generate_u(number_of_threads,1,1);
+   run_generateU(gpuP,gpuU,gpuM,grid_generate_u,block_generate_u);   
+   
    for(uint32_t i=0;i<m;++i)
    {
-    U[i]=(int)fmod((P[i]*exponent),n);
+     U[i]=gpuU[i];
    }
+   
+   
    
  }
 
@@ -302,6 +321,14 @@ std::string type2str(int type) {
      mid=mid+1;
    }
    
+   
+    double *gpuP;
+    uint16_t *gpuU;
+    double gpuM=(double)m;
+    cudaMallocManaged((void**)&gpuP,sizeof(double)*total);
+    cudaMallocManaged((void**)&gpuU,sizeof(uint16_t)*m);
+
+
     FILE *in_file;
 
     in_file = fopen(filename, "r");
@@ -345,13 +372,24 @@ std::string type2str(int type) {
      P[2*i+1]=y;
      
    }
-   
+ 
    /*Generate U Vector*/
+    /*Generate U Vector*/
+   for(uint32_t i=0;i<total;++i)
+   {
+     gpuP[i]=P[i];
+   }   
+   
+   uint16_t number_of_threads=m/4; 
+   dim3 grid_generate_u(4,1,1);
+   dim3 block_generate_u(number_of_threads,1,1);
+   run_generateU(gpuP,gpuU,gpuM,grid_generate_u,block_generate_u);
+   
    for(uint32_t i=0;i<m;++i)
    {
-    U[i]=(int)fmod((P[i]*exponent),n);
-   }
-   
+     U[i]=gpuU[i];
+   }   
+
  }  
   
   /*Phase 1 region ends*/

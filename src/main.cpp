@@ -1,7 +1,6 @@
   #include <iostream> /*For IO*/
   #include <cstdint>  /*For standard variable types*/
   #include "functions.hpp"
-  #include "kernel.hpp"
   
   using namespace std;
   using namespace cv;

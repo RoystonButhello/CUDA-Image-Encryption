@@ -55,6 +55,12 @@
         out[OutDex] = in[InDex];
     }
 
+   __global__ void generateU(double *P,uint16_t *U,double n)
+   {
+       int tid=blockIdx.x *blockDim.x + threadIdx.x;
+       U[tid]=(int)fmod((P[tid]*100000000.00),n);
+   }
+
    extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
    {
      ArMapImg<<<blocks,block_size>>>(in,out);
@@ -94,5 +100,11 @@
   extern "C" void run_ArMapTabletoImg(uint8_t *in,uint8_t *out,uint32_t *table,dim3 blocks,dim3 block_size)
   {
     ArMapTabletoImg<<<blocks,block_size>>>(in,out,table);
+    cudaDeviceSynchronize();
+  }
+  
+  extern "C" void run_generateU(double *P,uint16_t *U,double n,dim3 blocks,dim3 block_size)
+  {
+    generateU<<<blocks,block_size>>>(P,U,n);
     cudaDeviceSynchronize();
   }
