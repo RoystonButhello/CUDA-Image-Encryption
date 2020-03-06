@@ -51,7 +51,8 @@
     double *P1=(double*)malloc(sizeof(double)*total);
     double *P2=(double*)malloc(sizeof(double)*total);
     uint8_t *img_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
-    uint8_t *img_empty=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    uint8_t *img_vec_empty=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    uint8_t *img_vec_out=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
     uint16_t *U=(uint16_t*)malloc(sizeof(uint16_t)*m);
     uint16_t *V=(uint16_t*)malloc(sizeof(uint16_t)*m);
     uint8_t *fractal_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
@@ -67,7 +68,8 @@
     for(uint32_t i=0;i<total*3;++i)
     {
       img_vec[i]=0;
-      img_empty[i]=0;
+      img_vec_out[i]=0;
+      img_vec_empty[i]=0;
       fractal_vec[i]=0;
     } 
     
@@ -164,76 +166,38 @@
    
    
    
-    /*WARMUP
+    /*WARMUP*/
     dim3 grid_warm_up(1,1,1);
     dim3 block_warm_up(1,1,1);
     
-    run_WarmUp(grid_warm_up,block_warm_up);*/
+    run_WarmUp(grid_warm_up,block_warm_up);
     
+    
+    
+    /*Allocating U,V,img_vec and fractal_vec device memory*/
+    cudaMalloc((void**)&gpuimgIn,total*3*sizeof(uint8_t));
+    cudaMalloc((void**)&gpuimgOut,total*3*sizeof(uint8_t));
+    cudaMalloc((void**)&gpuU,m*sizeof(uint16_t));
+    cudaMalloc((void**)&gpuV,m*sizeof(uint16_t));
+    cudaMalloc((void**)&gpuFrac,total*3*sizeof(uint8_t)); 
+    cout<<"\nAfter Memory Allocation";
+    
+    /*Transferring U,V,img_vec and fractal_vec from host to device memory*/
+    cudaMemcpy(gpuimgIn,img_vec,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpuimgOut,img_vec_empty,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpuU,U,m*sizeof(uint16_t),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpuV,V,m*sizeof(uint16_t),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpuFrac,fractal_vec,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+    cout<<"\nAfter Memory Copy";
     /*FRACTAL XORING*/
-    
-    cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
-    cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
-    cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
-    cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
-    cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t)); 
-    
-    for (uint32_t i=0;i<total*3;++i)
-    {
-       gpuimgIn[i]=img_vec[i];
-       gpuFrac[i]=fractal_vec[i];
-       gpuimgOut[i]=0;
-    }
-    
     dim3 grid_frac_xor(m*n,1,1);
     dim3 block_frac_xor(3,1,1);
-  
     run_FracXor(gpuimgIn,gpuimgOut,gpuFrac,grid_frac_xor,block_frac_xor);
-    //cout<<"\nAfter fracxor";
-    //uint8_t temp=0;
-    swap(gpuimgIn,gpuimgOut);
-  
-    /*for(int i=0;i<total*3;++i)
-    {
-      img_vec[i]=gpuimgIn[i];
-    }*/
+    //swap(gpuimgIn,gpuimgOut);
+    //cout<<"\nAfter Swap";
 
-    if(DEBUG_VECTORS==1)
-    {
-      cout<<"\ngpuimgIn in fracxor Encrypt=";
-      for(uint32_t i=0;i<total*3;++i)
-      {
-        printf("%d ",gpuimgIn[i]);
-      }
-    
-      cout<<"\ngpuimgOut in fracxor Encrypt=";
-      for(uint32_t i=0;i<total*3;++i)
-      {
-        printf("%d ",gpuimgOut[i]);
-      }
-    
-      /*cout<<"\nEncrypted img_vec=";
-      for(uint32_t i=0;i<total*3;++i)
-      {
-         printf("%d ",img_vec[i]);
-      }*/
-      
-  }
-
-    
-   /*ARNOLD MAP ENCRYPTION*/
+ /*ARNOLD MAP ENCRYPTION
    
-   for(uint32_t i=0;i<m;++i)
-   {
-     gpuU[i]=U[i];
-     gpuV[i]=V[i];
-   }
-
-   /*for(uint32_t i=0;i<(total*3);++i)
-   {
-     gpuimgIn[i]=img_vec[i];
-   }*/
-
    dim3 grid_enc_gen_cat_map(m,n,1);
    dim3 block_enc_gen_cat_map(3,1,1);
    
@@ -243,30 +207,32 @@
    run_EncGenCatMap(gpuimgIn,gpuimgOut,gpuU,gpuV,grid_enc_gen_cat_map,block_enc_gen_cat_map);
    swap(gpuimgIn,gpuimgOut);
   
-  }
-    swap(gpuimgIn,gpuimgOut);
+  }*/
+  
 
+   
+   
+  /*Transferring img_vec from device to Host*/
+  cudaMemcpy(img_vec,gpuimgIn,total*3*sizeof(uint8_t),cudaMemcpyDeviceToHost);
+  cudaMemcpy(img_vec_out,gpuimgOut,total*3*sizeof(uint8_t),cudaMemcpyDeviceToHost);
+  cout<<"\nAfter cudaMemcpyDeviceToHost";  
+ 
    if(DEBUG_VECTORS==1)
    {
      cout<<"\ngpuimgIn after fractal xor and encryption=";
      for(int i=0;i<total*3;++i)
      {
-       printf("%d ",gpuimgIn[i]);
+       printf("%d ",img_vec[i]);
      }
      
      cout<<"\ngpuimgOut after fractal xor and encryption=";
      for(int i=0;i<total*3;++i)
      {
-       printf("%d ",gpuimgOut[i]);
-     }
+       printf("%d ",img_vec_out[i]);
+     }     
 
    }
    
-   for(uint32_t i=0;i<total*3;++i)
-   {
-     img_vec[i]=gpuimgOut[i]; 
-   }
-  
    /*Converting img_reshape to Mat image*/
    if(DEBUG_IMAGES==1)
    {

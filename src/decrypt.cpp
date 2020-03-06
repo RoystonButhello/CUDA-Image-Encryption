@@ -43,11 +43,12 @@ int main()
   double *P1=(double*)malloc(sizeof(double)*total);
   double *P2=(double*)malloc(sizeof(double)*total);
   uint8_t *img_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
-  uint8_t *img_empty=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+  uint8_t *img_vec_out=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
   uint16_t *U=(uint16_t*)malloc(sizeof(uint16_t)*m);
   uint16_t *V=(uint16_t*)malloc(sizeof(uint16_t)*m);
   uint8_t *fractal_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
-  uint32_t *img_shuffle =(uint32_t*)malloc(sizeof(uint32_t)*total);
+  
+  
   
   cout<<"\nAfter CPU Declarations";
   /*GPU vectors*/
@@ -136,31 +137,29 @@ int main()
   
  
   
-  /*GPU WARMUP*
+  /*GPU WARMUP*/
   dim3 grid_gpu_warm_up(1,1,1);
   dim3 block_gpu_warm_up(1,1,1);
   
-  run_WarmUp(grid_gpu_warm_up,block_gpu_warm_up);*/
+  run_WarmUp(grid_gpu_warm_up,block_gpu_warm_up);
   //uint8_t temp=0; 
   
   /*ARNOLD MAP DECRYPTION*/
-  cudaMallocManaged((void**)&gpuimgIn,total*3*sizeof(uint8_t));
-  cudaMallocManaged((void**)&gpuimgOut,total*3*sizeof(uint8_t));
-  cudaMallocManaged((void**)&gpuU,m*sizeof(uint16_t));
-  cudaMallocManaged((void**)&gpuV,m*sizeof(uint16_t));
-  cudaMallocManaged((void**)&gpuFrac,total*3*sizeof(uint8_t));
   
-  for(uint32_t i=0;i<total*3;++i)
-  {
-    gpuimgIn[i]=img_vec[i];
-  }
+  /*Allocating U,V,img_vec and fractal_vec device memory*/
+  cudaMalloc((void**)&gpuimgIn,total*3*sizeof(uint8_t));
+  cudaMalloc((void**)&gpuimgOut,total*3*sizeof(uint8_t));
+  cudaMalloc((void**)&gpuU,m*sizeof(uint16_t));
+  cudaMalloc((void**)&gpuV,m*sizeof(uint16_t));
+  cudaMalloc((void**)&gpuFrac,total*3*sizeof(uint8_t)); 
+    
   
-  for(uint32_t i=0;i<m;++i)
-  {
-    gpuU[i]=U[i];
-    gpuV[i]=V[i];
-  }
-
+  /*Transferring U,V,img_vec and fractal_vec from host to device memory*/
+  cudaMemcpy(gpuimgIn,img_vec,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+  cudaMemcpy(gpuU,U,m*sizeof(uint16_t),cudaMemcpyHostToDevice);
+  cudaMemcpy(gpuV,V,m*sizeof(uint16_t),cudaMemcpyHostToDevice);
+  cudaMemcpy(gpuFrac,fractal_vec,total*3*sizeof(uint8_t),cudaMemcpyHostToDevice);
+   
   dim3 grid_dec_gen_cat_map(m,n,1);
   dim3 block_dec_gen_cat_map(3,1,1);
   
@@ -172,36 +171,9 @@ int main()
    swap(gpuimgIn,gpuimgOut); 
   }
   
-  swap(gpuimgIn,gpuimgOut);
-
-  
-  
-    /*for(uint32_t i=0;i<total*3;++i)
-    {
-      img_vec[i]=gpuimgOut[i];
-    }*/
-  
-  if(DEBUG_VECTORS==1)
+  /*if(DEBUG_VECTORS==1)
   {
-    cout<<"\nimg_vec after Dec_GenCatMap=";
-    for(uint32_t i=0;i<total*3;++i)
-    {
-      printf("%d ",img_vec[i]);
-    }
-    
-    cout<<"\ngpuimgIn after dec_GenCatMap=";
-    for(uint32_t i=0;i<total*3;++i)
-    {
-      printf("%d ",gpuimgIn[i]);
-    }
-     
-    cout<<"\ngpuimgOut after dec_GenCatMap=";
-    for(uint32_t i=0;i<total*3;++i)
-    {
-      printf("%d ",gpuimgOut[i]);
-    }     
-
-     /*std::ofstream file("img_vec_dec.txt");
+     std::ofstream file("img_vec_dec.txt");
      std::string image_elements=std::string("");
      if(!file)
      {
@@ -216,15 +188,10 @@ int main()
      }
      
      file<<image_elements;
-     file.close();*/
-  }
+     file.close();
+  }*/
   
   /*FRACTAL XORING*/
-  
-  for(int i=0;i<total*3;++i)
-  {
-    gpuFrac[i]=fractal_vec[i];
-  }
   
   dim3 grid_frac_xor(m*n,1,1);
   dim3 block_frac_xor(3,1,1);
@@ -233,12 +200,11 @@ int main()
   temp=0;
   swap(gpuimgOut,gpuimgIn); 
   
-
-  for(int i=0;i<total*3;++i)
-  {
-    img_vec[i]=gpuimgOut[i];
-  }
-
+    
+  /*Transferring img_vec from device to Host*/
+  cudaMemcpy(gpuimgIn,img_vec,total*3*sizeof(uint8_t),cudaMemcpyDeviceToHost);
+  cudaMemcpy(gpuimgOut,img_vec_out,total*3*sizeof(uint8_t),cudaMemcpyDeviceToHost);
+   
   
   if(DEBUG_VECTORS==1)
   {
@@ -247,13 +213,13 @@ int main()
     {
       printf("%d ",gpuimgIn[i]);
     }
-    
+
     cout<<"\ngpuimgOut in fracxor Decrypt=";
     for(uint32_t i=0;i<total*3;++i)
     {
       printf("%d ",gpuimgOut[i]);
     }
-    
+
     cout<<"\nDecrypted img_vec=";
     for(uint32_t i=0;i<total*3;++i)
     {
