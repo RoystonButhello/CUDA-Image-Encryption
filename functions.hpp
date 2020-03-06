@@ -164,36 +164,55 @@ static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t 
 { 
    //cout<<"\nIn xorImageEnc";
    uint32_t total=m*n;
-   for(int i=0;i<total*3;++i)
+   /*for(int i=0;i<total*3;++i)
    {
      img_xor_vec[i]=0;
-   }
+   }*/
 
-   img_xor_vec[0]=img_vec[0] ^ INIT;
+   int cnt=0;
    //printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
-   for(int i=1;i<total*3;++i)
+   for(int i=xor_position;i>0;--i)
    {
+     ++cnt;
      img_xor_vec[i]=img_vec[i] ^ img_xor_vec[i-1];
      //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_xor_vec[i-1]);
    } 
+   img_xor_vec[0]=img_xor_vec[0] ^ img_xor_vec[(total*3)-1];
+   
+   for(int i=1;i<(total*3)-cnt;++i)
+   {
+     img_xor_vec[i]=img_vec[i] ^ img_xor_vec[i-1];
+   }
+
 }
 
 static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
 { 
    //cout<<"\nIn xorImageDec";
    uint32_t total=m*n;
-   for(int i=0;i<total*3;++i)
+   /*for(int i=0;i<total*3;++i)
    {
      img_xor_vec[i]=0;
-   }
+   }*/
 
-   img_xor_vec[0]=img_vec[0] ^ INIT;
+   int cnt=0;
+   
+  
    //printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
-   for(int i=1;i<total*3;++i)
+   for(int i=xor_position;i>0;--i)
    {
+     ++cnt;
      img_xor_vec[i]=img_vec[i] ^ img_vec[i-1];
      //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_vec[i-1]);
    } 
+
+   img_xor_vec[0]=img_vec[0] ^ img_xor_vec[(total*3)-1];
+   
+   for(int i=1;i<=(total*3)-cnt;++i)
+   {
+     img_xor_vec[i]=img_vec[i] ^ img_vec[i-1];
+     //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_vec[i-1]);
+   }  
 }
 
 /*Self XOR Transform Phase Ends*/
