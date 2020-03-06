@@ -1,189 +1,179 @@
-#include <iostream>
-#include <stdio.h>
-#include <string>
-#include <random>
-#include <chrono>
-#include <fstream>
-#include <stdint.h>
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include "opencv2/opencv.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <typeinfo>
-
-using namespace cv;
+#include "functions.hpp"
 using namespace std;
-using namespace thrust;
-using namespace chrono;
-
-thrust::host_vector<int> genRelocVec(int, int, double*);
-void columnRotator(Mat3b, Mat3b, int, int, int);
-void rowRotator(Mat3b, Mat3b, int, int, int);
+using namespace cv;
 
 int main()
 {
-    // Initiliaze file-related strings
-    string src("images/");
-    string temp("temp/");
-    string target = "cat.png";
-    string fn_img_in(src + target);
-    string fn_img_out(fn_img_in);
-    fn_img_out.insert(fn_img_out.length() - 4, "_ENC");
-    string fn_vars = temp + "vars.txt";
-
-    int rounds = 4;
 
     // Read the file and confirm it's been opened
-    Mat imgin = cv::imread(fn_img_in, 1);
-    if (!imgin.data)
+    Mat image= cv::imread("airplane.png", IMREAD_COLOR);
+    if (!image.data)
     {
         cout << "Image not found!\n";
         return -1;
     }
-
-    int M = imgin.rows, N = imgin.cols; // Read image dimensions
-
-    // Generate permutation and diffusion vectors
-    double* colRotate = NULL, * rowRotate = NULL;
-    auto U = genRelocVec(M, N, colRotate);
-    auto V = genRelocVec(N, M, rowRotate);
-
-    Mat3b imgout(M, N); // Temporary matrix to store results
-
-    //auto start = steady_clock::now();
-    //cout << "genRelocVec: " << duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms\n";
-
-    /*// Permutation
-    for (int i = 0; i < rounds; i++)
+     
+    if(RESIZE_TO_DEBUG==1)
     {
-        for (int j = 0; j < N; j++) // For each column
-        {
-            columnRotator(imgout, imgin.col(j), j, U[j], M);
-        }
+      cv::resize(image,image,cv::Size(2048,2048));
+    }
+    
+    uint32_t m=0,n=0,cnt=0;
+    uint32_t total=0;
+    uint32_t alpha=0,tme_8=0,manip_sys_time=0;
+    uint64_t tme=0;
+    uint16_t middle_element=0,xor_position=0;
 
-        for (int j = 0; j < M; j++) // For each row
-        {
-            rowRotator(imgin, imgout.row(j), j, V[j], N);
-        }
+    
+    
+    // Read image dimensions
+    m = (uint16_t)image.rows; 
+    n = (uint16_t)image.cols;
+    uint16_t channels=(uint16_t)image.channels();  
+    total=m*n;
+    
+    /*Declarations*/
+    uint8_t *img_arr=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    std::vector<uint8_t> random_array(256);
+    std::vector<uint8_t> img_vec(total*3);
+    std::vector<uint8_t> img_xor_vec(total*3);
+ 
+
+    cout<<"\nrows= "<<m;
+    cout<<"\ncolumns="<<n;
+    cout<<"\nchannels="<<channels;
+    cout<<"\ntotal="<<total;
+    
+    /*Print the image matrix*/
+    if(PRINT_IMAGES==1)
+    {
+      printImageContents(image); 
+    }
+   
+    
+   
+    /*Generate seed and system time value*/
+    alpha=getSeed(1,32);
+    manip_sys_time=(uint32_t)getManipulatedSystemTime();
+    
+    printf("\nalpha= %d",alpha);
+    printf("\nmanip_sys_time =%d",manip_sys_time);
+    
+    /*Write seed and system time value to file*/
+    std::string parameters=std::string("");
+    std::ofstream file("parameters.txt");
+    
+    if(!file)
+    {
+      cout<<"\nCould not open file "<<"parameters.txt"<<"\nExiting...";
+      exit(0);
+    }
+    
+    parameters.append(std::to_string(alpha));
+    parameters.append("\n");
+    parameters.append(std::to_string(manip_sys_time));
+    parameters.append("\n");
+    
+    file<<parameters;
+    file.close();
+ 
+    /*Generate PRNG*/
+    generatePRNG(random_array,alpha,manip_sys_time);
+    
+    
+    /*if(DEBUG_VECTORS==1)
+    {
+      printf("\nrandom_array=");
+
+      for(uint32_t i=0;i<256;++i)
+      {
+        printf("%d ",random_array[i]);
+      }
     }*/
 
-    cv::imshow("Encrypted", imgin);
-    cv::imwrite(fn_img_out, imgin);
-
-    /*// Unpermutation
-    for (int i = 0; i < rounds; i++)
+    //Flattening Image, obtaining middle element and xor position
+    flattenImage(image,img_vec);
+    
+    /*if(DEBUG_VECTORS==1)
     {
-        for (int j = 0; j < M; j++)
-        {
-            rowRotator(imgout, imgin.row(j), j, -V[j], N);
-        }
+    
+      cout<<"\nOriginal Image Vector=";
+      for(uint32_t i=0;i<total*3;++i)
+      {
+        printf("%d ",img_vec[i]);
+      }
+      std::string parameters=std::string("");
+      ofstream file("img_vec_original.txt");
+      if(!file)
+      {
+        cout<<"\n Could not open "<<"img_vec_original.txt";
+        exit(0);
+      }
+      
+      for(int i=0;i<total*3;++i)
+      {
+        parameters.append(std::to_string(img_vec[i]));
+        parameters.append("\n");
+      }
+      file<<parameters;
+      file.close();
+      //printVectorCircular(img_vec,xor_position,total);
+    
+    }*/ 
+     
+    middle_element=0;
+    xor_position=0;
+    
+    //printf("\nmiddle_element= %d",middle_element);
+    //printf("\nxor_position= %d",xor_position); */    
 
-        for (int j = 0; j < N; j++)
-        {
-            columnRotator(imgin, imgout.col(j), j, -U[j], M);
-        }
+    //Xoring image vector
+    
+    xorImageEnc(img_vec,img_xor_vec,m,n);
+    
+    if(DEBUG_VECTORS==1)
+    {    
+      cout<<"\nXor'd Image Vector before prngStepOne=";
+      for(int i=0;i<total*3;++i)
+      {
+        printf(" %d",img_vec[i]);
+      }
+    }
+  
+    /*Doing prngStepOne
+    prngStepOne(img_vec,random_array,total);
+    
+    if(DEBUG_VECTORS==1)
+    {
+      cout<<"\n\nimg_vec after prngStepOne=";
+      for(int i=0;i<total*3;++i)
+      {
+        printf(" %d",img_vec[i]);
+      }
+      
+      
+      
+      cout<<"\n\nrandom_array after prngStepOne=";
+      for(int i=0;i<256;++i)
+      {
+        printf(" %d",random_array[i]);
+      }
     }*/
 
-    cv::imshow("Decrypted", imgin);
-    waitKey(0);
+    if(DEBUG_IMAGES==1)
+    {
+      for(int i=0;i<total*3;++i)
+      {
+        img_arr[i]=img_xor_vec[i];
+      }
+      
+      cv::Mat img_reshape(m,n,CV_8UC3,img_arr);
+      cv::imwrite("airplane_encrypted.png",img_reshape);
+    }
+    
+    
+    
     return 0;
 }
 
-thrust::host_vector<int> genRelocVec(int M, int N, double* randomReal)
-{
-    //Initiliaze Generators
-    double unzero = 0.0000000001;
-    mt19937 seeder(time(0));
-    uniform_int_distribution<int> intGen(1, 32);
-    uniform_real_distribution<double> realGen(unzero, 1);
 
-    //Initiliaze parameters
-    auto a = intGen(seeder);
-    auto b = intGen(seeder);
-    auto c = a * b + 1;
-    auto x = realGen(seeder);
-    auto y = realGen(seeder);
-    auto offset = intGen(seeder);
-
-    //Skip first few values in sequence
-    for (int i = 0; i < offset; i++)
-    {
-        x = fmod(x + a * y, 1) + unzero;
-        y = fmod(b * x + c * y, 1) + unzero;
-    }
-
-    //Generate vector of real numbers in the interval (0,1)
-    int limit = M * N;
-    randomReal = new double[2 * limit];
-    for (int i = 0; i < limit; i++)
-    {
-        x = fmod(x + a * y, 1) + unzero;
-        y = fmod(b * x + c * y, 1) + unzero;
-        randomReal[i * 2] = x;
-        randomReal[i * 2 + 1] = y;
-    }
-
-    thrust::host_vector<int> relocVec(N);
-    uniform_int_distribution<int> offsetGen(1, N * (M - 1));
-    auto vec_offset = offsetGen(seeder);
-    int exp = (int)pow(10, 8);
-    for (int i = 0; i < N; i++)
-    {
-        relocVec[i] = (int)(randomReal[vec_offset + i] * exp) % M;
-    }
-    return relocVec;
-}
-
-void columnRotator(Mat3b img, Mat3b col, int index, int offset, int M)
-{
-    // M elements per column
-    if (offset > 0)
-    {
-        for (int k = 0; k < M; k++)
-        {
-            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset) % M, 0);
-        }
-    }
-    else if (offset < 0)
-    {
-        for (int k = 0; k < M; k++)
-        {
-            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset + M) % M, 0);
-        }
-    }
-    else
-    {
-        for (int k = 0; k < M; k++)
-        {
-            img.at<Vec3b>(k, index) = col.at<Vec3b>(k, 0);
-        }
-    }
-}
-
-void rowRotator(Mat3b img, Mat3b row, int index, int offset, int N)
-{
-    // N elements per row
-    if (offset > 0)
-    {
-        for (int k = 0; k < N; k++)
-        {
-            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset) % N);
-        }
-    }
-    else if (offset < 0)
-    {
-        for (int k = 0; k < N; k++)
-        {
-            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset + N) % N);
-        }
-    }
-    else
-    {
-        for (int k = 0; k < N; k++)
-        {
-            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, k);
-        }
-    }
-}
