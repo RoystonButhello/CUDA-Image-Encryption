@@ -29,27 +29,25 @@ using namespace std;
 /*Function Prototypes*/
 
 /*PRNG Generation Phase*/
-uint32_t getLast8Bits(uint32_t number);
-uint64_t getManipulatedSystemTime();
-uint32_t getLargestPrimeFactor(uint8_t n); 
-void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t manip_sys_time);
-uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
+static inline uint32_t getLast8Bits(uint32_t number);
+static inline uint64_t getManipulatedSystemTime();
+static inline uint32_t getLargestPrimeFactor(uint8_t n); 
+static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time);
+static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
 
 /*Self XOR Transform Phase*/
-void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec);
-void printImageContents(cv::Mat image);
-void printVectorCircular(std::vector <uint8_t> &img_vec,uint16_t xor_position,uint16_t total);
-void xorImageEnc(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n);
-void xorImageDec(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n);
+static inline void flattenImage(cv::Mat image,uint8_t *&img_vec);
+static inline void printImageContents(cv::Mat image);
+static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,uint16_t total);
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n);
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n);
+
 
 /*Miscellaneous*/
-uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
-
-/*PRNG Image Transformation Phase*/
-void prngStepOne(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &random_array,uint32_t total);
+static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
 
 /*PRNG Generation Phase Starts*/
-uint32_t getLast8Bits(uint32_t number)
+static inline uint32_t getLast8Bits(uint32_t number)
 {
   //cout<<"\nIn getLast8Bits";
   uint32_t  result=number & 0xFF;
@@ -57,7 +55,7 @@ uint32_t getLast8Bits(uint32_t number)
 
 }
 
-uint64_t getManipulatedSystemTime()
+static inline uint64_t getManipulatedSystemTime()
 {
   //cout<<"\nIn getManipulatedSystemTime";
   uint64_t microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -66,7 +64,7 @@ uint64_t getManipulatedSystemTime()
   return manip_sys_time;
 }
 
-uint32_t getLargestPrimeFactor(uint32_t number)
+static inline uint32_t getLargestPrimeFactor(uint32_t number)
 {
    //cout<<"\nIn getLargestPrimeFactor";
    int i=0;
@@ -82,7 +80,7 @@ uint32_t getLargestPrimeFactor(uint32_t number)
 
 }
 
-void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t manip_sys_time)
+static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time)
 {
   //cout<<"\nIn generatePRNG";
   uint32_t largest_prime_factor=0;
@@ -103,7 +101,7 @@ void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t man
   }
 }
 
-uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
+static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 {
     //cout<<"\nIn getSeed";
     std::random_device r;
@@ -118,7 +116,7 @@ uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 
 
 /*Self XOR Transform Phase Starts*/
-void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec)
+static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
 {
   //cout<<"\nIn flattenImage";
   uint16_t m=0,n=0;
@@ -133,7 +131,7 @@ void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec)
   }
 }
 
-void printImageContents(Mat image)
+static inline void printImageContents(Mat image)
 {
   //cout<<"\nIn printImageContents";
   cout<<"\nImage Matrix=";
@@ -151,7 +149,7 @@ void printImageContents(Mat image)
     }
 }
 
-void printVectorCircular(std::vector<uint8_t> &img_vec,uint16_t xor_position,uint16_t total)
+static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,uint16_t total)
 {
   //cout<<"In printCircularVector";
   cout<<"\nCircular Image Vector=";
@@ -162,7 +160,7 @@ void printVectorCircular(std::vector<uint8_t> &img_vec,uint16_t xor_position,uin
 }
 
 
-void xorImageEnc(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n)
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n)
 { 
    //cout<<"\nIn xorImageEnc";
    uint32_t total=m*n;
@@ -180,7 +178,7 @@ void xorImageEnc(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec
    } 
 }
 
-void xorImageDec(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n)
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n)
 { 
    //cout<<"\nIn xorImageDec";
    uint32_t total=m*n;
@@ -202,7 +200,7 @@ void xorImageDec(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec
 
 
 /*Miscellaneous Phase Starts*/
-uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
+static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
 {
   //cout<<"\nIn checkOverflow";
   if((number_1*number_2)>=512)
@@ -220,18 +218,6 @@ return 0;
 }
 /*Miscellaneous Phase Ends*/
 
-/*PRNG Image Transform Phase Starts*/
-void prngStepOne(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &random_array,uint32_t total)
-{
-  //cout<<"\nIn prngStepOne";
-  int c=0,i=0;
-  for(i=0;i<total*3;++i)
-  {
-    img_vec[i]=img_vec[i] ^ random_array[c];
-    random_array[c]=((random_array[c]*random_array[c]*random_array[c+1])%255) ^ img_vec[i];
-    c=(c+1)%255;
-  }
-  
-}
+
 
 #endif

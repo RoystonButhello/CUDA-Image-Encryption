@@ -49,7 +49,7 @@ int main()
     {
       std::clock_t img_resize_start=std::clock();
       
-      cv::resize(image,image,cv::Size(50,50));
+      cv::resize(image,image,cv::Size(1024,1024));
       
       std::clock_t img_resize_end=std::clock();
       time_array[3]=(1000.0*(img_resize_end-img_resize_start))/CLOCKS_PER_SEC;
@@ -72,10 +72,9 @@ int main()
     /*Declarations*/
     std::clock_t declarations_start=std::clock();
     
-    uint8_t *img_arr=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
-    std::vector<uint8_t> random_array(256);
-    std::vector<uint8_t> img_vec(total*3);
-    std::vector<uint8_t> img_xor_vec(total*3);
+    uint8_t *random_array=(uint8_t*)malloc(sizeof(uint8_t)*256);
+    uint8_t *img_xor_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
+    uint8_t *img_vec=(uint8_t*)malloc(sizeof(uint8_t)*total*3);
     
     std::clock_t declarations_end=std::clock();
     time_array[5]=(1000.0*(declarations_end-declarations_start))/CLOCKS_PER_SEC;
@@ -227,17 +226,17 @@ int main()
     {
       std::clock_t img_vec_transfer_start=std::clock();
       
-      for(int i=0;i<total*3;++i)
+      /*for(int i=0;i<total*3;++i)
       {
         img_arr[i]=img_xor_vec[i];
-      }
+      }*/
       
       std::clock_t img_vec_transfer_end=std::clock();
       time_array[15]=(1000.0*(img_vec_transfer_end-img_vec_transfer_start))/CLOCKS_PER_SEC;
 
       std::clock_t img_reshape_start=std::clock();
       
-      cv::Mat img_reshape(m,n,CV_8UC3,img_arr);
+      cv::Mat img_reshape(m,n,CV_8UC3,img_xor_vec);
 
       std::clock_t img_reshape_end=std::clock();
       time_array[16]=(1000.0*(img_reshape_end-img_reshape_start))/CLOCKS_PER_SEC;  
