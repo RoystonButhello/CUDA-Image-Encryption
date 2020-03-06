@@ -179,26 +179,26 @@ int main()
     
     std::clock_t middle_element_assign_start=std::clock();
     
-    middle_element=0;
+    middle_element=random_array[127];
      
     std::clock_t middle_element_assign_end=std::clock();
     time_array[12]=(1000.0*(middle_element_assign_end-middle_element_assign_start))/CLOCKS_PER_SEC;    
 
     std::clock_t position_assign_start=std::clock(); 
     
-    xor_position=0;
+    xor_position= middle_element % (m*n*channels);
     
     std::clock_t position_assign_end=std::clock();     
     time_array[13]=(1000.0*(position_assign_end-position_assign_start))/CLOCKS_PER_SEC;
     
     
-    //printf("\nmiddle_element= %d",middle_element);
-    //printf("\nxor_position= %d",xor_position);    
+    printf("\nmiddle_element= %d",middle_element);
+    printf("\nxor_position= %d",xor_position);    
 
     //Xoring image vector
     std::clock_t xor_start=std::clock();
 
-    xorImageEnc(img_vec,img_xor_vec,m,n);
+    xorImageEnc(img_vec,img_xor_vec,m,n,xor_position);
     
     /*Display XOR image vector*/
     if(DEBUG_VECTORS==1)

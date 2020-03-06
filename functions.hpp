@@ -39,8 +39,8 @@ static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
 static inline void flattenImage(cv::Mat image,uint8_t *&img_vec);
 static inline void printImageContents(cv::Mat image);
 static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,uint16_t total);
-static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n);
-static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n);
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
 
 
 /*Miscellaneous*/
@@ -160,7 +160,7 @@ static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,u
 }
 
 
-static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n)
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
 { 
    //cout<<"\nIn xorImageEnc";
    uint32_t total=m*n;
@@ -178,7 +178,7 @@ static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t 
    } 
 }
 
-static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n)
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
 { 
    //cout<<"\nIn xorImageDec";
    uint32_t total=m*n;

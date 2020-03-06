@@ -16,7 +16,7 @@ int main()
     
     uint32_t m=0,n=0,cnt=0;
     uint32_t total=0;
-    uint32_t alpha=0,tme_8=0,manip_sys_time=0;
+    uint32_t alpha=0,tme_8=0,manip_sys_time=0,element=0,cnt_file=0;
     uint64_t tme=0;
     uint16_t middle_element=0,xor_position=0;
     long double time_array[18];
@@ -91,7 +91,7 @@ int main()
     std::clock_t check_print_images_end=std::clock();
     time_array[6]=(1000.0*(check_print_images_end-check_print_images_start))/CLOCKS_PER_SEC;   
 
-    /*Generate seed and system time value*/
+    /*Generate seed and system time value
     std::clock_t get_seed_start=std::clock();
     
     alpha=getSeed(1,32);
@@ -101,30 +101,40 @@ int main()
 
     std::clock_t sys_time_start=std::clock();
     
-    manip_sys_time=(uint32_t)getManipulatedSystemTime();
+    manip_sys_time=(uint32_t)getManipulatedSystemTime();*/
     
-    std::clock_t sys_time_end=std::clock();
-    time_array[8]=(1000.0*(sys_time_end-sys_time_start))/CLOCKS_PER_SEC;
+    //std::clock_t sys_time_end=std::clock();
+    time_array[8]=0.00;
+    //(1000.0*(sys_time_end-sys_time_start))/CLOCKS_PER_SEC;
     
     
-    /*Write seed and system time value to file*/
+    /*Read seed and system time value from file*/
     std::clock_t write_parameters_start=clock();
-
-    std::string parameters=std::string("");
-    std::ofstream file("parameters.txt");
+    std::ifstream file("parameters.txt");
     
     if(!file)
     {
       cout<<"\nCould not open file "<<"parameters.txt"<<"\nExiting...";
       exit(0);
-    }
+    }   
+ 
+    while(file >> element)
+    {
+      if(cnt_file==0)
+      {
+        alpha=element;
+      }
+      
+      if(cnt_file==1)
+      {
+        manip_sys_time=element;
+      }
+     ++cnt_file;
+    }    
+
     
-    parameters.append(std::to_string(alpha));
-    parameters.append("\n");
-    parameters.append(std::to_string(manip_sys_time));
-    parameters.append("\n");
     
-    file<<parameters;
+   
     file.close();
     
     std::clock_t write_parameters_end=clock();
@@ -188,26 +198,26 @@ int main()
     
     std::clock_t middle_element_assign_start=std::clock();
     
-    middle_element=0;
+    middle_element=random_array[127];
      
     std::clock_t middle_element_assign_end=std::clock();
     time_array[12]=(1000.0*(middle_element_assign_end-middle_element_assign_start))/CLOCKS_PER_SEC;    
 
     std::clock_t position_assign_start=std::clock(); 
     
-    xor_position=0;
+    xor_position= middle_element % (m*n*channels);
     
     std::clock_t position_assign_end=std::clock();     
     time_array[13]=(1000.0*(position_assign_end-position_assign_start))/CLOCKS_PER_SEC;
     
     
-    //printf("\nmiddle_element= %d",middle_element);
-    //printf("\nxor_position= %d",xor_position);    
+    printf("\nmiddle_element= %d",middle_element);
+    printf("\nxor_position= %d",xor_position);    
 
     //Xoring image vector
     std::clock_t xor_start=std::clock();
 
-    xorImageDec(img_vec,img_xor_vec,m,n);
+    xorImageDec(img_vec,img_xor_vec,m,n,xor_position);
     
     /*Display XOR image vector*/
     if(DEBUG_VECTORS==1)
