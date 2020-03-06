@@ -22,11 +22,6 @@ int main()
     long double time_array[18];
     long double total_time=0.00,average_time=0.00;
     
-    for(int i=0;i<18;++i)
-    {
-      time_array[i]=0.00; 
-    }
-    
     // Read the file and confirm it's been opened
     
     std::clock_t img_read_start=std::clock();
@@ -96,7 +91,65 @@ int main()
     std::clock_t check_print_images_end=std::clock();
     time_array[6]=(1000.0*(check_print_images_end-check_print_images_start))/CLOCKS_PER_SEC;   
 
-   
+    /*Generate seed and system time value*/
+    std::clock_t get_seed_start=std::clock();
+    
+    alpha=getSeed(1,32);
+    
+    std::clock_t get_seed_end=std::clock();
+    time_array[7]=(1000.0*(get_seed_end-get_seed_start))/CLOCKS_PER_SEC;    
+
+    std::clock_t sys_time_start=std::clock();
+    
+    manip_sys_time=(uint32_t)getManipulatedSystemTime();
+    
+    std::clock_t sys_time_end=std::clock();
+    time_array[8]=(1000.0*(sys_time_end-sys_time_start))/CLOCKS_PER_SEC;
+    
+    
+    /*Write seed and system time value to file*/
+    std::clock_t write_parameters_start=clock();
+
+    std::string parameters=std::string("");
+    std::ofstream file("parameters.txt");
+    
+    if(!file)
+    {
+      cout<<"\nCould not open file "<<"parameters.txt"<<"\nExiting...";
+      exit(0);
+    }
+    
+    parameters.append(std::to_string(alpha));
+    parameters.append("\n");
+    parameters.append(std::to_string(manip_sys_time));
+    parameters.append("\n");
+    
+    file<<parameters;
+    file.close();
+    
+    std::clock_t write_parameters_end=clock();
+    time_array[9]=(1000.0*(write_parameters_end-write_parameters_start))/CLOCKS_PER_SEC;
+ 
+    /*Generate PRNG*/
+    std::clock_t generate_prng_start=std::clock();
+    
+    generatePRNG(random_array,alpha,manip_sys_time);
+    
+    std::clock_t generate_prng_end=std::clock();
+    time_array[10]=(1000.0*(generate_prng_end-generate_prng_start))/CLOCKS_PER_SEC;
+
+    /*Display generated PRNG*/
+    if(DEBUG_VECTORS==1)
+    {
+      printf("\nrandom_array=");
+
+      for(uint32_t i=0;i<256;++i)
+      {
+        printf("%d ",random_array[i]);
+      }
+    }    
+
+    
     //Flattening Image, obtaining middle element and xor position
     std::clock_t flatten_image_start=std::clock();
     
@@ -154,15 +207,8 @@ int main()
     //Xoring image vector
     std::clock_t xor_start=std::clock();
 
-    for(int i=0;i<1;++i)
-    {
-      xorImageDec(img_vec,img_xor_vec,m,n);
-      //std::swap(img_vec,img_xor_vec);
-    }
+    xorImageDec(img_vec,img_xor_vec,m,n);
     
-    std::clock_t xor_end=std::clock();
-    time_array[14]=(1000.0*(xor_end-xor_start))/CLOCKS_PER_SEC;     
-
     /*Display XOR image vector*/
     if(DEBUG_VECTORS==1)
     {
@@ -173,8 +219,8 @@ int main()
       }
     }
     
-    
-       
+    std::clock_t xor_end=std::clock();
+    time_array[14]=(1000.0*(xor_end-xor_start))/CLOCKS_PER_SEC;    
 
     if(DEBUG_IMAGES==1)
     {
@@ -225,10 +271,10 @@ int main()
     printf("\nAssign image dimensions = %LF s",time_array[4]/1000.0);
     printf("\nDeclare vectors and arrays = %LF s",time_array[5]/1000.0);    
     printf("\nCheck if image is to be printed = %LF s",time_array[6]/1000.0);
-    //printf("\nGet alpha = %LF s",time_array[7]/1000.0);
-    //printf("\nGet manipulated system time = %LF s",time_array[8]/1000.0);
-    //printf("\nWrite parameters to file = %LF s",time_array[9]/1000.0);
-    //printf("\nGenerate PRNG = %LF s",time_array[10]/1000.0);
+    printf("\nGet alpha = %LF s",time_array[7]/1000.0);
+    printf("\nGet manipulated system time = %LF s",time_array[8]/1000.0);
+    printf("\nWrite parameters to file = %LF s",time_array[9]/1000.0);
+    printf("\nGenerate PRNG = %LF s",time_array[10]/1000.0);
     printf("\nFlatten image = %LF s",time_array[11]/1000.0);
     printf("\nGet middle element of PRNG = %LF s",time_array[12]/1000.0);
     printf("\nGet XOR starting position = %LF s",time_array[13]/1000.0);
@@ -241,5 +287,6 @@ int main()
                                 
     return 0;
 }
+
 
 
