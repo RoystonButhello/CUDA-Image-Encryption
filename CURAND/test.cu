@@ -11,7 +11,7 @@ using namespace std;
 
 int main()
 {
-  int n=10;
+  int n=21;
   int i;
   curandGenerator_t gen;
   unsigned int *devData, *hostData;
@@ -40,10 +40,10 @@ int main()
   /*Copy device memory to host*/
   cudaMemcpy(hostData, devData, n * sizeof(unsigned int), cudaMemcpyDeviceToHost);
   
-  cout<<"\nRandom draws: \n";
+  cout<<"\nRandom Numbers: \n";
   for(i = 0; i < n; ++i) 
   {
-    printf(" %d",hostData[i]%1024);
+    printf(" %d",(hostData[i]%20));
   }
   cout<<"\n";
   
