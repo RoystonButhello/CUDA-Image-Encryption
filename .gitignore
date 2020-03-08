@@ -1,7 +1,19 @@
 # Ignore following directories
-__pycache__\\
-catmap\\
-temp\\
+__pycache__/
+catmap/
+temp/
+dSFMT-src-1.0/
+Debug/
+src/
+Paper/
+
 
 # Ignore output file
 out.png
+
+# Ignore the following extensions
+*.txt
+*.tar.gz
+
+
+# Ignore the  
