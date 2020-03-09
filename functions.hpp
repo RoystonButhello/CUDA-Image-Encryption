@@ -15,6 +15,7 @@
 #include <typeinfo>
 #include <cmath>    /*For sqrt()*/ 
 #include <cstdlib>  /*For exit()*/
+#include <ctime>    /*For clock()*/
 
 #define RESIZE_TO_DEBUG 1
 #define DEBUG_VECTORS   0
@@ -28,46 +29,44 @@ using namespace std;
 /*Function Prototypes*/
 
 /*PRNG Generation Phase*/
-uint32_t getLast8Bits(uint32_t number);
-uint64_t getManipulatedSystemTime();
-uint32_t getLargestPrimeFactor(uint8_t n); 
-void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t manip_sys_time);
-uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
+static inline uint32_t getLast8Bits(uint32_t number);
+static inline uint64_t getManipulatedSystemTime();
+static inline uint32_t getLargestPrimeFactor(uint8_t n); 
+static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time);
+static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
 
 /*Self XOR Transform Phase*/
-void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec);
-void printImageContents(cv::Mat image);
-void printVectorCircular(std::vector <uint8_t> &img_vec,uint16_t xor_position,uint16_t total);
-void xorImageEnc(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n);
-void xorImageDec(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n);
+static inline void flattenImage(cv::Mat image,uint8_t *&img_vec);
+static inline void printImageContents(cv::Mat image);
+static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,uint16_t total);
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
+
 
 /*Miscellaneous*/
-uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
-
-/*PRNG Image Transformation Phase*/
-void prngStepOne(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &random_array,uint32_t total);
+static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
 
 /*PRNG Generation Phase Starts*/
-uint32_t getLast8Bits(uint32_t number)
+static inline uint32_t getLast8Bits(uint32_t number)
 {
-  cout<<"\nIn getLast8Bits";
+  //cout<<"\nIn getLast8Bits";
   uint32_t  result=number & 0xFF;
   return result;
 
 }
 
-uint64_t getManipulatedSystemTime()
+static inline uint64_t getManipulatedSystemTime()
 {
-  cout<<"\nIn getManipulatedSystemTime";
+  //cout<<"\nIn getManipulatedSystemTime";
   uint64_t microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
   uint64_t manip_sys_time=(microseconds_since_epoch%255);  
   //printf("\n\n\nMicroseconds since epoch=%ld\t",microseconds_since_epoch);
   return manip_sys_time;
 }
 
-uint32_t getLargestPrimeFactor(uint32_t number)
+static inline uint32_t getLargestPrimeFactor(uint32_t number)
 {
-   cout<<"\nIn getLargestPrimeFactor";
+   //cout<<"\nIn getLargestPrimeFactor";
    int i=0;
    for (i = 2; i <= number; i++) {
             if (number % i == 0) {
@@ -81,9 +80,9 @@ uint32_t getLargestPrimeFactor(uint32_t number)
 
 }
 
-void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t manip_sys_time)
+static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time)
 {
-  cout<<"\nIn generatePRNG";
+  //cout<<"\nIn generatePRNG";
   uint32_t largest_prime_factor=0;
 
   for(uint32_t i=0;i<256;++i)
@@ -102,9 +101,9 @@ void generatePRNG(std::vector<uint8_t> &random_array,uint32_t alpha,uint32_t man
   }
 }
 
-uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
+static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 {
-    cout<<"\nIn getSeed";
+    //cout<<"\nIn getSeed";
     std::random_device r;
     std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
     mt19937 seeder(seed);
@@ -117,9 +116,9 @@ uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 
 
 /*Self XOR Transform Phase Starts*/
-void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec)
+static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
 {
-  cout<<"\nIn flattenImage";
+  //cout<<"\nIn flattenImage";
   uint16_t m=0,n=0;
   uint32_t total=0;
   m=(uint16_t)image.rows;
@@ -132,9 +131,9 @@ void flattenImage(cv::Mat image,std::vector<uint8_t> &img_vec)
   }
 }
 
-void printImageContents(Mat image)
+static inline void printImageContents(Mat image)
 {
-  cout<<"\nIn printImageContents";
+  //cout<<"\nIn printImageContents";
   cout<<"\nImage Matrix=";
     for(uint32_t i=0;i<image.rows;++i)
     { printf("\n");
@@ -150,9 +149,9 @@ void printImageContents(Mat image)
     }
 }
 
-void printVectorCircular(std::vector<uint8_t> &img_vec,uint16_t xor_position,uint16_t total)
+static inline void printVectorCircular(uint8_t *&img_vec,uint16_t xor_position,uint16_t total)
 {
-  cout<<"In printCircularVector";
+  //cout<<"In printCircularVector";
   cout<<"\nCircular Image Vector=";
   for(int i=xor_position;i<xor_position+(total*3);++i)
   {
@@ -161,49 +160,68 @@ void printVectorCircular(std::vector<uint8_t> &img_vec,uint16_t xor_position,uin
 }
 
 
-void xorImageEnc(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n)
+static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
 { 
-   cout<<"\nIn xorImageEnc";
+   //cout<<"\nIn xorImageEnc";
    uint32_t total=m*n;
-   for(int i=0;i<total*3;++i)
+   /*for(int i=0;i<total*3;++i)
    {
      img_xor_vec[i]=0;
-   }
+   }*/
 
-   img_xor_vec[0]=img_vec[0] ^ INIT;
-   printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
-   for(int i=1;i<total*3;++i)
+   int cnt=0;
+   //printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
+   for(int i=xor_position;i>0;--i)
+   {
+     ++cnt;
+     img_xor_vec[i]=img_vec[i] ^ img_xor_vec[i-1];
+     //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_xor_vec[i-1]);
+   } 
+   img_xor_vec[0]=img_xor_vec[0] ^ img_xor_vec[(total*3)-1];
+   
+   for(int i=1;i<(total*3)-cnt;++i)
    {
      img_xor_vec[i]=img_vec[i] ^ img_xor_vec[i-1];
-     printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_xor_vec[i-1]);
-   } 
-}
-
-void xorImageDec(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &img_xor_vec,uint32_t m,uint32_t n)
-{ 
-   cout<<"\nIn xorImageDec";
-   uint32_t total=m*n;
-   for(int i=0;i<total*3;++i)
-   {
-     img_xor_vec[i]=0;
    }
 
-   img_xor_vec[0]=img_vec[0] ^ INIT;
-   printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
-   for(int i=1;i<total*3;++i)
+}
+
+static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
+{ 
+   //cout<<"\nIn xorImageDec";
+   uint32_t total=m*n;
+   /*for(int i=0;i<total*3;++i)
+   {
+     img_xor_vec[i]=0;
+   }*/
+
+   int cnt=0;
+   
+  
+   //printf("\n %d = %d ^ %d",img_xor_vec[0],img_vec[0],INIT);
+   for(int i=xor_position;i>0;--i)
+   {
+     ++cnt;
+     img_xor_vec[i]=img_vec[i] ^ img_vec[i-1];
+     //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_vec[i-1]);
+   } 
+
+   img_xor_vec[0]=img_vec[0] ^ img_xor_vec[(total*3)-1];
+   
+   for(int i=1;i<=(total*3)-cnt;++i)
    {
      img_xor_vec[i]=img_vec[i] ^ img_vec[i-1];
-     printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_vec[i-1]);
-   } 
+     //printf("\n %d = %d ^ %d",img_xor_vec[i],img_vec[i],img_vec[i-1]);
+   }  
 }
 
 /*Self XOR Transform Phase Ends*/
 
 
 /*Miscellaneous Phase Starts*/
-uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
+static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
 {
-  cout<<"\nIn checkOverflow";
+  //cout<<"\nIn checkOverflow";
   if((number_1*number_2)>=512)
   {
     printf("\n%d , %d exceeded 512",number_1,number_2);
@@ -219,18 +237,7 @@ return 0;
 }
 /*Miscellaneous Phase Ends*/
 
-/*PRNG Image Transform Phase Starts*/
-void prngStepOne(std::vector<uint8_t> &img_vec,std::vector<uint8_t> &random_array,uint32_t total)
-{
-  cout<<"\nIn prngStepOne";
-  int c=0,i=0;
-  for(i=0;i<total*3;++i)
-  {
-    img_vec[i]=img_vec[i] ^ random_array[c];
-    random_array[c]=((random_array[c]*random_array[c]*random_array[c+1])%255) ^ img_vec[i];
-    c=(c+1)%255;
-  }
-  
-}
+
 
 #endif
+
