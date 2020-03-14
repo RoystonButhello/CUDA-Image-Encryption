@@ -1,4 +1,4 @@
-#include "functions.hpp"
+#include "include/selfxorfunctions.hpp"
 using namespace std;
 using namespace cv;
 
@@ -17,7 +17,7 @@ int main()
     
     std::clock_t img_read_start=std::clock();
     
-    Mat image= cv::imread("airplane.png", IMREAD_COLOR);
+    Mat image= cv::imread("images/airplane.png", IMREAD_COLOR);
     std::clock_t img_read_end=std::clock();
     
     time_array[0]=(1000.0*(img_read_end-img_read_start))/CLOCKS_PER_SEC;
@@ -26,10 +26,10 @@ int main()
     
     if (!image.data)
     {
-        cout << "Image not found!\n";
-        return -1;
+      cout<<"\nImage not found\nExiting...";
+      exit(0);
     }
-    
+
     std::clock_t img_present_check_end=std::clock();
     time_array[1]=(1000.0*(img_present_check_end-img_present_check_start))/CLOCKS_PER_SEC; 
     
@@ -234,7 +234,7 @@ int main()
       
       std::clock_t img_write_start=std::clock();
       
-      cv::imwrite("airplane_encrypted.png",img_reshape);
+      cv::imwrite("images/airplane_self_xor_encrypted.png",img_reshape);
       
       std::clock_t img_write_end=std::clock();
       time_array[17]=(1000.0*(img_write_end-img_write_start))/CLOCKS_PER_SEC;
@@ -278,6 +278,4 @@ int main()
                                 
     return 0;
 }
-
-
 
