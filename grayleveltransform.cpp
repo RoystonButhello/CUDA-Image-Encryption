@@ -13,21 +13,11 @@
 using namespace std;
 using namespace cv;
 
-void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total);
-
-void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
-{
-  for(int i = 0; i < total * 3; ++i)
-  {
-    img_vec[i] = img_vec[i] ^ random_array[i];
-  }
-  
-}
-
 int main()
 {
-  int lower_limit=1,upper_limit=14582912;
+  //int lower_limit=1,upper_limit=8000;
   uint32_t m=0,n=0,total=0;
+  double myu=0.0;
   
   cv::Mat image;
   
@@ -40,7 +30,7 @@ int main()
 
   if(RESIZE_TO_DEBUG==1)
   {
-    cv::resize(image,image,cv::Size(2048,2048),CV_INTER_LANCZOS4);
+    cv::resize(image,image,cv::Size(50,50),CV_INTER_LANCZOS4);
   }
   
   m=(uint32_t)image.rows;
@@ -54,9 +44,15 @@ int main()
   /*Declarations*/
   uint16_t *random_array = (uint16_t*)malloc(sizeof(uint16_t) * total * 3); 
   uint8_t  *img_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);   
+  double *x = (double*)malloc(sizeof(double) * total * 3);
+  double *y = (double*)malloc(sizeof(double) * total * 3);
   
+  x[0] = 0.1;
+  y[0] = 0.1;
+  myu  = 0.9;  
+
   std::clock_t c_start = std::clock();
-  MTMap(random_array,total*3,lower_limit,upper_limit);
+  twodLogisticAdjustedSineMap(x,y,random_array,myu,total);
   std::clock_t c_end = std::clock();
   long double time_elapsed_ms = 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC;
   
@@ -120,3 +116,4 @@ int main()
   
   return 0;
 }
+
