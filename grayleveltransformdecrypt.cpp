@@ -23,7 +23,7 @@ int main()
   cv::Mat image;
   
   std::clock_t img_load_start = std::clock();
-  image=imread("airplane.png",IMREAD_COLOR);
+  image=imread("airplane_encrypted.png",IMREAD_COLOR);
   std::clock_t img_load_end = std::clock();  
   time_array[0] = (1000.0 * (img_load_end - img_load_start)) / CLOCKS_PER_SEC;
 
@@ -105,7 +105,7 @@ int main()
   cudaMemcpy(gpuimgVec, img_vec, total * 3 * sizeof(uint16_t), cudaMemcpyHostToDevice);
 
   dim3 gray_level_transform_grid(m*n,1,1);
-  dim3 gray_level_transform_block(3,1,1);*/ 
+  dim3 gray_level_transform_block(3,1,1);*/  
   
   
   
@@ -129,7 +129,7 @@ int main()
     time_array[4] = (1000.0 * (img_reshape_end - img_reshape_start)) / CLOCKS_PER_SEC;
     
     std::clock_t img_write_start = std::clock();
-    cv::imwrite("airplane_encrypted.png",img_reshape);
+    cv::imwrite("airplane_decrypted.png",img_reshape);
     std::clock_t img_write_end = std::clock();
     time_array[5] = (1000.0 * (img_write_end - img_write_start)) / CLOCKS_PER_SEC;
   }  
@@ -153,7 +153,7 @@ int main()
   printf("\n Load image = %Lf ms", time_array[0]);
   printf("\n Generate random array = %Lf ms",time_array[1]);
   printf("\n Flatten image = %Lf ms",time_array[2]);
-  printf("\n Gray Level Transform encrypt call = %Lf ms",time_array[3]);
+  printf("\n Gray Level Transform decrypt call = %Lf ms",time_array[3]);
   //printf("\n Gray Level Transform Kernel = %f ms",time);
   printf("\n Reshape image = %Lf ms",time_array[4]);
   printf("\n Write Image = %Lf ms",time_array[5]);
