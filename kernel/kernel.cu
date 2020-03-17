@@ -62,7 +62,7 @@
 
    __global__ void grayLevelTransform(uint8_t *img_vec, uint16_t *random_array)
    {
-     int tid = blockIdx.x * 3 + threadIdx.x;
+     int tid = blockIdx.x * blockDim.x + threadIdx.x;
      img_vec[tid] = img_vec[tid] ^ random_array[tid];
    }
 
