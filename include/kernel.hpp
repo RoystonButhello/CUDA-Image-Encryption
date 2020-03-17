@@ -17,5 +17,8 @@ extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 bloc
 extern "C" void run_ArMapTabletoImg(uint8_t *in,uint8_t *out,uint32_t *table,dim3 blocks,dim3 block_size);
 /*Phase 10 Miscellaneous*/
 extern "C" void run_generateU(double *P,uint16_t *U,double n,dim3 blocks,dim3 block_size);
+/*Phase 11 gray level transform*/
+extern "C" void run_grayLevelTransform(uint8_t *img_vec, uint16_t *random_array, dim3 blocks, dim3 block_size);
+
 #endif
 

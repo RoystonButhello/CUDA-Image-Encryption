@@ -20,6 +20,7 @@
 #define RESIZE_TO_DEBUG 1
 #define DEBUG_VECTORS   0
 #define DEBUG_IMAGES    1
+#define PRINT_TIMING    0
 #define PRINT_IMAGES    0
 #define INIT            100
 
@@ -118,7 +119,7 @@ static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
 /*Self XOR Transform Phase Starts*/
 static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
 {
-  //cout<<"\nIn flattenImage";
+  cout<<"\nIn flattenImage";
   uint16_t m=0,n=0;
   uint32_t total=0;
   m=(uint16_t)image.rows;

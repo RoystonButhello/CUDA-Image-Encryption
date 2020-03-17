@@ -7,6 +7,7 @@
 #include <random>
 #include <chrono>
 #include <cstdint>
+#include <climits>
 #define LOWER_LIMIT 0.000001
 #define UPPER_LIMIT 0.09
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
@@ -14,18 +15,20 @@
 
 using namespace std;
 
-double getRandomNumber(double lower_limit,double upper_limit);
-void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number);
-void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number);
-void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total);
-void MTMap(uint16_t *&random_array,int number,int lower_limit,int upper_limit);
-void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total);
-void show_ieee754 (double f);
-void print_int_bits(int num);
-uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits);
+static inline double getRandomNumber(double lower_limit,double upper_limit);
+static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number);
+static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number);
+static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total);
+static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed);
+static inline void twodSineLogisticModulationMap(double *&x, double *&y, double alpha, double beta, uint32_t total);
+
+static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total);
+static inline void show_ieee754 (double f);
+static inline void print_int_bits(int num);
+static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits);
 
 
-double getRandomNumber(double lower_limit,double upper_limit)
+static inline double getRandomNumber(double lower_limit,double upper_limit)
 {
   
    std::random_device r;
@@ -37,7 +40,7 @@ double getRandomNumber(double lower_limit,double upper_limit)
    return (double)randnum;
 }
 
-void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number)
+static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number)
 {
   int i=0;
   
@@ -57,29 +60,29 @@ void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number
 
 }
 
-void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number)
+static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number)
 {
   printf("\n In 2DLMA");
   int i = 0;
   for(i = 0; i < number; ++i)
   {
-    printf("\nx= %F",x[i]);
+    //printf("\nx= %F",x[i]);
     x[i + 1] = x[i] * myu1 * (1 - x[i]) + lambda1 * (y[i] * y[i]);
     y[i + 1] = y[i] * myu2 * (1 - y[i]) + lambda2 * ((x[i] * x[i]) + x[i] * y[i]); 
   }
 }
 
-void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total)
+static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total)
 {
   printf("\nIn 2dLASM");
   int i=0;
 
-  for(i = 0; i < total * 3; ++i)
+  for(i = 0; i < (total * 3) - 1; ++i)
   {
    
     //printf("\nx= %F",x[i]);
     random_array[i] = get_n_mantissa_bits_safe(x[i],NUMBER_OF_BITS);
-    printf("\n%d",random_array[i]);
+    //printf("\n%d",random_array[i]);
     x[i + 1] = sin(M_PI * myu * (y[i] + 3) * x[i] * (1 - x[i]));
     y[i + 1] = sin(M_PI * myu * (x[i + 1] + 3) * y[i] * (1 - y[i]));
     
@@ -87,24 +90,37 @@ void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array
   }
 }
 
-void MTMap(uint16_t *&random_array,int number,int lower_limit,int upper_limit)
+static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed)
 {
     cout<<"\nIn MTMap";
-    std::random_device r;
-    std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+    //std::random_device r;
+    //std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
     std::mt19937 seeder(seed);
     
     std::uniform_int_distribution<int> intGen(lower_limit,upper_limit);
  
     /* generate ten random numbers in [1,6] */
-    for (size_t i = 0; i < number; ++i)
+    for (size_t i = 0; i < total * 3; ++i)
     {
         auto random_number=intGen(seeder);
         random_array[i]=(uint16_t)random_number;
     }
 }
 
-void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
+static inline void twodSineLogisticModulationMap(double *&x, double *&y, double alpha, double beta, uint32_t total)
+{
+  for(int i = 0; i < (total * 3) - 1; ++i)
+  {
+    x[i + 1] = alpha * (sin(M_PI * y[i]) + beta) * x[i] * (1 - x[i]);
+    y[i + 1] = alpha * (sin(M_PI * x[i + 1]) + beta) * y[i] * (1 - y[i]);
+  }
+}
+
+
+
+
+
+static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
 {
   for(int i = 0; i < total * 3; ++i)
   {
@@ -114,7 +130,7 @@ void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
 }
 
 /* formatted output of ieee-754 representation of float */
-void show_ieee754 (double f)
+static inline void show_ieee754 (double f)
 {
     union {
         double f;
@@ -134,7 +150,7 @@ void show_ieee754 (double f)
 }
 
 //Print bits of an integer
-void print_int_bits(int num)
+static inline void print_int_bits(int num)
 {   int x=1;
    for(int bit=(sizeof(int)*8)-1; bit>=0;bit--)
    {
@@ -144,7 +160,7 @@ void print_int_bits(int num)
    }
 }
 
-uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits)
+static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits)
 {
     union {
         double f;
