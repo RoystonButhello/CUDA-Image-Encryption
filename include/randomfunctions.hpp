@@ -14,6 +14,7 @@
 #define NUMBER_OF_BITS 16
 
 using namespace std;
+using namespace cv;
 
 static inline double getRandomNumber(double lower_limit,double upper_limit);
 static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number);
@@ -23,6 +24,8 @@ static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,
 static inline void twodSineLogisticModulationMap(double *&x, double *&y, double alpha, double beta, uint32_t total);
 
 static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total);
+static inline void rowColSwapEnc(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT);
+static inline void rowColSwapDec(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT);
 static inline void show_ieee754 (double f);
 static inline void print_int_bits(int num);
 static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits);
@@ -95,6 +98,7 @@ static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,
     cout<<"\nIn MTMap";
     //std::random_device r;
     //std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+    
     std::mt19937 seeder(seed);
     
     std::uniform_int_distribution<int> intGen(lower_limit,upper_limit);
@@ -117,9 +121,6 @@ static inline void twodSineLogisticModulationMap(double *&x, double *&y, double 
 }
 
 
-
-
-
 static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
 {
   for(int i = 0; i < total * 3; ++i)
@@ -127,6 +128,44 @@ static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,u
     img_vec[i] = img_vec[i] ^ random_array[i];
   }
   
+}
+
+static inline void rowColSwapEnc(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT)
+{
+  uint8_t row = 0, col = 0;
+  for(int i = 0; i < img_in.rows; ++i)
+  {
+    cout<<"\n";
+    row = rowSwapLUT[i];
+    for(int j = 0; j < img_in.cols; ++j)
+    {
+      col = colSwapLUT[j];
+      for(int k = 0; k < 3; ++k)
+      {
+        //printf("%d\t",image.at<Vec3b>(i,j)[k]);
+        img_out.at<Vec3b>(i,j)[k] = img_in.at<Vec3b>(row,col)[k];   
+      }
+    }
+  }
+}
+
+static inline void rowColSwapDec(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT)
+{
+  uint8_t row = 0, col = 0;
+  for(int i = 0; i < img_in.rows; ++i)
+  {
+    cout<<"\n";
+    row = rowSwapLUT[i];
+    for(int j = 0; j < img_in.cols; ++j)
+    {
+      col = colSwapLUT[j];
+      for(int k = 0; k < 3; ++k)
+      {
+        //printf("%d\t",image.at<Vec3b>(i,j)[k]);
+        img_out.at<Vec3b>(row,col)[k] = img_in.at<Vec3b>(i,j)[k];   
+      }
+    }
+  }
 }
 
 /* formatted output of ieee-754 representation of float */
