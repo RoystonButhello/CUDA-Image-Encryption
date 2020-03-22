@@ -8,10 +8,10 @@
 #include "include/randomfunctions.hpp"
 #include "include/selfxorfunctions.hpp"
 
-void rowColLUTGen(uint16_t *&colSwapLUT,uint16_t *&colRandVec,uint16_t *&rowSwapLUT,uint16_t *&rowRandVec,uint32_t n);
-void genLUTVec(uint16_t *&lutVec,uint32_t n);
+void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t n);
+void genLUTVec(uint32_t *&lutVec,uint32_t n);
 
-void genLUTVec(uint16_t *&lutVec,uint32_t n)
+void genLUTVec(uint32_t *&lutVec,uint32_t n)
 {
   for(int i = 0; i < n; ++i)
   {
@@ -19,7 +19,7 @@ void genLUTVec(uint16_t *&lutVec,uint32_t n)
   }
 }
 
-void rowColLUTGen(uint16_t *&colSwapLUT,uint16_t *&colRandVec,uint16_t *&rowSwapLUT,uint16_t *&rowRandVec,uint32_t n)
+void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t n)
 {
   int jCol=0,jRow=0;
   for(int i = n - 1; i > 0; i--)
@@ -51,7 +51,7 @@ int main()
   
   if(RESIZE_TO_DEBUG==1)
   {
-    cv::resize(image,image,cv::Size(4,4));
+    cv::resize(image,image,cv::Size(260,260));
   }
   
   if(PRINT_IMAGES == 1)
@@ -76,13 +76,18 @@ int main()
   cout<<"\nempty_image columns = "<<img_dec.cols;
   
   
-  uint16_t *colSwapLUT = (uint16_t*)malloc(sizeof(uint16_t) * n);
-  uint16_t *rowSwapLUT = (uint16_t*)malloc(sizeof(uint16_t) * n);
-  uint16_t *rowRandVec = (uint16_t*)malloc(sizeof(uint16_t) * total * 3);
-  uint16_t *colRandVec = (uint16_t*)malloc(sizeof(uint16_t) * total * 3);
+  uint32_t *colSwapLUT = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint32_t *rowSwapLUT = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint32_t *rowRandVec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *colRandVec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint8_t *img_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
+  uint8_t *enc_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
+  uint8_t *dec_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
   
+  flattenImage(image,img_vec);  
+
   lowerLimit = 1;
-  upperLimit = (total * 3) + 0.1 * (total * 3); 
+  upperLimit = (total * 3) + 100; 
 
   genLUTVec(colSwapLUT,n);
   genLUTVec(rowSwapLUT,n);
@@ -103,21 +108,21 @@ int main()
   } 
  
   
-  MTMap(rowRandVec,total,lowerLimit,upperLimit,123456789);
-  MTMap(colRandVec,total,lowerLimit,upperLimit,9);
+  MTMap(rowRandVec,total,lowerLimit,upperLimit);
+  MTMap(colRandVec,total,lowerLimit,upperLimit);
   
   if(DEBUG_VECTORS == 1)
   {
     cout<<"\nrowRandVec = ";
     for(int i = 0; i < total * 3; ++i)
     {
-      printf(" %d",rowRandVec[i]);
+      printf("\n %d",rowRandVec[i]);
     }
     
     cout<<"\ncolRandVec = ";
     for(int i = 0; i < total * 3; ++i)
     {
-      printf(" %d",colRandVec[i]);
+      printf("\n%d",colRandVec[i]);
     }
   }
   
@@ -139,21 +144,55 @@ int main()
   }  
   
   
-  rowColSwapEnc(image,img_enc,rowSwapLUT,colSwapLUT);
+  rowColSwapEnc(img_vec,enc_vec,rowSwapLUT,colSwapLUT,m,n,total);
   if(PRINT_IMAGES == 1)
   {
     cout<<"\nempty_image after encryption = ";
     printImageContents(img_enc);
   }  
   
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\n\nOriginal image = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",img_vec[i]);
+    }
+
+    cout<<"\n\nEncrypted image = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",enc_vec[i]);
+    }
+  }  
+
+  if(DEBUG_IMAGES == 1)
+  {
+    cv::Mat img_reshape(m,n,CV_8UC3,enc_vec);
+    cv::imwrite("airplane_rowcolswap_encrypted.png",img_reshape);
+  }
   
-  rowColSwapDec(img_enc,img_dec,rowSwapLUT,colSwapLUT);
+  rowColSwapDec(enc_vec,dec_vec,rowSwapLUT,colSwapLUT,m,n,total);
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\n\nDecrypted image = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",dec_vec[i]);
+    }
+  }
+  
   if(PRINT_IMAGES == 1)
   {
     cout<<"\nempty_image after decryption = ";
     printImageContents(img_dec);
   }
    
+  if(DEBUG_IMAGES == 1)
+  {
+    cv::Mat img_reshape(m,n,CV_8UC3,dec_vec);
+    cv::imwrite("airplane_rowcolswap_decrypted.png",img_reshape);
+  }
   
   return 0;
 }
