@@ -19,6 +19,9 @@ extern "C" void run_ArMapTabletoImg(uint8_t *in,uint8_t *out,uint32_t *table,dim
 extern "C" void run_generateU(double *P,uint16_t *U,double n,dim3 blocks,dim3 block_size);
 /*Phase 11 gray level transform*/
 extern "C" void run_grayLevelTransform(uint8_t *img_vec, uint16_t *random_array, dim3 blocks, dim3 block_size);
+/*Phase 12 row column swapping*/
+extern "C" void run_encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size);
+extern "C" void run_decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size);
 
 #endif
 

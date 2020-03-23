@@ -98,7 +98,6 @@ static inline void MTMap(uint32_t *&random_array,uint32_t total,int lower_limit,
     cout<<"\nIn MTMap";
     std::random_device r;
     std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
-    
     std::mt19937 seeder(seed);
     
     std::uniform_int_distribution<int> intGen(lower_limit,upper_limit);
@@ -181,7 +180,7 @@ static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&row
         
         //if(img_out[gray_level_index_out] == 0)
         //{
-          printf("\nglio %d = %d * 3 + %d",gray_level_index_out,pixel_index_out,k);
+          //printf("\nglio %d = %d * 3 + %d",gray_level_index_out,pixel_index_out,k);
           //printf("\n\nglii %d = %d * 3 + %d",gray_level_index_in,pixel_index_in,k);
           //printf("\n\n\nimg_in %d",img_in[gray_level_index_in]);
         //} 

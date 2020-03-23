@@ -65,6 +65,33 @@
      int tid = blockIdx.x * blockDim.x + threadIdx.x;
      img_vec[tid] = img_vec[tid] ^ random_array[tid];
    }
+   
+   __global__ void encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT)
+   {
+      int blockId = blockIdx.y * gridDim.x + blockIdx.x;
+      int threadId = blockId * blockDim.x + threadIdx.x;
+      
+      int gray_level_index_in = threadId;
+      int row = rowSwapLUT[blockIdx.x];
+      int col = colSwapLUT[blockIdx.y];
+      int pixel_index_out = row * gridDim.x + col;
+      int gray_level_index_out = pixel_index_out * blockDim.x + threadIdx.x;
+      img_out[gray_level_index_in] = img_in[gray_level_index_out];
+      
+   }
+   
+  __global__ void decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT)
+  {
+    int blockId= blockIdx.y * gridDim.x + blockIdx.x;
+    int threadId = blockId * blockDim.x + threadIdx.x;
+    
+    int gray_level_index_in = threadId;
+    int row = rowSwapLUT[blockIdx.x];
+    int col = colSwapLUT[blockIdx.y];
+    int pixel_index_out = row * gridDim.x + col;
+    int gray_level_index_out = pixel_index_out * blockDim.x + threadIdx.x;
+    img_out[gray_level_index_out] = img_in[gray_level_index_in];
+  }   
 
    extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
    {
@@ -116,8 +143,15 @@
 
   extern "C" void run_grayLevelTransform(uint8_t *img_vec, uint16_t *random_array, dim3 blocks, dim3 block_size)
   {
-    
     grayLevelTransform<<<blocks, block_size>>>(img_vec, random_array);
-    
-    
+  }
+  
+  extern "C" void run_encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
+  {
+    encRowColSwap<<<blocks, block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
+  }
+  
+  extern "C" void run_decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
+  {
+    decRowColSwap<<<blocks,block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
   }
