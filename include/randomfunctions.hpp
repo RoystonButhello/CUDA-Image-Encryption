@@ -144,8 +144,8 @@ static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&row
     for(j = 0; j < n; ++j)
     {
       col = colSwapLUT[j];
-      int pixel_index_in = i * m + j;
-      int pixel_index_out = row * m + col;
+      int pixel_index_in = i * n + j;
+      int pixel_index_out = row * n + col;
       //printf("\n%d",i * m + j);
       for(k = 0; k < 3; ++k)
       {
@@ -164,25 +164,30 @@ static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&row
   int row_constant = (m * 3);
   int row = 0,col = 0;
   int element_index = 0;
+  printf("\nm = %d",m);
+  printf("\nn = %d",n);
   for(int i = 0; i < m; ++i)
   {
     row = rowSwapLUT[i];
     for(int j = 0; j < n; ++j)
     {
       col = colSwapLUT[j];
-      int pixel_index_in = i * m + j;
-      int pixel_index_out = row * m + col;
+      int pixel_index_in = i * n + j;
+      //printf("\npixel_index_in = %d",pixel_index_in);
+      int pixel_index_out = row * n + col;
       for(int k = 0; k < 3; ++k)
       {
         int gray_level_index_in = pixel_index_in * 3 + k;
         int gray_level_index_out = pixel_index_out * 3 + k;
+        //printf("\ngray_level_index_in = %d",gray_level_index_in);
+        //printf("\ngray_level_index_out = %d",gray_level_index_out);
         img_out[gray_level_index_out] = img_in[gray_level_index_in];
         
         //if(img_out[gray_level_index_out] == 0)
         //{
           //printf("\nglio %d = %d * 3 + %d",gray_level_index_out,pixel_index_out,k);
           //printf("\n\nglii %d = %d * 3 + %d",gray_level_index_in,pixel_index_in,k);
-          //printf("\n\n\nimg_in %d",img_in[gray_level_index_in]);
+          //printf("\n\n\nimg_in = %d",img_in[gray_level_index_in]);
         //} 
         
       }
