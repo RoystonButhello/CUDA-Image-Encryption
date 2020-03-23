@@ -20,12 +20,12 @@ static inline double getRandomNumber(double lower_limit,double upper_limit);
 static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number);
 static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number);
 static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total);
-static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed);
+static inline void MTMap(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit);
 static inline void twodSineLogisticModulationMap(double *&x, double *&y, double alpha, double beta, uint32_t total);
 
-static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total);
-static inline void rowColSwapEnc(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT);
-static inline void rowColSwapDec(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT);
+static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total);
+static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
 static inline void show_ieee754 (double f);
 static inline void print_int_bits(int num);
 static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits);
@@ -93,11 +93,11 @@ static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t 
   }
 }
 
-static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed)
+static inline void MTMap(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit)
 {
     cout<<"\nIn MTMap";
-    //std::random_device r;
-    //std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+    std::random_device r;
+    std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
     
     std::mt19937 seeder(seed);
     
@@ -107,7 +107,7 @@ static inline void MTMap(uint16_t *&random_array,uint32_t total,int lower_limit,
     for (size_t i = 0; i < total * 3; ++i)
     {
         auto random_number=intGen(seeder);
-        random_array[i]=(uint16_t)random_number;
+        random_array[i]=(uint32_t)random_number;
     }
 }
 
@@ -121,7 +121,7 @@ static inline void twodSineLogisticModulationMap(double *&x, double *&y, double 
 }
 
 
-static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,uint32_t total)
+static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total)
 {
   for(int i = 0; i < total * 3; ++i)
   {
@@ -130,39 +130,62 @@ static inline void grayLevelTransform(uint8_t *&img_vec,uint16_t *random_array,u
   
 }
 
-static inline void rowColSwapEnc(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT)
+static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
 {
-  uint8_t row = 0, col = 0;
-  for(int i = 0; i < img_in.rows; ++i)
+  int get_row = 0, get_col = 0;
+  int row_constant = (m * 3);
+  int row = 0,col = 0;
+  int element_index = 0;
+  
+  int i = 0, j = 0, k = 0;
+  for(i = 0; i < m; ++i)
   {
-    cout<<"\n";
     row = rowSwapLUT[i];
-    for(int j = 0; j < img_in.cols; ++j)
+    
+    for(j = 0; j < n; ++j)
     {
       col = colSwapLUT[j];
-      for(int k = 0; k < 3; ++k)
+      int pixel_index_in = i * m + j;
+      int pixel_index_out = row * m + col;
+      //printf("\n%d",i * m + j);
+      for(k = 0; k < 3; ++k)
       {
-        //printf("%d\t",image.at<Vec3b>(i,j)[k]);
-        img_out.at<Vec3b>(i,j)[k] = img_in.at<Vec3b>(row,col)[k];   
-      }
+         int gray_level_index_in = pixel_index_in * 3 + k;
+         int gray_level_index_out = pixel_index_out * 3 + k;
+         img_out[gray_level_index_in] = img_in[gray_level_index_out];
+         //printf("\n%d",pixel_index_in * 3 + k);
+      } 
     }
   }
 }
 
-static inline void rowColSwapDec(cv::Mat &img_in,cv::Mat &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT)
+static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
 {
-  uint8_t row = 0, col = 0;
-  for(int i = 0; i < img_in.rows; ++i)
+  int get_row = 0, get_col = 0;
+  int row_constant = (m * 3);
+  int row = 0,col = 0;
+  int element_index = 0;
+  for(int i = 0; i < m; ++i)
   {
-    cout<<"\n";
     row = rowSwapLUT[i];
-    for(int j = 0; j < img_in.cols; ++j)
+    for(int j = 0; j < n; ++j)
     {
       col = colSwapLUT[j];
+      int pixel_index_in = i * m + j;
+      int pixel_index_out = row * m + col;
       for(int k = 0; k < 3; ++k)
       {
-        //printf("%d\t",image.at<Vec3b>(i,j)[k]);
-        img_out.at<Vec3b>(row,col)[k] = img_in.at<Vec3b>(i,j)[k];   
+        int gray_level_index_in = pixel_index_in * 3 + k;
+        int gray_level_index_out = pixel_index_out * 3 + k;
+        img_out[gray_level_index_out] = img_in[gray_level_index_in];
+        
+        //if(img_out[gray_level_index_out] == 0)
+        //{
+          printf("\nglio %d = %d * 3 + %d",gray_level_index_out,pixel_index_out,k);
+          //printf("\n\nglii %d = %d * 3 + %d",gray_level_index_in,pixel_index_in,k);
+          //printf("\n\n\nimg_in %d",img_in[gray_level_index_in]);
+        //} 
+        
       }
     }
   }

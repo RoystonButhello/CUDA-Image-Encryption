@@ -10,6 +10,8 @@
 
 void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t n);
 void genLUTVec(uint32_t *&lutVec,uint32_t n);
+void writeVectorToFile32(uint32_t *&vec,int length,std::string filename);
+void writeVectorToFile8(uint8_t *&vec,int length,std::string filename);
 
 void genLUTVec(uint32_t *&lutVec,uint32_t n)
 {
@@ -35,6 +37,45 @@ void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwap
   } 
 }
 
+void writeVectorToFile32(uint32_t *&vec,int length,std::string filename)
+{
+  std::ofstream file(filename);
+  if(!file)
+  {
+    cout<<"\nCould not create "<<filename<<"\nExiting...";
+    exit(0);
+  }
+
+  std::string elements = std::string("");  
+
+  for(int i = 0; i < length; ++i)
+  {
+    elements.append(std::to_string(vec[i]));
+    elements.append("\n");
+  }
+  file<<elements;
+  file.close();
+}
+
+void writeVectorToFile8(uint8_t *&vec,int length,std::string filename)
+{
+  std::ofstream file(filename);
+  if(!file)
+  {
+    cout<<"\nCould not create "<<filename<<"\nExiting...";
+    exit(0);
+  }
+  
+  std::string elements = std::string("");
+  for(int i = 0; i < length; ++i)
+  {
+    elements.append(std::to_string(vec[i]));
+    elements.append("\n");
+  }
+  
+  file<<elements;
+  file.close();
+}
 
 int main()
 {
@@ -51,7 +92,7 @@ int main()
   
   if(RESIZE_TO_DEBUG==1)
   {
-    cv::resize(image,image,cv::Size(260,260));
+    cv::resize(image,image,cv::Size(512,512));
   }
   
   if(PRINT_IMAGES == 1)
@@ -87,14 +128,14 @@ int main()
   flattenImage(image,img_vec);  
 
   lowerLimit = 1;
-  upperLimit = (total * 3) + 100; 
+  upperLimit = total * 3; 
 
   genLUTVec(colSwapLUT,n);
   genLUTVec(rowSwapLUT,n);
   
   if(DEBUG_VECTORS==1)
   {
-    cout<<"\ncolSwapLUT before swap = ";
+    /*cout<<"\ncolSwapLUT before swap = ";
     for(int i = 0 ;i < n; ++i)
     {
       printf(" %d",colSwapLUT[i]);
@@ -104,7 +145,8 @@ int main()
     for(int i = 0; i < n; ++i)
     {
       printf(" %d",rowSwapLUT[i]);
-    }
+    }*/
+   
   } 
  
   
@@ -113,7 +155,7 @@ int main()
   
   if(DEBUG_VECTORS == 1)
   {
-    cout<<"\nrowRandVec = ";
+    /*cout<<"\nrowRandVec = ";
     for(int i = 0; i < total * 3; ++i)
     {
       printf("\n %d",rowRandVec[i]);
@@ -123,14 +165,17 @@ int main()
     for(int i = 0; i < total * 3; ++i)
     {
       printf("\n%d",colRandVec[i]);
-    }
+    }*/
+    
+     writeVectorToFile32(rowRandVec,total * 3,"Reports/rowRandVec260.txt");
+     writeVectorToFile32(colRandVec,total * 3,"Reports/colRandVec260.txt"); 
   }
   
   rowColLUTGen(colSwapLUT,colRandVec,rowSwapLUT,rowRandVec,n);
   
   if(DEBUG_VECTORS == 1)
   {
-    cout<<"\ncolSwapLUT after swap = ";
+    /*cout<<"\ncolSwapLUT after swap = ";
     for(int i = 0 ;i < n; ++i)
     {
       printf(" %d",colSwapLUT[i]);
@@ -140,7 +185,10 @@ int main()
     for(int i = 0; i < n; ++i)
     {
       printf(" %d",rowSwapLUT[i]);
-    }
+    }*/
+    
+    writeVectorToFile32(rowSwapLUT,n,"Reports/rowSwap260.txt");
+    writeVectorToFile32(colSwapLUT,n,"Reports/colswap260.txt");
   }  
   
   
@@ -149,21 +197,25 @@ int main()
   {
     cout<<"\nempty_image after encryption = ";
     printImageContents(img_enc);
+    
+    
   }  
   
   if(DEBUG_VECTORS == 1)
   {
-    cout<<"\n\nOriginal image = ";
+    /*cout<<"\n\nOriginal image = ";
     for(int i = 0; i < total * 3; ++i)
     {
       printf(" %d",img_vec[i]);
     }
-
+    
     cout<<"\n\nEncrypted image = ";
     for(int i = 0; i < total * 3; ++i)
     {
       printf(" %d",enc_vec[i]);
-    }
+    }*/
+    writeVectorToFile8(img_vec,total * 3,"Reports/img_vec260.txt");
+    writeVectorToFile8(enc_vec,total * 3,"Reports/enc_vec260.txt");
   }  
 
   if(DEBUG_IMAGES == 1)
@@ -175,11 +227,12 @@ int main()
   rowColSwapDec(enc_vec,dec_vec,rowSwapLUT,colSwapLUT,m,n,total);
   if(DEBUG_VECTORS == 1)
   {
-    cout<<"\n\nDecrypted image = ";
+    /*cout<<"\n\nDecrypted image = ";
     for(int i = 0; i < total * 3; ++i)
     {
       printf(" %d",dec_vec[i]);
-    }
+    }*/
+    writeVectorToFile8(dec_vec,total * 3,"Reports/dec_vec260.txt");
   }
   
   if(PRINT_IMAGES == 1)
