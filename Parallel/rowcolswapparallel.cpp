@@ -9,8 +9,8 @@
 #include "include/selfxorfunctions.hpp"
 #include "include/kernel.hpp"
 
-void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t n);
-void genLUTVec(uint32_t *&lutVec,uint32_t n);
+void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t m,uint32_t n);
+void genLUTVec(uint32_t *&lutVec,uint32_t m,uint32_t n);
 void writeVectorToFile32(uint32_t *&vec,int length,std::string filename);
 void writeVectorToFile8(uint8_t *&vec,int length,std::string filename);
 
@@ -22,20 +22,23 @@ void genLUTVec(uint32_t *&lutVec,uint32_t n)
   }
 }
 
-void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t n)
+void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t m,uint32_t n)
 {
   int jCol=0,jRow=0;
+  
+  for(int i = m - 1; i > 0; i--)
+  {
+    jRow = rowRandVec[i] % i;
+    std::swap(rowSwapLUT[i],rowSwapLUT[jRow]);
+  }  
+
   for(int i = n - 1; i > 0; i--)
   {
     jCol = colRandVec[i] % i;
     std::swap(colSwapLUT[i],colSwapLUT[jCol]);
   } 
   
-  for(int i = n - 1; i > 0; i--)
-  {
-    jRow = rowRandVec[i] % i;
-    std::swap(rowSwapLUT[i],rowSwapLUT[jRow]);
-  } 
+  
 }
 
 void writeVectorToFile32(uint32_t *&vec,int length,std::string filename)
@@ -111,15 +114,14 @@ int main()
   cout<<"\nChannels = "<<image.channels();
   cout<<"\nTotal = "<<total;
   
-  Mat img_enc = Mat(Size(m, n), CV_8UC3, Scalar(0, 0, 0));
-  Mat img_dec = Mat(Size(m, n), CV_8UC3, Scalar(0, 0, 0)); 
+  //Mat img_enc = Mat(Size(m, n), CV_8UC3, Scalar(0, 0, 0));
+  //Mat img_dec = Mat(Size(m, n), CV_8UC3, Scalar(0, 0, 0)); 
   
-  cout<<"\nempty_image rows = "<<img_enc.rows;
-  cout<<"\nempty_image columns = "<<img_dec.cols;
+  //cout<<"\nempty_image rows = "<<img_enc.rows;
+  //cout<<"\nempty_image columns = "<<img_dec.cols;
   
-  
+  uint32_t *rowSwapLUT = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *colSwapLUT = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  uint32_t *rowSwapLUT = (uint32_t*)malloc(sizeof(uint32_t) * n);
   uint32_t *rowRandVec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *colRandVec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint8_t *img_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
@@ -135,7 +137,7 @@ int main()
   cudaMalloc((void**)&gpuimgIn,sizeof(uint8_t) * total * 3);
   cudaMalloc((void**)&gpuEncVec,sizeof(uint8_t) * total * 3);
   cudaMalloc((void**)&gpuDecVec,sizeof(uint8_t) * total * 3);
-  cudaMalloc((void**)&gpuRowSwapLUT,sizeof(uint32_t) * n);
+  cudaMalloc((void**)&gpuRowSwapLUT,sizeof(uint32_t) * m);
   cudaMalloc((void**)&gpuColSwapLUT,sizeof(uint32_t) * n);
   
   
@@ -144,21 +146,21 @@ int main()
   lowerLimit = 1;
   upperLimit = total * 3; 
 
+  genLUTVec(rowSwapLUT,m);
   genLUTVec(colSwapLUT,n);
-  genLUTVec(rowSwapLUT,n);
   
   if(DEBUG_VECTORS==1)
   {
+    cout<<"\nrowSwapLUT before swap = ";
+    for(int i = 0; i < m; ++i)
+    {
+      printf(" %d",rowSwapLUT[i]);
+    }
+    
     cout<<"\ncolSwapLUT before swap = ";
     for(int i = 0 ;i < n; ++i)
     {
       printf(" %d",colSwapLUT[i]);
-    }
-    
-    cout<<"\nrowSwapLUT before swap = ";
-    for(int i = 0; i < n; ++i)
-    {
-      printf(" %d",rowSwapLUT[i]);
     }
    
   } 
@@ -185,30 +187,30 @@ int main()
     //writeVectorToFile32(colRandVec,total * 3,"Reports/colRandVec260.txt"); 
   }
   
-  rowColLUTGen(colSwapLUT,colRandVec,rowSwapLUT,rowRandVec,n);
+  rowColLUTGen(colSwapLUT,colRandVec,rowSwapLUT,rowRandVec,m,n);
   
   if(DEBUG_VECTORS == 1)
   {
+    cout<<"\nrowSwapLUT after swap = ";
+    for(int i = 0; i < m; ++i)
+    {
+      printf(" %d",rowSwapLUT[i]);
+    }
+    
     cout<<"\ncolSwapLUT after swap = ";
     for(int i = 0 ;i < n; ++i)
     {
       printf(" %d",colSwapLUT[i]);
     }
     
-    cout<<"\nrowSwapLUT after swap = ";
-    for(int i = 0; i < n; ++i)
-    {
-      printf(" %d",rowSwapLUT[i]);
-    }
-    
-    //writeVectorToFile32(rowSwapLUT,n,"Reports/rowSwap260.txt");
+    //writeVectorToFile32(rowSwapLUT,m,"Reports/rowSwap260.txt");
     //writeVectorToFile32(colSwapLUT,n,"Reports/colswap260.txt");
   }  
   
   cudaMemcpy(gpuimgIn,img_vec,sizeof(uint8_t) * total * 3,cudaMemcpyHostToDevice);
   cudaMemcpy(gpuEncVec,enc_vec,sizeof(uint8_t) * total * 3,cudaMemcpyHostToDevice);
   cudaMemcpy(gpuDecVec,dec_vec,sizeof(uint8_t) * total * 3,cudaMemcpyHostToDevice);
-  cudaMemcpy(gpuRowSwapLUT,rowSwapLUT,sizeof(uint32_t) * n,cudaMemcpyHostToDevice);
+  cudaMemcpy(gpuRowSwapLUT,rowSwapLUT,sizeof(uint32_t) * m,cudaMemcpyHostToDevice);
   cudaMemcpy(gpuColSwapLUT,colSwapLUT,sizeof(uint32_t) * n,cudaMemcpyHostToDevice);
   
   dim3 grid_row_col_swap(m,n,1);
@@ -218,11 +220,11 @@ int main()
   cudaMemcpy(enc_vec,gpuEncVec,total * 3 * sizeof(uint8_t),cudaMemcpyDeviceToHost);
   
   //rowColSwapEnc(img_vec,enc_vec,rowSwapLUT,colSwapLUT,m,n,total);
-  if(PRINT_IMAGES == 1)
+  /*if(PRINT_IMAGES == 1)
   {
     cout<<"\nempty_image after encryption = ";
     printImageContents(img_enc);
-  }  
+  }*/  
   
   if(DEBUG_VECTORS == 1)
   {
@@ -260,11 +262,11 @@ int main()
     //writeVectorToFile8(dec_vec,total * 3,"Reports/dec_vec260.txt");
   }
   
-  if(PRINT_IMAGES == 1)
+  /*if(PRINT_IMAGES == 1)
   {
     cout<<"\nempty_image after decryption = ";
     printImageContents(img_dec);
-  }
+  }*/
    
   if(DEBUG_IMAGES == 1)
   {
