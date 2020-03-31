@@ -341,7 +341,7 @@ healthchecksdb
 
 # Linux Stuff
 
-#Directories
+# Directories
 CURAND
 Chaotic-Maps
 CUDA
@@ -351,7 +351,7 @@ Papers
 Reports
 shell_scripts
 
-#Files
+# Files
 *.png
 Serial.cpp
 Decrypt.cpp
