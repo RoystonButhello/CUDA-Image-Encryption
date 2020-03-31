@@ -353,3 +353,5 @@ shell_scripts
 
 #Files
 *.png
+Serial.cpp
+Decrypt.cpp
