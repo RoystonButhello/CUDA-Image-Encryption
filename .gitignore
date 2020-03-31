@@ -1,0 +1,12 @@
+#Directories
+Miscellaneous
+Tests
+CUDA
+CURAND
+src
+
+#Files
+*.png
+
+
+
