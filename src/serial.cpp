@@ -4,7 +4,7 @@
 
 int main()
 {
-  cv::Mat image;
+  cv::Mat3b image;
   image = cv::imread(config::input_image_path,cv::IMREAD_COLOR);
   if(!image.data)
   {
@@ -14,7 +14,13 @@ int main()
   
   if(RESIZE_TO_DEBUG == 1)
   {
-    cv::resize(image,image,cv::Size(config::rows,config::cols),CV_INTER_LANCZOS4);
+    cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
+  }  
+  
+  if(PRINT_IMAGES == 1)
+  {
+    cout<<"\nOriginal image = ";
+    common::printImageContents(image);
   }  
 
   uint32_t m = 0,n = 0,channels = 0,total = 0;
@@ -23,10 +29,14 @@ int main()
   channels = image.channels();
   total = m * n;
   
-  cout<<"\nRows = "<<m;
-  cout<<"\nColumns = "<<n;
+  
+
+  cout<<"\nm = "<<m;
+  cout<<"\nn = "<<n;
   cout<<"\nChannels = "<<channels;
   
+  Mat3b imgout(m,n);  
+
   /*Vector Declarations*/
   uint8_t *img_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
   uint8_t *enc_vec  = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
@@ -35,8 +45,8 @@ int main()
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
+  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
   
   common::flattenImage(image,img_vec);
   pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
@@ -66,10 +76,6 @@ int main()
     }
     
   } 
-   
-  /*Image Permutation Phase*/
-  
-  /*Row and Column Swapping*/
   
   common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
   
@@ -88,7 +94,53 @@ int main()
     }
   }  
   
-  serial::rowColSwapEnc(img_vec,enc_vec,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
+   
+  /*Image Permutation Phase*/
+  
+  /*Row and column Rotation*/
+  for (int i = 0; i < 1; i++)
+  {
+      for (int j = 0; j < n; j++) // For each column
+      {
+          serial::columnRotator(imgout, image.col(j), j, col_swap_lut_vec[j], m);
+      }
+      for (int j = 0; j < m; j++) // For each row
+      {
+          serial::rowRotator(image, imgout.row(j), j, row_swap_lut_vec[j], n);
+      }
+  }
+
+  if(PRINT_IMAGES == 1)
+  {
+    cout<<"\nImage after row and column permutation = ";
+    common::printImageContents(image);
+  }  
+
+    // Unpermutation
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            serial::rowRotator(imgout, image.row(j), j, -row_swap_lut_vec[j], n);
+        }
+        
+        for (int j = 0; j < n; j++)
+        {
+            serial::columnRotator(image, imgout.col(j), j, -col_swap_lut_vec[j], m);
+        }
+    }
+
+  
+  if(PRINT_IMAGES == 1)
+  {
+    cout<<"\nImage after row and column unpermutation = ";
+    common::printImageContents(image);
+  }
+  
+  /*Row and Column Swapping
+  
+  
+  serial::rowColSwapEnc(img_vec,enc_vec,row_swap_lut_vec,col_swap_lut_vec,m,n,total);*/
   
   if(DEBUG_VECTORS == 1)
   {

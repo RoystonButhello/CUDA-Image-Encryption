@@ -350,8 +350,8 @@ Miscellaneous
 Papers
 Reports
 shell_scripts
+Tests
 
 # Files
 *.png
-Serial.cpp
-Decrypt.cpp
+

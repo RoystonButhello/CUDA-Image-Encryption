@@ -8,7 +8,11 @@ namespace serial
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total);
   static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
   static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
-
+    
+  static inline void generateRelocationVec(uint32_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total);
+  
+  static inline void rotateRow(cv::Mat3b &image,cv::Mat3b &image_row,int row_id,int offset);
+  
 
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
   { 
@@ -141,7 +145,91 @@ namespace serial
       }
     }
    }
+  
+  static inline void generateRelocationVec(uint32_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total)
+  {
+    uint64_t exponent = (uint64_t)pow(10,14);
+    double unzero = 0.0000000001;
+    double *random_vector = (double*)malloc(sizeof(double) * n);
+    
+    /*Skipping 1st offset values*/
+    for(int i = 0; i < offset; ++i)
+    {
+      x = fmod((x + a * y),1) + unzero;
+      y = fmod((b * x + c * y),1) + unzero; 
+    }
+  
+    /*Generating random vector*/
+    for(int i = 0; i < (total / 2); ++i)
+    {
+      x = fmod((x + a * y),1) + unzero;
+      y = fmod((b * x + c * y),1) + unzero;
+      random_vector[2 * i] = x;
+      random_vector[(2 * i) + 1] = y;
+    }
+    
+    /*Generating rotation vector*/
+    for(int i = 0; i < n; ++i)
+    {
+      rotation_vector[i] = (uint32_t)fmod((random_vector[i] * exponent),m);
+    }
+  
+  }
+  
+  void columnRotator(Mat3b img, Mat3b col, int index, int offset, int M)
+  {
+    
+    if (offset > 0)
+    {
+        for (int k = 0; k < M; k++)
+        {
+            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset) % M, 0);
+        }
+    }
+    
+    else if (offset < 0)
+    {
+        for (int k = 0; k < M; k++)
+        {
+            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset + M) % M, 0);
+        }
+    }
+    
+    else
+    {
+        for (int k = 0; k < M; k++)
+        {
+            img.at<Vec3b>(k, index) = col.at<Vec3b>(k, 0);
+        }
+    }
+}
 
+void rowRotator(Mat3b img, Mat3b row, int index, int offset, int N)
+{
+    // N elements per row
+    if (offset > 0)
+    {
+        for (int k = 0; k < N; k++)
+        {
+            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset) % N);
+        }
+    }
+    else if (offset < 0)
+    {
+        for (int k = 0; k < N; k++)
+        {
+            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset + N) % N);
+        }
+    }
+    else
+    {
+        for (int k = 0; k < N; k++)
+        {
+            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, k);
+        }
+    }
+}  
+ 
 }
 
 

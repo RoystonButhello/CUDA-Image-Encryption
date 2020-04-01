@@ -23,8 +23,8 @@ using namespace std;
 
 namespace common
 {
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec);
-  static inline void printImageContents(cv::Mat image);
+  static inline void flattenImage(cv::Mat3b image,uint8_t *&img_vec);
+  static inline void printImageContents(cv::Mat3b image);
   static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
 
   static inline void show_ieee754 (double f);
@@ -49,7 +49,7 @@ namespace common
   static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
   
 
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
+  static inline void flattenImage(cv::Mat3b image,uint8_t *&img_vec)
   {
     cout<<"\nIn flattenImage";
     uint16_t m=0,n=0;
@@ -64,7 +64,7 @@ namespace common
     }
   }
 
-  static inline void printImageContents(Mat image)
+  static inline void printImageContents(cv::Mat3b image)
   {
     //cout<<"\nIn printImageContents";
     cout<<"\nImage Matrix=";
