@@ -41,8 +41,8 @@
 
 namespace config
 {
-  uint32_t rows = 4;
-  uint32_t cols = 4;
+  uint32_t rows = 1024;
+  uint32_t cols = 1024;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen = 1234567890;
@@ -52,11 +52,12 @@ namespace config
   std::string encrypted_image = image_name + "_encrypted_";
   std::string decrypted_image = image_name + "_decrypted_";
   std::string extension = ".png";
-  std::string input = "input"; 
+  std::string input = "input";
+  std::string output = "output"; 
   
   std::string input_image_path = input + separator + image_name + extension;
-  std::string encrypted_image_path = encrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;
-  std::string decrypted_image_path = decrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;   
+  std::string encrypted_image_path = output + separator + encrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;
+  std::string decrypted_image_path = output + separator + decrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;   
 }  
 
 #endif

@@ -30,21 +30,88 @@ int main()
   /*Vector Declarations*/
   uint8_t *img_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
   uint8_t *enc_vec  = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
-  uint32_t *random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint8_t *dec_vec  = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
+  uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
   uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);
   
   common::flattenImage(image,img_vec);
-  pattern::MTSequence(random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen); 
+  pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(col_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  common::genLUTVec(row_swap_lut_vec,m);
+  common::genLUTVec(col_swap_lut_vec,n);
+      
+
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\n\nOriginal image vector = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",img_vec[i]);
+    }
+    
+    cout<<"\n\nRow random vector = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",row_random_vec[i]);
+    }
+    
+    cout<<"\n\nColumn random vector = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",col_random_vec[i]);
+    }
+    
+  } 
    
   /*Image Permutation Phase*/
   
   /*Row and Column Swapping*/
-
-    
   
+  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
+  
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\nRow LUT vector after swap = ";
+    for(int i = 0; i < m; ++i)
+    {
+      printf(" %d",row_swap_lut_vec[i]);
+    }
+    
+    cout<<"\nColumn LUT vector after swap = ";
+    for(int i = 0; i < n; ++i)
+    {
+      printf(" %d",col_swap_lut_vec[i]);
+    }
+  }  
+  
+  serial::rowColSwapEnc(img_vec,enc_vec,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
+  
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\nEncrypted image vector = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",enc_vec[i]);
+    }
+    
+    cout<<"\nDecrypted image vector = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",dec_vec[i]);
+    }
+
+  }
+  
+  if(DEBUG_IMAGES == 1)
+  {
+   cv::Mat img_resize(m,n,CV_8UC3,enc_vec);
+   cv::imwrite(config::encrypted_image_path,img_resize);
+  }
+    
   return 0;
 }
 

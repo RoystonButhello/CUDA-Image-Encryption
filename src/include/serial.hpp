@@ -6,8 +6,8 @@ namespace serial
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total);
-  static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
-  static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
 
 
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
@@ -76,7 +76,7 @@ namespace serial
   
   }
 
-  static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
@@ -105,14 +105,14 @@ namespace serial
      }
   }
 
-  static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
     int row = 0,col = 0;
     int element_index = 0;
-    printf("\nm = %d",m);
-    printf("\nn = %d",n);
+    //printf("\nm = %d",m);
+    //printf("\nn = %d",n);
     for(int i = 0; i < m; ++i)
     {
       row = rowSwapLUT[i];
