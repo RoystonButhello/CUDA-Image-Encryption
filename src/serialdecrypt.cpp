@@ -102,7 +102,7 @@ int main()
    imgout = imgout.reshape(1,imgout.rows * imgout.cols);
    
   //Row and Column Swapping
-  //serial::rowColSwapDec(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
+  serial::rowColSwapDec(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
   image = image.reshape(3,m);
   imgout = imgout.reshape(3,m);
   
