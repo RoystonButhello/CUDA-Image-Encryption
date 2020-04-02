@@ -35,13 +35,14 @@ int main()
   
   /*Vector Declarations*/
   
-  uint8_t *enc_vec  = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
-  uint8_t *dec_vec  = (uint8_t*)malloc(sizeof(uint8_t) * total * 3);
+
   uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  
+  double *x = (double*)malloc(sizeof(double) * total * 3);
+  double *y = (double*)malloc(sizeof(double) * total * 3);
+  uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
       
   cv::Mat3b imgout(m,n);
   pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
@@ -50,7 +51,21 @@ int main()
   common::genLUTVec(col_swap_lut_vec,n);
   common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);    
   
-  /*if(DEBUG_VECTORS == 1)
+  //Diffusion Phase
+  
+  //Gray Level Transform
+  config::slmm_map.x_init = 0.1;
+  config::slmm_map.y_init = 0.1;
+  config::slmm_map.alpha = 1.00;
+  config::slmm_map.beta = 3.00;
+  x[0] = config::slmm_map.x_init;
+  y[0] = config::slmm_map.y_init;
+  
+  pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+  
+  serial::grayLevelTransform(image,random_array,total);  
+  
+  if(DEBUG_VECTORS == 1)
   {
     
     cout<<"\n\nRow random vector = ";
@@ -80,9 +95,10 @@ int main()
     {
       printf(" %d",col_swap_lut_vec[i]);
     }
-  }*/  
-
-
+  }  
+   
+    //Image Unpermutation Phase
+    
     //Unpermutation
     for (int i = 0; i < 1; i++)
     {
@@ -106,6 +122,8 @@ int main()
   image = image.reshape(3,m);
   imgout = imgout.reshape(3,m);
   
+  
+  
   if(PRINT_IMAGES == 1)
   {
     cout<<"\nImage after decryption = ";
@@ -113,6 +131,8 @@ int main()
     cout<<"\n\nimgout in serialdecrypt";
     common::printImageContents(imgout);
   }
+  
+
   
   cv::imwrite("airplane_decrypted.png",image);
   

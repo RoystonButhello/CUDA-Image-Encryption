@@ -42,6 +42,36 @@
 
 namespace config
 {
+  
+  typedef struct
+  {
+    double x_init;
+    double y_init;
+    double myu;
+  }lasm;
+  
+  typedef struct
+  {
+    double x_init;
+    double y_init;
+    double myu1;
+    double myu2;
+    double lambda1;
+    double lambda2;
+    double randnum;
+  }lma;  
+   
+  typedef struct
+  {
+    double x_init;
+    double y_init;
+    double alpha;
+    double beta;
+  }slmm; 
+ 
+  slmm slmm_map;
+  lma lma_map;
+  lasm lasm_map;
   uint32_t rows = 1024;
   uint32_t cols = 1024;
   int lower_limit = 1;
@@ -61,8 +91,6 @@ namespace config
   std::string output = "output"; 
   
   std::string input_image_path = input + separator + image_name + extension;
-  std::string row_col_permuted_image_path = output + separator + row_col_permuted_image + std::to_string(rows) + "_" + std::to_string(rows) + std::to_string(cols) + extension;
-  std::string row_col_unpermuted_image_path = output + separator + row_col_unpermuted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;
   std::string encrypted_image_path = output + separator + encrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;
   std::string decrypted_image_path = output + separator + decrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;   
 }  
