@@ -48,6 +48,7 @@ namespace common
  static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
   static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
   
+  
 
   static inline void flattenImage(cv::Mat3b image,uint8_t *&img_vec)
   {

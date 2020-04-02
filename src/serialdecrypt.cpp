@@ -4,8 +4,8 @@
 
 int main()
 {
-  cv::Mat image;
-  image = cv::imread(config::encrypted_image_path,cv::IMREAD_COLOR);
+  cv::Mat3b image;
+  image = cv::imread("airplane_encrypted.png",cv::IMREAD_COLOR);
   if(!image.data)
   {
     cout<<"\nCould not load encrypted image from "<<config::encrypted_image_path<<"\n Exiting...";
@@ -14,7 +14,13 @@ int main()
   
   if(RESIZE_TO_DEBUG == 1)
   {
-    cv::resize(image,image,cv::Size(config::rows,config::cols),CV_INTER_LANCZOS4);
+    cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
+  }  
+  
+  if(PRINT_IMAGES == 1)
+  {
+    cout<<"\nEncrypted image = ";
+    common::printImageContents(image);
   }  
 
   uint32_t m = 0,n = 0,channels = 0,total = 0;
@@ -35,23 +41,17 @@ int main()
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);
   
-  common::flattenImage(image,enc_vec);
+      
+  cv::Mat3b imgout(m,n);
   pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   pattern::MTSequence(col_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   common::genLUTVec(row_swap_lut_vec,m);
   common::genLUTVec(col_swap_lut_vec,n);
-      
-
-  if(DEBUG_VECTORS == 1)
+  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);    
+  
+  /*if(DEBUG_VECTORS == 1)
   {
-    cout<<"\n\nOriginal image vector = ";
-    for(int i = 0; i < total * 3; ++i)
-    {
-      printf(" %d",enc_vec[i]);
-    }
     
     cout<<"\n\nRow random vector = ";
     for(int i = 0; i < total * 3; ++i)
@@ -66,12 +66,6 @@ int main()
     }
     
   } 
-   
-  /*Image Permutation Phase*/
-  
-  /*Row and Column Swapping*/
-  
-  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
   
   if(DEBUG_VECTORS == 1)
   {
@@ -86,32 +80,43 @@ int main()
     {
       printf(" %d",col_swap_lut_vec[i]);
     }
-  }  
-  
-  serial::rowColSwapDec(enc_vec,dec_vec,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
-  
-  if(DEBUG_VECTORS == 1)
-  {
-    cout<<"\nEncrypted image vector = ";
-    for(int i = 0; i < total * 3; ++i)
-    {
-      printf(" %d",enc_vec[i]);
-    }
-    
-    cout<<"\nDecrypted image vector = ";
-    for(int i = 0; i < total * 3; ++i)
-    {
-      printf(" %d",dec_vec[i]);
-    }
+  }*/  
 
+
+    //Unpermutation
+    for (int i = 0; i < 1; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            serial::rowRotator(imgout, image.row(j), j, n-row_swap_lut_vec[j], n);
+        }
+        
+        for (int j = 0; j < n; j++)
+        {
+            serial::columnRotator(image, imgout.col(j), j, m-col_swap_lut_vec[j], m);
+        }
+    }
+  
+   
+   image = image.reshape(1,image.rows * image.cols);
+   imgout = imgout.reshape(1,imgout.rows * imgout.cols);
+   
+  //Row and Column Swapping
+  //serial::rowColSwapDec(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
+  image = image.reshape(3,m);
+  imgout = imgout.reshape(3,m);
+  
+  if(PRINT_IMAGES == 1)
+  {
+    cout<<"\nImage after decryption = ";
+    common::printImageContents(image);
+    cout<<"\n\nimgout in serialdecrypt";
+    common::printImageContents(imgout);
   }
   
-  if(DEBUG_IMAGES == 1)
-  {
-   cv::Mat img_resize(m,n,CV_8UC3,dec_vec);
-   cv::imwrite(config::decrypted_image_path,img_resize);
-  }
-    
+  cv::imwrite("airplane_decrypted.png",image);
+  
+  
   return 0;
 }
 

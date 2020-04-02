@@ -6,13 +6,13 @@ namespace serial
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total);
-  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
-  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+  
     
   static inline void generateRelocationVec(uint32_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total);
   
-  static inline void rotateRow(cv::Mat3b &image,cv::Mat3b &image_row,int row_id,int offset);
   
+  static inline void columnRotator(cv::Mat3b &img, cv::Mat3b col, int index, int offset, int m);
+  static inline void rowRotator(cv::Mat3b &img, cv::Mat3b row, int index, int offset, int n);
 
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
   { 
@@ -80,7 +80,7 @@ namespace serial
   
   }
 
-  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapEnc(cv::Mat3b &img_in,cv::Mat3b &img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
@@ -98,18 +98,13 @@ namespace serial
         int pixel_index_in = i * n + j;
         int pixel_index_out = row * n + col;
         //printf("\n%d",i * m + j);
-        for(k = 0; k < 3; ++k)
-        {
-          int gray_level_index_in = pixel_index_in * 3 + k;
-          int gray_level_index_out = pixel_index_out * 3 + k;
-          img_out[gray_level_index_in] = img_in[gray_level_index_out];
-          //printf("\n%d",pixel_index_in * 3 + k);
-        } 
+        img_out.at<Vec3b>(pixel_index_in) = img_in.at<Vec3b>(pixel_index_out);
+        
        }
      }
   }
 
-  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapDec(cv::Mat3b &img_in,cv::Mat3b &img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
@@ -126,22 +121,8 @@ namespace serial
         int pixel_index_in = i * n + j;
         //printf("\npixel_index_in = %d",pixel_index_in);
         int pixel_index_out = row * n + col;
-        for(int k = 0; k < 3; ++k)
-        {
-          int gray_level_index_in = pixel_index_in * 3 + k;
-          int gray_level_index_out = pixel_index_out * 3 + k;
-          //printf("\ngray_level_index_in = %d",gray_level_index_in);
-          //printf("\ngray_level_index_out = %d",gray_level_index_out);
-          img_out[gray_level_index_out] = img_in[gray_level_index_in];
+        img_out.at<Vec3b>(pixel_index_out) = img_in.at<Vec3b>(pixel_index_in);
         
-          //if(img_out[gray_level_index_out] == 0)
-          //{
-              //printf("\nglio %d = %d * 3 + %d",gray_level_index_out,pixel_index_out,k);
-             //printf("\n\nglii %d = %d * 3 + %d",gray_level_index_in,pixel_index_in,k);
-            //printf("\n\n\nimg_in = %d",img_in[gray_level_index_in]);
-          //} 
-        
-        }
       }
     }
    }
@@ -176,54 +157,54 @@ namespace serial
   
   }
   
-  void columnRotator(Mat3b img, Mat3b col, int index, int offset, int M)
+  static inline void columnRotator(cv::Mat3b &img, cv::Mat3b col, int index, int offset, int m)
   {
     
     if (offset > 0)
     {
-        for (int k = 0; k < M; k++)
+        for (int k = 0; k < m; k++)
         {
-            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset) % M, 0);
+            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset) % m, 0);
         }
     }
     
     else if (offset < 0)
     {
-        for (int k = 0; k < M; k++)
+        for (int k = 0; k < m; k++)
         {
-            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset + M) % M, 0);
+            img.at<Vec3b>(k, index) = col.at<Vec3b>((k + offset + m) % m, 0);
         }
     }
     
     else
     {
-        for (int k = 0; k < M; k++)
+        for (int k = 0; k < m; k++)
         {
             img.at<Vec3b>(k, index) = col.at<Vec3b>(k, 0);
         }
     }
 }
 
-void rowRotator(Mat3b img, Mat3b row, int index, int offset, int N)
+static inline void rowRotator(cv::Mat3b &img, cv::Mat3b row, int index, int offset, int n)
 {
     // N elements per row
     if (offset > 0)
     {
-        for (int k = 0; k < N; k++)
+        for (int k = 0; k < n; k++)
         {
-            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset) % N);
+            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset) % n);
         }
     }
     else if (offset < 0)
     {
-        for (int k = 0; k < N; k++)
+        for (int k = 0; k < n; k++)
         {
-            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset + N) % N);
+            img.at<Vec3b>(index, k) = row.at<Vec3b>(0, (k + offset + n) % n);
         }
     }
     else
     {
-        for (int k = 0; k < N; k++)
+        for (int k = 0; k < n; k++)
         {
             img.at<Vec3b>(index, k) = row.at<Vec3b>(0, k);
         }
