@@ -1,5 +1,4 @@
 #Directories
-src
 shell_scripts
 Miscellaneous
 Tests
@@ -8,8 +7,14 @@ CURAND
 Papers
 Reports
 Chaotic-Maps
+include
+kernel
 #Files
 *.png
+src/*.png
+src/*.tar.gz
+src/main
+src/decrypt
 
 
 
