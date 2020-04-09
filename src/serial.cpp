@@ -5,10 +5,17 @@
 int main()
 {
   cv::Mat3b image;
-  long double time_array[20];
+  long double time_array[21];
+  long double total_time = 0.0000;
+  
+  /*Initialize time array*/
+  for(int i = 0; i < 20; ++i)
+  {
+   time_array[i] = 0;
+  }
   
   clock_t img_read_start = clock();
-  image = cv::imread("input/airplane.png",cv::IMREAD_COLOR);
+  image = cv::imread(config::input_image_path,cv::IMREAD_COLOR);
   clock_t img_read_end = clock();
   time_array[0] = 1000.0 * (img_read_end - img_read_start) / CLOCKS_PER_SEC;
  
@@ -50,25 +57,33 @@ int main()
   clock_t img_declare_end = clock();
   time_array[2] = 1000.0 * (img_declare_end - img_declare_start) / CLOCKS_PER_SEC;
   clock_t arr_declare_start = clock();
+  
   uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  
+  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  
+  uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);
+  uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);
+
   double *x = (double*)malloc(sizeof(double) * total * 3);
   double *y = (double*)malloc(sizeof(double) * total * 3);
+  
   uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   clock_t arr_declare_end = clock();
   time_array[3] = 1000.0 * (arr_declare_end - arr_declare_start) / CLOCKS_PER_SEC;
   
   clock_t row_vec_start = clock();
-  pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t row_vec_end = clock();
   time_array[4] = 1000.0 * (row_vec_end - row_vec_start) / CLOCKS_PER_SEC;
   
   clock_t col_vec_start = clock();
-  pattern::MTSequence(col_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t col_vec_end = clock();
   time_array[5] = 1000.0 * (col_vec_end - col_vec_start) / CLOCKS_PER_SEC;
   
@@ -87,132 +102,196 @@ int main()
   clock_t lut_vec_swap_end = clock();
   time_array[8] = 1000.0 * (lut_vec_swap_end - lut_vec_swap_start) / CLOCKS_PER_SEC;
   
+  clock_t row_random_vec_start = clock();
+  pattern::MTSequence(row_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  clock_t row_random_vec_end = clock();
+  time_array[18] = 1000.0 * (row_random_vec_end - row_random_vec_start) / CLOCKS_PER_SEC;
+  
+  clock_t col_random_vec_start = clock();
+  pattern::MTSequence(col_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  clock_t col_random_vec_end = clock();
+  time_array[19] = 1000.0 * (col_random_vec_end - col_random_vec_start) / CLOCKS_PER_SEC;
+  
+  
   
   if(DEBUG_VECTORS == 1)
   {
-    
     cout<<"\n\nRow random vector = ";
-    for(int i = 0; i < total * 3; ++i)
-    {
-      printf(" %d",row_random_vec[i]);
-    }
-    
+    common::printArray32(row_random_vec,total * 3);
     cout<<"\n\nColumn random vector = ";
-    for(int i = 0; i < total * 3; ++i)
-    {
-      printf(" %d",col_random_vec[i]);
-    }
-    
+    common::printArray32(col_random_vec,total * 3);
     cout<<"\nRow LUT vector after swap = ";
-    for(int i = 0; i < m; ++i)
-    {
-      printf(" %d",row_swap_lut_vec[i]);
-    }
-    
+    common::printArray32(row_swap_lut_vec,m);
     cout<<"\nColumn LUT vector after swap = ";
-    for(int i = 0; i < n; ++i)
-    {
-      printf(" %d",col_swap_lut_vec[i]);
-    }  
+    common::printArray32(col_swap_lut_vec,n);
+    cout<<"\nRow rotation vector = ";
+    common::printArray32(row_rotation_vec,total * 3);
+    cout<<"\nColumn rotation vector = ";
+    common::printArray32(col_rotation_vec,total * 3);  
   } 
-   
   
-   
+
+    
   /*Image Permutation Phase*/
   
-  /*Row and column Rotation*/
-  clock_t img_permute_start = clock();
-  for (int i = 0; i < 1; i++)
+  if(ROW_COL_ROTATE == 1)
   {
-      for (int j = 0; j < n; j++) // For each column
-      {
-          serial::columnRotator(imgout, image.col(j), j, col_swap_lut_vec[j], m);
-      }
-      for (int j = 0; j < m; j++) // For each row
-      {
-          serial::rowRotator(image, imgout.row(j), j, row_swap_lut_vec[j], n);
-      }
+   common::genLUTVec(U,m);
+   common::genLUTVec(V,n); 
+   common::rowColLUTGen(U,row_rotation_vec,V,col_rotation_vec,m,n);   
+   if(DEBUG_VECTORS == 1)
+   {
+     cout<<"\nU = ";
+     common::printArray32(U,m);
+     cout<<"\nV = ";
+     common::printArray32(V,n);
+   } 
+    
+    /*Row and column Rotation*/
+    clock_t img_permute_start = clock();
+    for (int i = 0; i < 1; i++)
+    {
+        for (int j = 0; j < n; j++) // For each column
+        {
+            serial::columnRotator(imgout, image.col(j), j, V[j], m);
+        }
+        
+        for (int j = 0; j < m; j++) // For each row
+        {
+            serial::rowRotator(image, imgout.row(j), j, U[j], n);
+        }
+  
+        clock_t img_permute_end = clock();
+        time_array[9] = 1000.0 * (img_permute_end - img_permute_start) / CLOCKS_PER_SEC;
+        
+        if(PRINT_IMAGES == 1)
+        {
+          cout<<"\nAfter Row and Column rotation image = ";
+          common::printImageContents(image);
+          cout<<"\n\nimgout = ";
+          common::printImageContents(imgout);
+        }
+        
+        if(DEBUG_INTERMEDIATE_IMAGES == 1)
+        {
+            clock_t write_row_col_rotated_image_start = clock();
+            cv::imwrite(config::row_col_rotated_image_path,image);
+            clock_t write_row_col_rotated_image_end = clock();
+            time_array[14] = 1000.0 * (write_row_col_rotated_image_end - write_row_col_rotated_image_start) / CLOCKS_PER_SEC;
+        }
+     }  
   }
-  clock_t img_permute_end = clock();
-  time_array[9] = 1000.0 * (img_permute_end - img_permute_start) / CLOCKS_PER_SEC;  
   
-  clock_t img_reshape_start = clock();  
-  image = image.reshape(1,image.rows * image.cols);
-  clock_t img_reshape_end = clock();
-  time_array[10] = 1000.0 * (img_reshape_end - img_reshape_end) / CLOCKS_PER_SEC;
   
-  imgout = imgout.reshape(1,imgout.rows * imgout.cols);
    
   /*Row and Column Swapping*/
-  clock_t row_col_swap_start = clock();
-  serial::rowColSwapEnc(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
-  clock_t row_col_swap_end = clock();
-  time_array[11] = 1000.0 * (row_col_swap_end - row_col_swap_start) / CLOCKS_PER_SEC;
-   
-  image = image.reshape(3,m);
-  imgout = imgout.reshape(3,m);
-  
-  if(PRINT_IMAGES == 1)
+  if(ROW_COL_SWAP == 1)
   {
-    cout<<"\nImage after encryption = ";
-    common::printImageContents(image);
-    cout<<"\n\nimgout in serial";
-    common::printImageContents(imgout);
-  }  
+    //common::initializeImageToZero(image);
+
+    clock_t row_col_swap_start = clock();
+    serial::rowColSwapEnc(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
+    clock_t row_col_swap_end = clock();
+    time_array[11] = 1000.0 * (row_col_swap_end - row_col_swap_start) / CLOCKS_PER_SEC;
+    
+    if(PRINT_IMAGES == 1)
+    {
+      
+      
+      cout<<"\nAfter row and column swapping image = ";
+      common::printImageContents(image);
+      cout<<"\n\nimgout = ";
+      common::printImageContents(imgout);
+    }    
+
+    if(DEBUG_INTERMEDIATE_IMAGES == 1)
+    {
+      
+      clock_t write_row_col_swapped_image_start = clock();
+      cv::imwrite(config::row_col_swapped_image_path,imgout);
+      clock_t write_row_col_swapped_image_end = clock();
+      time_array[15] = 1000.0 * (write_row_col_swapped_image_end - write_row_col_swapped_image_start) / CLOCKS_PER_SEC;
+    }
+  }
+ 
+  
   
   /*Diffusion Phase*/
   
-  /*Gray Level Transform*/
-  config::slmm_map.x_init = 0.1;
-  config::slmm_map.y_init = 0.1;
-  config::slmm_map.alpha = 1.00;
-  config::slmm_map.beta = 3.00;
-   
-  
-  x[0] = config::slmm_map.x_init;
-  y[0] = config::slmm_map.y_init;
-    
-  
-  clock_t chaotic_map_start = clock();
-  pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
-  clock_t chaotic_map_end = clock();
-  time_array[12] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
-  
-  clock_t gray_level_transform_start = clock();
-  serial::grayLevelTransform(image,random_array,total);
-  clock_t gray_level_transform_end = clock();
-  time_array[13] = 1000.0 * (gray_level_transform_end - gray_level_transform_start) / CLOCKS_PER_SEC;   
-  
-  clock_t img_write_start = clock();
-  cv::imwrite("airplane_encrypted.png",image);
-  clock_t img_write_end = clock();
-  time_array[14] = 1000.0 * (img_write_end - img_write_start) / CLOCKS_PER_SEC;
-   
-  long double total_time = 0.0000;
-  for(int i = 0; i < 15; ++i)
+  if(DIFFUSION == 1)
   {
-    if(i != 1)
+     /*Gray Level Transform*/
+     config::slmm_map.x_init = 0.1;
+     config::slmm_map.y_init = 0.1;
+     config::slmm_map.alpha = 1.00;
+     config::slmm_map.beta = 3.00;
+   
+     x[0] = config::slmm_map.x_init;
+     y[0] = config::slmm_map.y_init;
+    
+     clock_t chaotic_map_start = clock();
+     pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+     clock_t chaotic_map_end = clock();
+     time_array[12] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
+    
+     clock_t gray_level_transform_start = clock();
+     serial::grayLevelTransform(imgout,random_array,total);
+     clock_t gray_level_transform_end = clock();
+     time_array[13] = 1000.0 * (gray_level_transform_end - gray_level_transform_start) / CLOCKS_PER_SEC;
+     
+     if(PRINT_IMAGES == 1)
+     {
+        cout<<"\nAfter diffusion ";
+        //common::printImageContents(image);
+        cout<<"\n\nimgout = ";
+        common::printImageContents(imgout);
+     }     
+
+     
+     if(DEBUG_INTERMEDIATE_IMAGES == 1)
+     {
+       clock_t write_diffused_image_start = clock();
+       cv::imwrite(config::diffused_image_path,imgout);
+       clock_t write_diffused_image_end = clock();
+       time_array[16] = 1000.0 * (write_diffused_image_end - write_diffused_image_start) / CLOCKS_PER_SEC; 
+     }
+       
+ }
+ 
+
+ 
+  
+  if(PRINT_TIMING == 1)
+  {
+    for(int i = 0; i < 20; ++i)
     {
       total_time += time_array[i];
     }
-  } 
- 
-  printf("\nRead image = %Lf ms",time_array[0]);
-  printf("\nEmpty image declaration = %Lf ms",time_array[2]);
-  printf("\nVector declarations = %Lf ms",time_array[3]);
-  printf("\nGenerate row random vector = %Lf ms",time_array[4]);
-  printf("\nGenerate column random vector = %Lf ms",time_array[5]);
-  printf("\nGenerate row LUT vector = %Lf ms",time_array[6]);
-  printf("\nGenerate column LUT vector = %Lf ms",time_array[7]);
-  printf("\nSwap LUT vectors = %Lf ms",time_array[8]);
-  printf("\nImage permutation = %Lf ms",time_array[9]);
-  printf("\nImage reshape = %Lf ms",time_array[10]);
-  printf("\nRow and column swap = %Lf ms",time_array[11]);
-  printf("\nChaotic map = %Lf ms",time_array[12]);
-  printf("\nGray level transform = %Lf ms",time_array[13]);
-  printf("\nWrite encrypted image = %Lf ms",time_array[14]);
-  printf("\nTOtal time = %Lf ms",total_time); 
-    
+     
+    total_time = total_time + config::img_path_init_time;
+
+    printf("\nImage path initialization = %Lf ms",config::img_path_init_time);
+    printf("\nRead image = %Lf ms",time_array[0]);
+    printf("\nEmpty image declaration = %Lf ms",time_array[2]);
+    printf("\nVector declarations = %Lf ms",time_array[3]);
+    printf("\nGenerate row random vector = %Lf ms",time_array[4]);
+    printf("\nGenerate column random vector = %Lf ms",time_array[5]);
+    printf("\nGenerate row LUT vector = %Lf ms",time_array[6]);
+    printf("\nGenerate column LUT vector = %Lf ms",time_array[7]);
+    printf("\nSwap LUT vectors = %Lf ms",time_array[8]);
+    printf("\nGenerate row rotation vector = %Lf ms",time_array[18]);
+    printf("\nGenerate column rotation vector = %Lf ms",time_array[19]);
+    printf("\nImage permutation = %Lf ms",time_array[9]);
+    //
+    printf("\nRow and column swap = %Lf ms",time_array[11]);
+    printf("\nChaotic map = %Lf ms",time_array[12]);
+    printf("\nGray level transform = %Lf ms",time_array[13]);
+    printf("\nWrite row and column rotated image = %Lf ms",time_array[14]);
+    printf("\nWrite row and column swapped_image = %Lf ms",time_array[15]);
+    printf("\nWrite diffused image = %Lf ms",time_array[16]);
+    printf("\nTotal time = %Lf ms",total_time); 
+  }
+      
   return 0;
 }
 

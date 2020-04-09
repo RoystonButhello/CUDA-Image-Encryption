@@ -69,7 +69,7 @@ namespace pattern
     std::uniform_int_distribution<int> intGen(lower_limit,upper_limit);
  
     /* generate ten random numbers in [1,6] */
-    for (size_t i = 0; i < total * 3; ++i)
+    for (size_t i = 0; i < total; ++i)
     {
         auto random_number=intGen(seeder);
         random_array[i]=(uint32_t)random_number;

@@ -47,6 +47,7 @@ namespace common
   static inline double getRandomNumber(double lower_limit,double upper_limit);
  static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
   static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
+  static inline void initializeImageToZero(cv::Mat3b &image);
   
   
 
@@ -68,7 +69,7 @@ namespace common
   static inline void printImageContents(cv::Mat3b image)
   {
     //cout<<"\nIn printImageContents";
-    cout<<"\nImage Matrix=";
+    //cout<<"\nImage Matrix=";
     for(uint32_t i=0;i<image.rows;++i)
     { 
       printf("\n");
@@ -311,6 +312,7 @@ namespace common
 
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
   {
+
     int jCol=0,jRow=0;
     for(int i = m - 1; i > 0; i--)
     {
@@ -332,8 +334,21 @@ namespace common
       lut_vec[i] = i;
     }
   }
+  
+  static inline void initializeImageToZero(cv::Mat3b &image)
+  {
+    cout<<"\nIn initializeImageToZeros ";
+    for(int i = 0; i < image.rows;++i)
+    {
+      for(int j = 0; j < image.cols; ++i)
+      {
+        
+        image.at<Vec3b>(i,j) = 0;
+        
+      }
+    }
+  }
 
 }
-
 
 #endif

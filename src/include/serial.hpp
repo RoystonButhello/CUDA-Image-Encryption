@@ -74,6 +74,7 @@ namespace serial
     for(int i = 0; i < total * 3; ++i)
     {
       image.at<uint8_t>(i) = image.at<uint8_t>(i) ^ random_array[i];
+      //printf("\ni = %d",i);
     }
   
   }
