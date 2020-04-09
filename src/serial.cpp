@@ -175,9 +175,10 @@ int main()
         if(DEBUG_INTERMEDIATE_IMAGES == 1)
         {
             clock_t write_row_col_rotated_image_start = clock();
-            cv::imwrite(config::row_col_rotated_image_path,image);
+            bool write_rotated_image = cv::imwrite(config::row_col_rotated_image_path,image);
             clock_t write_row_col_rotated_image_end = clock();
             time_array[14] = 1000.0 * (write_row_col_rotated_image_end - write_row_col_rotated_image_start) / CLOCKS_PER_SEC;
+            cout<<"\nWrite rotated image = "<<write_rotated_image;
         }
      }  
   }
@@ -208,9 +209,10 @@ int main()
     {
       
       clock_t write_row_col_swapped_image_start = clock();
-      cv::imwrite(config::row_col_swapped_image_path,imgout);
+      bool write_swapped_image= cv::imwrite(config::row_col_swapped_image_path,imgout);
       clock_t write_row_col_swapped_image_end = clock();
       time_array[15] = 1000.0 * (write_row_col_swapped_image_end - write_row_col_swapped_image_start) / CLOCKS_PER_SEC;
+      cout<<"\nWrite swapped image = "<<write_swapped_image;
     }
   }
  
@@ -251,9 +253,10 @@ int main()
      if(DEBUG_INTERMEDIATE_IMAGES == 1)
      {
        clock_t write_diffused_image_start = clock();
-       cv::imwrite(config::diffused_image_path,imgout);
+       bool write_diffused_image = cv::imwrite(config::diffused_image_path,imgout);
        clock_t write_diffused_image_end = clock();
-       time_array[16] = 1000.0 * (write_diffused_image_end - write_diffused_image_start) / CLOCKS_PER_SEC; 
+       time_array[16] = 1000.0 * (write_diffused_image_end - write_diffused_image_start) / CLOCKS_PER_SEC;
+       cout<<"\nWrite diffused image = "<<write_diffused_image; 
      }
        
  }

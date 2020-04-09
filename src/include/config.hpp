@@ -78,8 +78,8 @@ namespace config
   slmm slmm_map;
   lma lma_map;
   lasm lasm_map;
-  uint32_t rows = 1024;
-  uint32_t cols = 1024;
+  uint32_t rows = 51;
+  uint32_t cols = 51;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen = 1234567890;

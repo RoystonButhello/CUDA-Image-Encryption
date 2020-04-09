@@ -159,9 +159,10 @@ int main()
     if(DEBUG_INTERMEDIATE_IMAGES == 1)
     {
       clock_t write_undiffused_image_start = clock();
-      cv::imwrite(config::undiffused_image_path,image);
+      bool write_undiffused_image = cv::imwrite(config::undiffused_image_path,image);
       clock_t write_undiffused_image_end = clock();
       time_array[13] = 1000.0 * (write_undiffused_image_end - write_undiffused_image_start) / CLOCKS_PER_SEC; 
+      cout<<"\nWrite undiffused image = "<<write_undiffused_image;
     }
    }  
     
@@ -191,7 +192,8 @@ int main()
     
     if(DEBUG_INTERMEDIATE_IMAGES == 1)
     {
-      cv::imwrite(config::row_col_unswapped_image_path,imgout);
+      bool write_unswapped_image = cv::imwrite(config::row_col_unswapped_image_path,imgout);
+      cout<<"\nWrite unswapped image = "<<write_unswapped_image;
     }
    }
   //Image Unpermutation Phase
@@ -240,9 +242,10 @@ int main()
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
       {
          clock_t img_write_start = clock();
-         cv::imwrite(config::row_col_unrotated_image_path,imgout);
+         bool write_unrotated_image = cv::imwrite(config::row_col_unrotated_image_path,imgout);
          clock_t img_write_end = clock();
-         time_array[12] = 1000.0 * (img_write_end - img_write_start) / CLOCKS_PER_SEC; 
+         time_array[12] = 1000.0 * (img_write_end - img_write_start) / CLOCKS_PER_SEC;
+         cout<<"\nWrite unrotated image = "<<write_unrotated_image; 
       } 
  
 }

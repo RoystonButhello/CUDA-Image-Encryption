@@ -9,6 +9,7 @@
 #include <chrono>   /*For time*/
 #include <fstream>  /*For writing to file*/ 
 #include <cstdint>  /*For standard variable types*/
+#include <cstdbool> /*For boolean variables*/
 #include <opencv2/opencv.hpp> /*For OpenCV*/
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
