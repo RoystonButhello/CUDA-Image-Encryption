@@ -5,10 +5,11 @@ namespace serial
 {
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
-  static inline void grayLevelTransform(cv::Mat3b &image,uint32_t *random_array,uint32_t total);
-  static inline void generateRelocationVec(uint32_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total);
+  static inline void grayLevelTransform(cv::Mat3b &image,uint16_t *random_array,uint32_t total);
+  static inline void rowColSwapEnc(cv::Mat3b &img_in,cv::Mat3b &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+  static inline void rowColSwapDec(cv::Mat3b &img_in,cv::Mat3b &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
   
-  
+  static inline void generateRelocationVec(uint16_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total);
   static inline void columnRotator(cv::Mat3b &img, cv::Mat3b col, int index, int offset, int m);
   static inline void rowRotator(cv::Mat3b &img, cv::Mat3b row, int index, int offset, int n);
 
@@ -69,7 +70,7 @@ namespace serial
   }
 
 
-  static inline void grayLevelTransform(cv::Mat3b &image,uint32_t *random_array,uint32_t total)
+  static inline void grayLevelTransform(cv::Mat3b &image,uint16_t *random_array,uint32_t total)
   {
     for(int i = 0; i < total * 3; ++i)
     {
@@ -79,7 +80,7 @@ namespace serial
   
   }
 
-  static inline void rowColSwapEnc(cv::Mat3b &img_in,cv::Mat3b &img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapEnc(cv::Mat3b &img_in,cv::Mat3b &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
@@ -103,7 +104,7 @@ namespace serial
      }
   }
 
-  static inline void rowColSwapDec(cv::Mat3b &img_in,cv::Mat3b &img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapDec(cv::Mat3b &img_in,cv::Mat3b &img_out,uint16_t *&rowSwapLUT,uint16_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
   {
     int get_row = 0, get_col = 0;
     int row_constant = (m * 3);
@@ -126,7 +127,7 @@ namespace serial
     }
    }
   
-  static inline void generateRelocationVec(uint32_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total)
+  static inline void generateRelocationVec(uint16_t *&rotation_vector,int a,int b,int c,int offset,double x,double y,uint32_t m,uint32_t n,uint32_t total)
   {
     uint64_t exponent = (uint64_t)pow(10,14);
     double unzero = 0.0000000001;

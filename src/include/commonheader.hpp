@@ -43,12 +43,18 @@ namespace common
   static inline uint64_t getManipulatedSystemTime();
   static inline uint32_t getLargestPrimeFactor(uint8_t n); 
   static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time);
-  static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
   
-  static inline double getRandomNumber(double lower_limit,double upper_limit);
- static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
-  static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
+  
+  static inline double getRandomDouble(double lower_limit,double upper_limit);
+  static inline int getRandomInteger(int lower_limit,int upper_limit);
+  static inline uint32_t getRandomUnsignedInteger32(int lower_limit,int upper_limit);
+  static inline uint8_t getRandomUnsignedInteger8(int lower_limit,int upper_limit);
+  
+ static inline void rowColLUTGen(uint16_t *&rowSwapLUT,uint16_t *&rowRandVec,uint16_t *&colSwapLUT,uint16_t *&colRandVec,uint32_t m,uint32_t n);
+  static inline void genLUTVec(uint16_t *&lutVec,uint32_t n);
   static inline void initializeImageToZero(cv::Mat3b &image);
+  static inline void writeParameterRecords(config::algorithm *parameter_records,char *filename,size_t number_of_records);
+  static inline void readParameterRecords(config::algorithm *&parameter_records, char *filename, size_t number_of_records);
   
   
 
@@ -289,18 +295,7 @@ namespace common
     }
   }
 
-  static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound)
-  {
-      //cout<<"\nIn getSeed";
-      std::random_device r;
-      std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
-      mt19937 seeder(seed);
-      uniform_int_distribution<int> intGen(lower_bound, upper_bound);
-      uint32_t alpha=intGen(seeder);
-      return alpha;
-  }
-  
-  static inline double getRandomNumber(double lower_limit,double upper_limit)
+  static inline double getRandomDouble(double lower_limit,double upper_limit)
   {
      std::random_device r;
      std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
@@ -310,8 +305,38 @@ namespace common
      auto randnum=realGen(seeder);
      return (double)randnum;
   }
-
-  static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
+  
+  static inline int getRandomInteger(int lower_limit,int upper_limit)
+  {
+     std::random_device r;
+     std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+     mt19937 seeder(seed);
+     uniform_int_distribution<int> intGen(lower_limit, upper_limit);
+     auto randnum=intGen(seeder);
+     return (int)randnum;
+  }
+  
+  static inline uint32_t getRandomUnsignedInteger32(int lower_limit,int upper_limit)
+  {
+     std::random_device r;
+     std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+     mt19937 seeder(seed);
+     uniform_int_distribution<uint32_t> intGen(lower_limit, upper_limit);
+     auto randnum=intGen(seeder);
+     return (uint32_t)randnum;
+  }
+  
+  static inline uint8_t getRandomUnsignedInteger8(int lower_limit,int upper_limit)
+  {
+     std::random_device r;
+     std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+     mt19937 seeder(seed);
+     uniform_int_distribution<uint8_t> intGen(lower_limit, upper_limit);
+     auto randnum=intGen(seeder);
+     return (uint8_t)randnum;
+  }
+  
+  static inline void rowColLUTGen(uint16_t *&rowSwapLUT,uint16_t *&rowRandVec,uint16_t *&colSwapLUT,uint16_t *&colRandVec,uint32_t m,uint32_t n)
   {
 
     int jCol=0,jRow=0;
@@ -328,7 +353,7 @@ namespace common
     } 
   }  
 
-  static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n)
+  static inline void genLUTVec(uint16_t *&lut_vec,uint32_t n)
   {
     for(int i = 0; i < n; ++i)
     {
@@ -349,7 +374,112 @@ namespace common
       }
     }
   }
+  
+  /*static inline void writeParameterRecords(config::algorithm *parameter_records,char *filename,size_t number_of_records)
+   { 
+     cout<<"\nIn writeParameterRecords";
+     FILE *outfile;
+     outfile = fopen(filename,"w");
+     if(outfile == NULL)
+     {
+       cout<<"\nCould not open "<<filename<<" for writing \nExiting...";
+       exit(0);
+     }
+     
+     for(int i = 0; i < number_of_records; ++i)
+     { 
+        printf("\n\nRECORD %d",i);
+        printf("\nx_init = %f",parameter_records[i].slmm_parameters.x_init);
+        printf("\ny_init = %f",parameter_records[i].slmm_parameters.y_init);
+        printf("\nalpha = %f",parameter_records[i].slmm_parameters.alpha);
+        printf("\nbeta = %f",parameter_records[i].slmm_parameters.beta);
+        printf("\nrotation_rounds = %d",parameter_records[i].rotation_rounds);
+        printf("\nswap_rounds = %d",parameter_records[i].swap_rounds);
+        printf("\nseed_lut_gen_1 = %d",parameter_records[i].seed_lut_gen_1);
+        printf("\nseed_lut_gen_2 = %d",parameter_records[i].seed_lut_gen_2);
+        printf("\nseed_row_rotate = %d",parameter_records[i].seed_row_rotate);
+        printf("\nseed_col_rotate = %d",parameter_records[i].seed_col_rotate);
+        //printf("\ninteger_lower_limit = %d",parameter_records[i].integer_lower_limit);
+        //printf("\ninteger_upper_limit = %d",parameter_records[i].integer_upper_limit);
+        //printf("\ndouble_lower_limit = %f",parameter_records[i].double_lower_limit);
+        //printf("\ndouble_upper_limit = %f",parameter_records[i].double_upper_limit);
+            
+     }
+     
+     size_t write_status = fwrite(&parameter_records, sizeof(config::algorithm), number_of_records, outfile);
+     fclose(outfile);
+     
+     if(write_status != number_of_records)
+     {
+       cout<<"\nError in writing to "<<filename;
+       printf("\nCould write only %ld of %ld records \nExiting...",write_status,number_of_records);
+       exit(0);
+     }
+     
+   }
+   
+   static inline void readParameterRecords(config::algorithm *&parameter_records, char *filename, size_t number_of_records)
+   {
+     cout<<"\nIn readParameterRecords";
+     FILE *infile;
+     infile = fopen(filename,"r");
+     if(infile == NULL)
+     {
+       cout<<"\nCould not open "<<filename<<" for reading \nExiting...";
+       exit(0);
+     }
+     size_t read_status = 0;
+     while( read_status = fread(&parameter_records, sizeof(config::algorithm), number_of_records, infile) )
+     {
+        
+       
+        if(read_status != number_of_records)
+        {
+          cout<<"\nError in reading from "<<filename;
+          printf("\nCould read only %ld of %ld records \nExiting...",read_status,number_of_records);
+          exit(0);
+        }
+        else
+        {
+          for(int i = 0; i < number_of_records; ++i)
+         { 
+           printf("\n\nRECORD %d",i);
+           printf("\nx_init = %f",parameter_records[i].slmm_parameters.x_init);
+           printf("\ny_init = %f",parameter_records[i].slmm_parameters.y_init);
+           printf("\nalpha = %f",parameter_records[i].slmm_parameters.alpha);
+           printf("\nbeta = %f",parameter_records[i].slmm_parameters.beta);
+           printf("\nrotation_rounds = %d",parameter_records[i].rotation_rounds);
+           printf("\nswap_rounds = %d",parameter_records[i].swap_rounds);
+           printf("\nseed_lut_gen_1 = %u",parameter_records[i].seed_lut_gen_1);
+           printf("\nseed_lut_gen_2 = %u",parameter_records[i].seed_lut_gen_2);
+           printf("\nseed_row_rotate = %u",parameter_records[i].seed_row_rotate);
+           printf("\nseed_col_rotate = %u",parameter_records[i].seed_col_rotate);
 
+         }        
+        }
+       
+       
+     }
+       
+   }
+   
+   static inline void generateParameterRecords(config::algorithm *&parameter_records,size_t number_of_records)
+   {
+     cout<<"\nIn generateParameterRecords";
+     for(int i = 0; i < number_of_records; ++i)
+     {
+       parameter_records[i].slmm_parameters.x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+       parameter_records[i].slmm_parameters.y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
+       parameter_records[i].slmm_parameters.alpha =  getRandomDouble(ALPHA_LOWER_LIMIT,ALPHA_UPPER_LIMIT);
+       parameter_records[i].slmm_parameters.beta =   getRandomDouble(double_lower_limit,double_upper_limit);
+       parameter_records[i].rotate_rounds =          getRandomUnsignedInteger8(ROTATE_ROUND_LOWER_LOWER_LIMIT,ROTATE_ROUND_UPPER_LIMIT);
+       parameter_records[i].swap_rounds =            getRandomUnsignedInteger8(SWAP_ROUND_LOWER_LIMIT,SWAP_ROUND_UPPER_LIMIT);
+       parameter_records[i].diffusion_rounds =       getRandomUnsignedInteger8(DIFFUSION_ROUND_LOWER_LIMIT,DIFFUSION_ROUND_UPPER_LIMIT);
+       parameters_records[i].seed_lut_gen_1 =        getRandomUnsignedInteger32();
+        
+     }
+   }*/  
+   
 }
 
 #endif

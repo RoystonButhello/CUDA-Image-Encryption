@@ -1,6 +1,7 @@
 #include "include/commonheader.hpp"
 #include "include/serial.hpp"
 #include "include/pattern.hpp"
+#include "include/diagnostics.hpp"
 
 int main()
 {
@@ -47,25 +48,26 @@ int main()
   cout<<"\nChannels = "<<channels;
   
   /*Vector Declarations*/
-  clock_t vec_declaration_start = clock();
-  uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
-  uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  clock_t arr_declare_start = clock();
   
-  uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint16_t *row_random_vec = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
+  uint16_t *col_random_vec = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
   
-  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
-  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint16_t *row_swap_lut_vec = (uint16_t*)calloc(m,sizeof(uint16_t));
+  uint16_t *col_swap_lut_vec = (uint16_t*)calloc(n,sizeof(uint16_t));
   
-  uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);  
-
-  double *x = (double*)malloc(sizeof(double) * total * 3);
-  double *y = (double*)malloc(sizeof(double) * total * 3);
+  uint16_t *row_rotation_vec = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
+  uint16_t *col_rotation_vec = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
   
-  uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
-  clock_t vec_declaration_end = clock();
-  time_array[1] = 1000.0 * (vec_declaration_end - vec_declaration_start) / CLOCKS_PER_SEC;
+  uint16_t *U = (uint16_t*)calloc(m,sizeof(uint16_t));
+  uint16_t *V = (uint16_t*)calloc(n,sizeof(uint16_t));
+  
+  double *x = (double*)calloc(total * 3,sizeof(double));
+  double *y = (double*)calloc(total * 3,sizeof(double));
+  
+  uint16_t *random_array = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
+  clock_t arr_declare_end = clock();
+  time_array[3] = 1000.0 * (arr_declare_end - arr_declare_start) / CLOCKS_PER_SEC;
   
   clock_t img_declaration_start =  clock();   
   cv::Mat3b imgout(m,n);
@@ -110,17 +112,17 @@ int main()
   if(DEBUG_VECTORS == 1)
   {
       cout<<"\nRow random vector = ";
-      common::printArray32(row_random_vec, total * 3);
+      common::printArray16(row_random_vec, total * 3);
       cout<<"\n\nColumn random vector = ";
-      common::printArray32(col_random_vec,total * 3);
+      common::printArray16(col_random_vec,total * 3);
       cout<<"\nRow LUT vector after swap = ";
-      common::printArray32(row_swap_lut_vec,m);
+      common::printArray16(row_swap_lut_vec,m);
       cout<<"\nColumn LUT vector after swap = ";
-      common::printArray32(col_swap_lut_vec,n);
+      common::printArray16(col_swap_lut_vec,n);
       cout<<"\nRow rotation vector = ";
-      common::printArray32(row_rotation_vec,total * 3);
+      common::printArray16(row_rotation_vec,total * 3);
       cout<<"\nColumn rotation vector = ";
-      common::printArray32(col_rotation_vec,total * 3);
+      common::printArray16(col_rotation_vec,total * 3);
   } 
   
   //Diffusion Phase
@@ -166,9 +168,7 @@ int main()
     }
    }  
     
-    /*Reshaping 3D image to 2D
-    image = image.reshape(1,image.rows * image.cols);
-    imgout = imgout.reshape(1,imgout.rows * imgout.cols);*/
+
      
 
   //Row and Column Unswapping
@@ -178,9 +178,7 @@ int main()
     serial::rowColSwapDec(image,imgout,row_swap_lut_vec,col_swap_lut_vec,m,n,total);
     clock_t swap_end = clock();
     time_array[11] = 1000.0 * (swap_end - swap_start) / CLOCKS_PER_SEC;
-  
-    //image = image.reshape(3,m);
-    //imgout = imgout.reshape(3,m);
+    
   
     if(PRINT_IMAGES == 1)
     {
@@ -192,7 +190,10 @@ int main()
     
     if(DEBUG_INTERMEDIATE_IMAGES == 1)
     {
+      clock_t write_unswapped_image_start = clock();
       bool write_unswapped_image = cv::imwrite(config::row_col_unswapped_image_path,imgout);
+      clock_t write_unswapped_image_end = clock();
+      time_array[14] = 1000.0 * (write_unswapped_image_end - write_unswapped_image_start) / CLOCKS_PER_SEC;
       cout<<"\nWrite unswapped image = "<<write_unswapped_image;
     }
    }
@@ -206,9 +207,9 @@ int main()
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\nU = ";
-        common::printArray32(U,m);
+        common::printArray16(U,m);
         cout<<"\nV = ";
-        common::printArray32(V,n);
+        common::printArray16(V,n);
       }      
 
       //Unpermutation
@@ -247,7 +248,8 @@ int main()
          time_array[12] = 1000.0 * (img_write_end - img_write_start) / CLOCKS_PER_SEC;
          cout<<"\nWrite unrotated image = "<<write_unrotated_image; 
       } 
- 
+      cv::Mat image_plain = cv::imread("output/airplane_1024_1024.png",IMREAD_COLOR);
+      diagnostics::checkImageMatrices(imgout,image_plain);
 }
   
   
@@ -274,11 +276,11 @@ int main()
     printf("\nSwap LUT = %LF ms",time_array[7]);
     printf("\nChaotic Map = %LF ms",time_array[8]);
     printf("\nGray level transform = %LF ms",time_array[9]);
-    printf("\nImage unrotation = %LF ms",time_array[10]);
     printf("\nRow and column unswap = %LF ms",time_array[11]);
+    printf("\nImage unrotation = %LF ms",time_array[10]);
     printf("\nWrite undiffused image = %LF ms",time_array[13]);
-    printf("\nWrite row and column unrotated image = %Lf ms",time_array[14]);
-    printf("\nWrite row and column unswapped image = %Lf ms",time_array[12]);
+    printf("\nWrite row and column unrotated image = %Lf ms",time_array[12]);
+    printf("\nWrite row and column unswapped image = %Lf ms",time_array[14]);
     printf("\nTotal time = %LF ms",total_time);  
   
   }

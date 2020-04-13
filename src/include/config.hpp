@@ -27,23 +27,48 @@
   #error "Unknown compiler"
 #endif
 
-#define RESIZE_TO_DEBUG            1
-#define DEBUG_VECTORS              0
+#define RESIZE_TO_DEBUG              1
+#define DEBUG_VECTORS                0
 
-#define DEBUG_IMAGES               1
-#define DEBUG_INTERMEDIATE_IMAGES  1
+#define DEBUG_IMAGES                 1
+#define DEBUG_INTERMEDIATE_IMAGES    1
 
-#define PRINT_TIMING               0
-#define PRINT_IMAGES               0
+#define PRINT_TIMING                 1
+#define PRINT_IMAGES                 0
 
-#define ROW_COL_SWAP               1
-#define ROW_COL_ROTATE             1
-#define DIFFUSION                  1
+#define ROW_COL_SWAP                 0
+#define ROW_COL_ROTATE               1
+#define DIFFUSION                    0
 
-#define LOWER_LIMIT                0.000001
-#define UPPER_LIMIT                0.09
-#define NUMBER_OF_BITS             16
-#define INIT                       100
+#define LOWER_LIMIT                  0.000001
+#define UPPER_LIMIT                  0.09
+
+#define ALPHA_LOWER_LIMIT            0.00
+#define ALHA_UPPER_LIMIT             1.00
+
+#define BETA_LOWER_LIMIT             1.00
+#define BETA_UPPER_LIMIT             3.00
+
+#define X_LOWER_LIMIT                0.1
+#define X_UPPER_LIMIT                0.9
+
+#define ROUNDS_LOWER_LIMIT           1
+#define ROUNDS_UPPER_LIMIT           2
+
+#define ROTATE_ROUNDS_LOWER_LIMIT    1
+#define ROTATE_ROUNDS_UPPER_LIMIT    2
+
+#define SWAP_ROUNDS_LOWER_LIMIT      1
+#define SWAP_ROUNDS_UPPER_LIMIT      2
+
+#define DIFFUSION_ROUNDS_LOWER_LIMIT 1
+#define DIFFUSION_ROUNDS_UPPER_LIMIT 2
+
+#define SEED_LOWER_LIMIT             3000000
+#define SEED_UPPER_LIMIT             1073741824       
+
+#define NUMBER_OF_BITS               16
+#define INIT                         100
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
 namespace config
@@ -75,27 +100,51 @@ namespace config
     double beta;
   }slmm; 
  
+  typedef struct 
+  {
+    
+    slmm slmm_parameters;
+    lasm lasm_parameters;
+    lma  lma_parameters;
+    uint8_t rotation_rounds;
+    uint8_t swap_rounds;
+    uint8_t diffusion_rounds;
+    uint32_t seed_lut_gen_1;
+    uint32_t seed_lut_gen_2;
+    uint32_t seed_row_rotate;
+    uint32_t seed_col_rotate; 
+  }algorithm;  
+  
   slmm slmm_map;
-  lma lma_map;
-  lasm lasm_map;
-  uint32_t rows = 51;
-  uint32_t cols = 51;
+  
+  uint32_t rows = 1024;
+  uint32_t cols = 1024;
+  
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen = 1234567890;
   int seed_row_rotate = 3712908712;
-  int seed_col_rotate = 380219812;
+  int seed_col_rotate = 380219812;  
+
+  enum class ChaoticMap
+  {
+    TwoDLogisticMap,
+    TwoDLogisticMapAdvanced,
+    TwoDLogisticAdjustedSineMap,
+    TwoDSineLogisticModulationMap,
+    TwoDLogisticAdjustedLogisticMap
+  };
+  
+  ChaoticMap chaotic_map = ChaoticMap::TwoDSineLogisticModulationMap;
   
   clock_t initialize_image_paths_start = std::clock();
   std::string image_name = "airplane";
-  std::string encrypted_image = image_name + "_encrypted_";
-  std::string decrypted_image = image_name + "_decrypted_";
   std::string row_col_rotated_image = image_name + "_row_col_rotated_";
   std::string row_col_unrotated_image = image_name + "_row_col_unrotated_";
   std::string row_col_swapped_image = image_name + "_row_col_swapped_";
   std::string row_col_unswapped_image = image_name + "_row_col_unswapped_";
-  std::string diffused_image = image_name + "_diffused_image_";
-  std::string undiffused_image = image_name + "_undiffused_image_";
+  std::string diffused_image = image_name + "_diffused_";
+  std::string undiffused_image = image_name + "_undiffused_";
   std::string string_rows = std::to_string(rows);
   std::string string_cols = std::to_string(cols);
   std::string final_encrypted = "_final_encrypted";

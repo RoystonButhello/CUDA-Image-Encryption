@@ -354,6 +354,5 @@ Tests
 
 # Files
 *.png
-src/serial
-src/serialdecrypt
+
 

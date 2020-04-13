@@ -4,10 +4,10 @@
 namespace pattern 
 {
   static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number);
-  static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint32_t *&random_array, double myu1, double myu2, double lambda1, double   lambda2,double randnum,int number);
-  static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint32_t *&random_array, double myu, uint32_t total);
-  static inline void MTSequence(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed);
-  static inline void twodSineLogisticModulationMap(double *&x, double *&y,uint32_t *&random_array,double alpha, double beta, uint32_t total);
+  static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double   lambda2,double randnum,int number);
+  static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total);
+  static inline void MTSequence(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed);
+  static inline void twodSineLogisticModulationMap(double *&x, double *&y,uint16_t *&random_array,double alpha, double beta, uint32_t total);
 
   static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number)
   {
@@ -29,7 +29,7 @@ namespace pattern
 
   }
 
-  static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint32_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number)
+  static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint16_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,double randnum,int number)
   {
     printf("\n In 2DLMA");
     int i = 0;
@@ -41,7 +41,7 @@ namespace pattern
     }
   }
 
-  static inline void twodLogisticAdjustedSineMap(double *&x,double *&y,uint32_t *&random_array,double myu,uint32_t total)
+  static inline void twodLogisticAdjustedSineMap(double *&x,double *&y,uint16_t *&random_array,double myu,uint32_t total)
   {
     printf("\nIn 2dLASM");
     int i=0;
@@ -59,7 +59,7 @@ namespace pattern
     }
   }
 
-  static inline void MTSequence(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed)
+  static inline void MTSequence(uint16_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed)
   {
     cout<<"\nIn MTMap";
     //std::random_device r;
@@ -76,7 +76,7 @@ namespace pattern
     }
   }
 
-  static inline void twodSineLogisticModulationMap(double *&x, double *&y,uint32_t *&random_array,double alpha, double beta, uint32_t total)
+  static inline void twodSineLogisticModulationMap(double *&x, double *&y,uint16_t *&random_array,double alpha, double beta, uint32_t total)
   {
     for(int i = 0; i < (total * 3) - 1; ++i)
     {
