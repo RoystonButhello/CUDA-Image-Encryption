@@ -77,7 +77,7 @@ int main()
   double *x = (double*)calloc(total * 3,sizeof(double));
   double *y = (double*)calloc(total * 3,sizeof(double));
   
-  uint16_t *random_array = (uint16_t*)calloc(total * 3,sizeof(uint16_t));
+  uint16_t *random_array = (uint16_t*)calloc(total * 3,sizeof(uint32_t));
   clock_t arr_declare_end = clock();
   time_array[3] = 1000.0 * (arr_declare_end - arr_declare_start) / CLOCKS_PER_SEC;
   
@@ -236,7 +236,7 @@ int main()
      y[0] = config::slmm_map.y_init;
     
      clock_t chaotic_map_start = clock();
-     pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+     pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * 3);
      clock_t chaotic_map_end = clock();
      time_array[11] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
     

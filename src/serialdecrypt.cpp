@@ -139,7 +139,7 @@ int main()
     y[0] = config::slmm_map.y_init;
   
     clock_t chaotic_map_start = clock();
-    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * 3);
     clock_t chaotic_map_end = clock();
     time_array[8] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
   

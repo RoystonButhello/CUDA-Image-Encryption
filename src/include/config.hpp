@@ -36,9 +36,9 @@
 #define PRINT_TIMING                 1
 #define PRINT_IMAGES                 0
 
-#define ROW_COL_SWAP                 0
-#define ROW_COL_ROTATE               0
-#define DIFFUSION                    0
+#define ROW_COL_SWAP                 1
+#define ROW_COL_ROTATE               1
+#define DIFFUSION                    1
 
 #define TWOD_LALM                    1
 #define TWOD_LASM                    1
