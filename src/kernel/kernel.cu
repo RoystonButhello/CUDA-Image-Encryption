@@ -19,7 +19,7 @@
         out[idx] = in[idx]^fractal[idx];
     } 
 
-    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint16_t *colRotate, uint16_t *rowRotate)
+    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -28,7 +28,7 @@
         out[OutDex]  = in[InDex];
     }
 
-    __global__ void Dec_GenCatMap(uint8_t *in, uint8_t *out, uint16_t *colRotate, uint16_t *rowRotate)
+    __global__ void Dec_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -111,13 +111,13 @@
     cudaDeviceSynchronize();  
   }
 
-  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint32_t *colRotate,uint32_t *rowRotate,dim3 blocks,dim3 block_size)
   {
     Enc_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
     cudaDeviceSynchronize();
   }
   
-  extern "C" void run_DecGenCatMap(uint8_t *in,uint8_t *out,uint16_t *colRotate,uint16_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_DecGenCatMap(uint8_t *in,uint8_t *out,uint32_t *colRotate,uint32_t *rowRotate,dim3 blocks,dim3 block_size)
   {
      Dec_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
      cudaDeviceSynchronize();    
@@ -149,10 +149,12 @@
   extern "C" void run_encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
   {
     encRowColSwap<<<blocks, block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
+    cudaDeviceSynchronize();
   }
   
   extern "C" void run_decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
   {
     decRowColSwap<<<blocks,block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
+    cudaDeviceSynchronize();
   }
 

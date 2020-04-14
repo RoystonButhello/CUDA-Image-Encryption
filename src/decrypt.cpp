@@ -6,12 +6,12 @@
 
 int main()
 {
-  cv::Mat3b image;
+  cv::Mat image;
   long double time_array[15];
   long double total_time = 0.0000;  
 
   clock_t img_read_start = clock();
-  image = cv::imread(config::diffused_image_path,cv::IMREAD_COLOR);
+  image = cv::imread("airplane_encrypted.png",cv::IMREAD_COLOR);
   clock_t img_read_end = clock();
   time_array[0] = 1000.0 * (img_read_end - img_read_start) / CLOCKS_PER_SEC;
     
@@ -60,23 +60,34 @@ int main()
   /*GPU Declarations*/
   uint8_t *gpu_enc_vec;
   uint8_t *gpu_dec_vec;
+  uint8_t *gpu_final_vec;
   uint32_t *gpu_row_swap_lut_vec;
   uint32_t *gpu_col_swap_lut_vec;
   cudaMallocManaged((void**)&gpu_enc_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_dec_vec,total * 3 * sizeof(uint8_t));
+  cudaMallocManaged((void**)&gpu_final_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
   
   //Flattening Image
   common::flattenImage(image,gpu_enc_vec);
   
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\nEncrypted image = ";
+    for(int i = 0; i < total * 3; ++i)
+    {
+      printf(" %d",gpu_enc_vec[i]);
+    }
+  }  
+
   clock_t row_random_vec_start = clock();
-  pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t row_random_vec_end = clock();
   time_array[3] = 1000.0 * (row_random_vec_end - row_random_vec_start) / CLOCKS_PER_SEC;
   
   clock_t col_random_vec_start = clock();
-  pattern::MTSequence(col_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t col_random_vec_end = clock();
   time_array[4] = 1000.0 * (col_random_vec_end - col_random_vec_start) / CLOCKS_PER_SEC;
   
@@ -109,17 +120,19 @@ int main()
     y[0] = config::slmm_map.y_init;
   
     clock_t chaotic_map_start = clock();
-    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * 3);
     clock_t chaotic_map_end = clock();
     time_array[8] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
   
     clock_t gray_level_transform_start = clock();
-    serial::grayLevelTransform(gpu_enc_vec,random_array,total);  
+    serial::grayLevelTransform(gpu_enc_vec,random_array,total * 3);  
     clock_t gray_level_transform_end = clock();
     time_array[9] = (gray_level_transform_end - gray_level_transform_start) / CLOCKS_PER_SEC;
   
     if(DEBUG_VECTORS == 1)
     {
+     
+      
     
       cout<<"\n\nRow random vector = ";
       for(int i = 0; i < total * 3; ++i)
@@ -154,6 +167,7 @@ int main()
     {
       if(DEBUG_VECTORS == 1)
       {
+         
          cout<<"\nUndiffused image = ";
          for(int i = 0; i < total * 3; ++i)
          {
@@ -162,10 +176,50 @@ int main()
       }
       
       cv::Mat img_reshape(m,n,CV_8UC3,gpu_enc_vec);
-      cv::imwrite(config::undiffused_image_path,img_reshape);
+      cv::imwrite("airplane_undiffused.png",img_reshape);
     }   
     
    }
+    
+   if(ROW_COL_SWAPPING == 1)
+  {
+    dim3 grid_dec_row_col_swap(m,n,1);
+    dim3 block_dec_row_col_swap(3,1,1);
+    run_decRowColSwap(gpu_enc_vec,gpu_dec_vec,gpu_row_swap_lut_vec,gpu_col_swap_lut_vec,grid_dec_row_col_swap,block_dec_row_col_swap);
+    
+    if(DEBUG_VECTORS == 1)
+    {
+      cout<<"\nAfter row and column unswapping";
+      cout<<"\ngpu_enc_vec = ";
+      for(int i = 0; i < total * 3; ++i)
+      {
+        printf("%d ",gpu_enc_vec[i]);
+        
+      }
+      cout<<"\ngpu_dec_vec = ";
+      for(int i = 0; i < total * 3; ++i)
+      {
+        printf(" %d",gpu_dec_vec[i]);
+      }
+    }
+    
+    
+    if(DEBUG_INTERMEDIATE_IMAGES == 1)
+    {
+      
+      cv::Mat img_reshape(m,n,CV_8UC3,gpu_dec_vec);
+      cv::imwrite("airplane_row_col_unswapped.png",img_reshape);
+      
+      if(PRINT_IMAGES == 1)
+      {
+        cout<<"\nImage after permutation = ";
+        common::printImageContents(img_reshape);
+        
+      }
+      
+    }
+  }
+    
     //Image Unpermutation Phase
     
     //Unpermutation
@@ -174,7 +228,7 @@ int main()
       
       dim3 grid_dec_gen_cat_map(m,n,1);
       dim3 block_dec_gen_cat_map(3,1,1);
-      run_DecGenCatMap(gpu_enc_vec,gpu_dec_vec,gpu_col_swap_lut_vec,gpu_row_swap_lut_vec,grid_dec_gen_cat_map,block_dec_gen_cat_map);
+      run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,gpu_col_swap_lut_vec,gpu_row_swap_lut_vec,grid_dec_gen_cat_map,block_dec_gen_cat_map);
       
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
       {
@@ -183,11 +237,11 @@ int main()
           cout<<"\nUnpermuted image = ";
           for(int i = 0; i < total * 3; ++i)
           {
-            printf(" %d",gpu_dec_vec[i]);
+            printf(" %d",gpu_final_vec[i]);
           }
         }
-        cv::Mat img_reshape(m,n,CV_8UC3,gpu_dec_vec);
-        cv::imwrite(config::row_col_unpermuted_image_path,img_reshape);
+        cv::Mat img_reshape(m,n,CV_8UC3,gpu_final_vec);
+        cv::imwrite("airplane_decrypted.png",img_reshape);
         
       }
     }

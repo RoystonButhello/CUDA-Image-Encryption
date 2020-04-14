@@ -46,7 +46,7 @@ namespace common
   
   static inline double getRandomNumber(double lower_limit,double upper_limit);
  static inline void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t m,uint32_t n);
-  static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
+  static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n);
   
 
   static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
@@ -307,8 +307,31 @@ namespace common
      auto randnum=realGen(seeder);
      return (double)randnum;
   }
+  
+  static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n)
+  {
+    for(int i = 0; i < n; ++i)
+    {
+      lut_vec[i] = i;
+    }
+  }
+  
+  static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
+  {
 
-
+    int jCol=0,jRow=0;
+    for(int i = m - 1; i > 0; i--)
+    {
+      jRow = rowRandVec[i] % i;
+      std::swap(rowSwapLUT[i],rowSwapLUT[jRow]);
+    }
+  
+    for(int i = n - 1; i > 0; i--)
+    {
+      jCol = colRandVec[i] % i;
+      std::swap(colSwapLUT[i],colSwapLUT[jCol]);
+    } 
+  }
 }
 
 

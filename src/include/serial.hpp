@@ -69,7 +69,7 @@ namespace serial
 
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total)
   {
-    for(int i = 0; i < total * 3; ++i)
+    for(int i = 0; i < total; ++i)
     {
       img_vec[i] = img_vec[i] ^ random_array[i];
     }

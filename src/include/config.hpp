@@ -28,25 +28,42 @@
   #error "Unknown compiler"
 #endif
 
-#define RESIZE_TO_DEBUG   1
-#define DEBUG_VECTORS     0
-#define DEBUG_IMAGES      1
-#define PRINT_TIMING      0
-#define PRINT_IMAGES      0
-#define LOWER_LIMIT       0.000001
-#define UPPER_LIMIT       0.09
-#define NUMBER_OF_BITS    16
-#define INIT              100
+#define RESIZE_TO_DEBUG                1
+#define DEBUG_VECTORS                  0
+#define DEBUG_IMAGES                   1
+#define DEBUG_INTERMEDIATE_IMAGES      1
+
+#define PRINT_TIMING                   0
+#define PRINT_IMAGES                   0
+
+#define LOWER_LIMIT                    0.000001
+#define UPPER_LIMIT                    0.09
+
+#define NUMBER_OF_BITS                 16
+#define INIT                           100
+
+#define ROW_COL_ROTATION               1
+#define DIFFUSION                      1
+#define ROW_COL_SWAPPING               1 
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
 namespace config
 {
-  uint32_t rows = 4;
-  uint32_t cols = 4;
+  uint32_t rows = 1024;
+  uint32_t cols = 1024;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen = 1234567890;
   
+  typedef struct
+  {
+    double x_init;
+    double y_init;
+    double alpha;
+    double beta;
+  }slmm; 
+
+  slmm slmm_map;
   
   std::string image_name = "airplane";
   std::string encrypted_image = image_name + "_encrypted_";

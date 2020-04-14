@@ -5,7 +5,7 @@
 
 int main()
 {
-  cv::Mat3b image;
+  cv::Mat image;
   long double time_array[16];
   long double total_time = 0.0000;
   clock_t img_read_start = clock();
@@ -65,22 +65,24 @@ int main()
   /*GPU Declarations*/
   uint8_t *gpu_img_vec;
   uint8_t *gpu_enc_vec;
+  uint8_t *gpu_final_vec;
   uint32_t *gpu_row_swap_lut_vec;
   uint32_t *gpu_col_swap_lut_vec;
   cudaMallocManaged((void**)&gpu_img_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_enc_vec,total * 3 * sizeof(uint8_t));
+  cudaMallocManaged((void**)&gpu_final_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
     
 
   /*Random Vector Generation*/
   clock_t row_vec_start = clock();
-  pattern::MTSequence(row_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t row_vec_end = clock();
   time_array[4] = 1000.0 * (row_vec_end - row_vec_start) / CLOCKS_PER_SEC;
   
   clock_t col_vec_start = clock();
-  pattern::MTSequence(col_random_vec,total,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
   clock_t col_vec_end = clock();
   time_array[5] = 1000.0 * (col_vec_end - col_vec_start) / CLOCKS_PER_SEC;
   
@@ -142,6 +144,7 @@ int main()
     run_EncGenCatMap(gpu_img_vec,gpu_enc_vec,gpu_col_swap_lut_vec,gpu_row_swap_lut_vec,grid_enc_gen_cat_map,block_enc_gen_cat_map);
     if(DEBUG_VECTORS == 1)
     {
+      cout<<"\nAfter row and column prmutation";
       cout<<"\ngpu_img_vec = ";
       for(int i = 0; i < total * 3; ++i)
       {
@@ -159,12 +162,13 @@ int main()
     {
       
       cv::Mat img_reshape(m,n,CV_8UC3,gpu_enc_vec);
-      cv::imwrite(config::row_col_permuted_image_path,img_reshape);
+      cv::imwrite("airplane_row_col_permuted.png",img_reshape);
       
       if(PRINT_IMAGES == 1)
       {
         cout<<"\nImage after permutation = ";
         common::printImageContents(img_reshape);
+        
       }
       
     }
@@ -172,7 +176,44 @@ int main()
     
   }
   
-  
+  if(ROW_COL_SWAPPING == 1)
+  {
+    dim3 grid_enc_row_col_swap(m,n,1);
+    dim3 block_enc_row_col_swap(3,1,1);
+    run_encRowColSwap(gpu_enc_vec,gpu_final_vec,gpu_row_swap_lut_vec,gpu_col_swap_lut_vec,grid_enc_row_col_swap,block_enc_row_col_swap);
+    
+    if(DEBUG_VECTORS == 1)
+    {
+      cout<<"\nAfter row and column swap";
+      cout<<"\ngpu_enc_vec = ";
+      for(int i = 0; i < total * 3; ++i)
+      {
+        printf("%d ",gpu_enc_vec[i]);
+        
+      }
+      cout<<"\ngpu_final_vec = ";
+      for(int i = 0; i < total * 3; ++i)
+      {
+        printf(" %d",gpu_final_vec[i]);
+      }
+    }
+    
+    
+    if(DEBUG_INTERMEDIATE_IMAGES == 1)
+    {
+      
+      cv::Mat img_reshape(m,n,CV_8UC3,gpu_final_vec);
+      cv::imwrite("airplane_row_col_swapped.png",img_reshape);
+      
+      if(PRINT_IMAGES == 1)
+      {
+        cout<<"\nImage after permutation = ";
+        common::printImageContents(img_reshape);
+        
+      }
+      
+    }
+  }
   
   
   /*Diffusion Phase*/
@@ -192,12 +233,12 @@ int main()
     
   
     clock_t chaotic_map_start = clock();
-    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total);
+    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * 3);
     clock_t chaotic_map_end = clock();
     time_array[12] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
   
     clock_t gray_level_transform_start = clock();
-    serial::grayLevelTransform(gpu_enc_vec,random_array,total);
+    serial::grayLevelTransform(gpu_final_vec,random_array,total * 3);
     clock_t gray_level_transform_end = clock();
     time_array[13] = 1000.0 * (gray_level_transform_end - gray_level_transform_start) / CLOCKS_PER_SEC;
     
@@ -207,14 +248,14 @@ int main()
       for(int i = 0; i < total * 3; ++i)
       {
        
-        printf(" %d",gpu_enc_vec[i]);
+        printf(" %d",gpu_final_vec[i]);
       }
     }   
   
-    cv::Mat img_reshape(m,n,CV_8UC3,gpu_enc_vec);
+    cv::Mat img_reshape(m,n,CV_8UC3,gpu_final_vec);
     
     clock_t img_write_start = clock();
-    cv::imwrite(config::diffused_image_path,img_reshape);
+    cv::imwrite("airplane_encrypted.png",img_reshape);
     clock_t img_write_end = clock();
     time_array[14] = 1000.0 * (img_write_end - img_write_start) / CLOCKS_PER_SEC;
      
