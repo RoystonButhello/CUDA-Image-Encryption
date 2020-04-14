@@ -37,20 +37,17 @@
 #define PRINT_IMAGES                 0
 
 #define ROW_COL_SWAP                 0
-#define ROW_COL_ROTATE               1
+#define ROW_COL_ROTATE               0
 #define DIFFUSION                    0
+
+#define TWOD_LALM                    1
+#define TWOD_LASM                    1
+#define TWOD_SLMM                    1
+#define TWOD_LMA                     1
+#define TWOD_LM                      1
 
 #define LOWER_LIMIT                  0.000001
 #define UPPER_LIMIT                  0.09
-
-#define ALPHA_LOWER_LIMIT            0.00
-#define ALHA_UPPER_LIMIT             1.00
-
-#define BETA_LOWER_LIMIT             1.00
-#define BETA_UPPER_LIMIT             3.00
-
-#define X_LOWER_LIMIT                0.1
-#define X_UPPER_LIMIT                0.9
 
 #define ROUNDS_LOWER_LIMIT           1
 #define ROUNDS_UPPER_LIMIT           2
@@ -67,7 +64,41 @@
 #define SEED_LOWER_LIMIT             3000000
 #define SEED_UPPER_LIMIT             1073741824       
 
-#define NUMBER_OF_BITS               16
+#define X_LOWER_LIMIT                0.10000000
+#define X_UPPER_LIMIT                0.90000000
+
+#define Y_LOWER_LIMIT                0.10000000
+#define Y_UPPER_LIMIT                0.90000000
+
+#define MYU_LOWER_LIMIT              0.50000000
+#define MYU_UPPER_LIMIT              0.90000000
+
+#define LASM_LOWER_LIMIT             0.40000000
+#define LASM_UPPER_LIMIT             0.90000000
+
+#define MYU1_LOWER_LIMIT             3.01000000
+#define MYU1_UPPER_LIMIT             3.29000000
+
+#define MYU2_LOWER_LIMIT             3.01000000
+#define MYU2_UPPER_LIMIT             3.30000000
+
+#define LAMBDA1_LOWER_LIMIT          0.16000000
+#define LAMBDA1_UPPER_LIMIT          0.21000000
+
+#define LAMBDA2_LOWER_LIMIT          0.14000000
+#define LAMBDA2_UPPER_LIMIT          0.15000000
+
+#define ALPHA_LOWER_LIMIT            0.90500000
+#define ALPHA_UPPER_LIMIT            1.00000000
+
+#define BETA_LOWER_LIMIT             2.97000000
+#define BETA_UPPER_LIMIT             3.20000000
+
+#define R_LOWER_LIMIT                1.11000000
+#define R_UPPER_LIMIT                1.19000000
+
+              
+#define NUMBER_OF_BITS               24
 #define INIT                         100
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
