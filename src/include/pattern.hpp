@@ -8,6 +8,8 @@ namespace pattern
   static inline void twodLogisticAdjustedSineMap(double *&x, double *&y, uint16_t *&random_array, double myu, uint32_t total);
   static inline void MTSequence(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed);
   static inline void twodSineLogisticModulationMap(double *&x, double *&y, double alpha, double beta, uint32_t total);
+  static inline void twodLogisticAdjustedLogisticMap(double *&x,double *&y,double *&x_bar,double *&y_bar,uint32_t *&random_array,double myu,uint32_t total);
+  static inline void twodLogisticMap(double *&x, double *&y, uint32_t *&random_array,double r,uint32_t total);
 
   static inline void twodLogisticMapBasic(double x,double y,double myu,double randnum,int number)
   {
@@ -84,7 +86,31 @@ namespace pattern
       y[i + 1] = alpha * (sin(M_PI * x[i + 1]) + beta) * y[i] * (1 - y[i]);
     }
   }
+  
+  static inline void twodLogisticAdjustedLogisticMap(double *&x,double *&y,double *&x_bar,double *&y_bar,uint32_t *&random_array,double myu,uint32_t total)
+  {
+    printf("\nIn 2dLALM");
+    for(uint32_t i = 0; i < total - 1; ++i)
+    {
+       random_array[i] = common::get_n_mantissa_bits_safe(x[i],NUMBER_OF_BITS);
+       x_bar[i + 1] = myu * (y[i] * 3) * x[i] * (1 - x[i]);
+       x[i + 1] = 4 * x_bar[i + 1] * (1 - x_bar[i + 1]);
+       y_bar[i + 1] = myu * (x[i + 1] + 3) * y[i] * (1 - y[i]);
+       y[i + 1] = 4 * y_bar[i + 1] * (1 - y_bar[i + 1]); 
+      
+    }
+  }
 
+  static inline void twodLogisticMap(double *&x, double *&y, uint32_t *&random_array,double r,uint32_t total)
+  {
+    printf("\nIn 2dLM");
+    for(uint32_t i = 0; i < total - 1; ++i)
+    {
+      random_array[i] = common::get_n_mantissa_bits_safe(x[i],NUMBER_OF_BITS);
+      x[i + 1] = r * ((3 * y[i]) + 1) * x[i] * (1 - x[i]);
+      y[i + 1] = r * ((3 * x[i + 1]) + 1) * y[i] * (1 - y[i]);
+    }
+  }
 }
 
 
