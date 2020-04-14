@@ -75,11 +75,11 @@ namespace pattern
     printf("\nIn 2dLALM");
     for(uint32_t i = 0; i < total - 1; ++i)
     {
-      random_array[i] = common::get_n_mantissa_bits_safe(x[i],NUMBER_OF_BITS);
-      x_bar[i + 1] = myu * (y[i] + 3) * x[i] * (1 - x[i]);
-      y_bar[i + 1] = 4 * x_bar[i + 1] * (1 - x_bar[i + 1]);
-      y_bar[i + 1] = myu * (x[i + 1] + 3) * y[i] * ( 1 - y[i]);
-      y[i + 1] = 4 * y_bar[i + 1] * (1 - y_bar[i + 1]);
+       random_array[i] = common::get_n_mantissa_bits_safe(x[i],NUMBER_OF_BITS);
+       x_bar[i + 1] = myu * (y[i] * 3) * x[i] * (1 - x[i]);
+       x[i + 1] = 4 * x_bar[i + 1] * (1 - x_bar[i + 1]);
+       y_bar[i + 1] = myu * (x[i + 1] + 3) * y[i] * (1 - y[i]);
+       y[i + 1] = 4 * y_bar[i + 1] * (1 - y_bar[i + 1]); 
       
     }
   }
