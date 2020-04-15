@@ -7,9 +7,13 @@ CURAND
 Papers
 Reports
 Chaotic-Maps
+src/proof
+
 #Files
 *.png
-
+src/*.tar.gz
+src/test.cpp
+src/test
 
 
 
