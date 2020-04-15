@@ -46,7 +46,7 @@ int main()
   
 
   /*CPU Declarations*/
-  Mat3b imgout(m,n);
+  cout<<"\nBefore CPU declarations";
   clock_t img_declare_start = clock();
   clock_t img_declare_end = clock();
   time_array[2] = 1000.0 * (img_declare_end - img_declare_start) / CLOCKS_PER_SEC;
@@ -57,22 +57,30 @@ int main()
   double *x = (double*)malloc(sizeof(double) * total * 3);
   double *y = (double*)malloc(sizeof(double) * total * 3);
   uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
-  //uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  //uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   clock_t arr_declare_end = clock();
   time_array[3] = 1000.0 * (arr_declare_end - arr_declare_start) / CLOCKS_PER_SEC;
+  cout<<"\nAfter CPU declarations";
   
   /*GPU Declarations*/
+  cout<<"\nBefore GPU declarations";
   uint8_t *gpu_img_vec;
   uint8_t *gpu_enc_vec;
   uint8_t *gpu_final_vec;
   uint32_t *gpu_row_swap_lut_vec;
   uint32_t *gpu_col_swap_lut_vec;
+  uint32_t *gpu_u;
+  uint32_t *gpu_v;
   cudaMallocManaged((void**)&gpu_img_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_enc_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_final_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
+  cudaMallocManaged((void**)&gpu_u,m * sizeof(uint32_t));
+  cudaMallocManaged((void**)&gpu_v,n * sizeof(uint32_t));
+  cout<<"\nAfter GPU declarations";
+  
     
 
   /*Random Vector Generation*/
@@ -101,6 +109,14 @@ int main()
   clock_t lut_vec_swap_end = clock();
   time_array[8] = 1000.0 * (lut_vec_swap_end - lut_vec_swap_start) / CLOCKS_PER_SEC;
   
+  pattern::MTSequence(row_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  pattern::MTSequence(col_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  
+  common::genLUTVec(gpu_u,m);
+  common::genLUTVec(gpu_v,n);
+  
+  common::rowColLUTGen(gpu_u,row_rotation_vec,gpu_v,col_rotation_vec,m,n); 
+  common::flattenImage(image,gpu_img_vec);
   
   if(DEBUG_VECTORS == 1)
   {
@@ -138,10 +154,11 @@ int main()
   
   if(ROW_COL_ROTATION == 1)
   {
-    common::flattenImage(image,gpu_img_vec);
+    cout<<"\nIn row col rotation";
+    
     dim3 grid_enc_gen_cat_map(m,n,1);
     dim3 block_enc_gen_cat_map(3,1,1);
-    run_EncGenCatMap(gpu_img_vec,gpu_enc_vec,gpu_col_swap_lut_vec,gpu_row_swap_lut_vec,grid_enc_gen_cat_map,block_enc_gen_cat_map);
+    run_EncGenCatMap(gpu_img_vec,gpu_enc_vec,gpu_v,gpu_u,grid_enc_gen_cat_map,block_enc_gen_cat_map);
     if(DEBUG_VECTORS == 1)
     {
       cout<<"\nAfter row and column prmutation";
@@ -178,6 +195,7 @@ int main()
   
   if(ROW_COL_SWAPPING == 1)
   {
+    cout<<"\nIn row col swapping";
     dim3 grid_enc_row_col_swap(m,n,1);
     dim3 block_enc_row_col_swap(3,1,1);
     run_encRowColSwap(gpu_enc_vec,gpu_final_vec,gpu_row_swap_lut_vec,gpu_col_swap_lut_vec,grid_enc_row_col_swap,block_enc_row_col_swap);
@@ -220,7 +238,7 @@ int main()
   
   if(DIFFUSION == 1)
   { 
-  
+    cout<<"\nIn diffusion";
     /*Gray Level Transform*/
     config::slmm_map.x_init = 0.1;
     config::slmm_map.y_init = 0.1;

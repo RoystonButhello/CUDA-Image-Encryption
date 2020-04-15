@@ -51,6 +51,8 @@ int main()
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
   uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
+  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   double *x = (double*)malloc(sizeof(double) * total * 3);
   double *y = (double*)malloc(sizeof(double) * total * 3);
   uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
@@ -61,6 +63,8 @@ int main()
   uint8_t *gpu_enc_vec;
   uint8_t *gpu_dec_vec;
   uint8_t *gpu_final_vec;
+  uint32_t *gpu_u;
+  uint32_t *gpu_v;
   uint32_t *gpu_row_swap_lut_vec;
   uint32_t *gpu_col_swap_lut_vec;
   cudaMallocManaged((void**)&gpu_enc_vec,total * 3 * sizeof(uint8_t));
@@ -68,9 +72,8 @@ int main()
   cudaMallocManaged((void**)&gpu_final_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
-  
-  //Flattening Image
-  common::flattenImage(image,gpu_enc_vec);
+  cudaMallocManaged((void**)&gpu_u,m * sizeof(uint32_t));
+  cudaMallocManaged((void**)&gpu_v,n * sizeof(uint32_t));
   
   if(DEBUG_VECTORS == 1)
   {
@@ -106,6 +109,16 @@ int main()
   clock_t swap_lut_end = clock();
   time_array[7] = 1000.0 * (swap_lut_end - swap_lut_start) / CLOCKS_PER_SEC;
   
+  pattern::MTSequence(row_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  pattern::MTSequence(col_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  
+  common::genLUTVec(gpu_u,m);
+  common::genLUTVec(gpu_v,n);
+  
+  common::rowColLUTGen(gpu_u,row_rotation_vec,gpu_v,col_rotation_vec,m,n);
+  
+  //Flattening Image
+  common::flattenImage(image,gpu_enc_vec);
   //Diffusion Phase
   
   if(DIFFUSION == 1)
@@ -228,7 +241,7 @@ int main()
       
       dim3 grid_dec_gen_cat_map(m,n,1);
       dim3 block_dec_gen_cat_map(3,1,1);
-      run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,gpu_col_swap_lut_vec,gpu_row_swap_lut_vec,grid_dec_gen_cat_map,block_dec_gen_cat_map);
+      run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,gpu_v,gpu_u,grid_dec_gen_cat_map,block_dec_gen_cat_map);
       
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
       {

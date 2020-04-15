@@ -52,10 +52,10 @@ namespace common
   static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
   {
     cout<<"\nIn flattenImage";
-    uint16_t m=0,n=0;
+    uint32_t m=0,n=0;
     uint32_t total=0;
-    m=(uint16_t)image.rows;
-    n=(uint16_t)image.cols;
+    m=(uint32_t)image.rows;
+    n=(uint32_t)image.cols;
     total=m*n;
     image=image.reshape(1,1);
     for(int i=0;i<total*3;++i)
@@ -310,6 +310,7 @@ namespace common
   
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n)
   {
+    cout<<"\nIn genLUTVec";
     for(int i = 0; i < n; ++i)
     {
       lut_vec[i] = i;
@@ -318,7 +319,7 @@ namespace common
   
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
   {
-
+    cout<<"\nIn rowColLUTGen";
     int jCol=0,jRow=0;
     for(int i = m - 1; i > 0; i--)
     {

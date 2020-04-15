@@ -74,7 +74,7 @@
       int gray_level_index_in = threadId;
       int row = rowSwapLUT[blockIdx.x];
       int col = colSwapLUT[blockIdx.y];
-      int pixel_index_out = row * gridDim.x + col;
+      int pixel_index_out = row * gridDim.y + col;
       int gray_level_index_out = pixel_index_out * blockDim.x + threadIdx.x;
       img_out[gray_level_index_in] = img_in[gray_level_index_out];
       
@@ -88,7 +88,7 @@
     int gray_level_index_in = threadId;
     int row = rowSwapLUT[blockIdx.x];
     int col = colSwapLUT[blockIdx.y];
-    int pixel_index_out = row * gridDim.x + col;
+    int pixel_index_out = row * gridDim.y + col;
     int gray_level_index_out = pixel_index_out * blockDim.x + threadIdx.x;
     img_out[gray_level_index_out] = img_in[gray_level_index_in];
   }   
