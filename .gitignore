@@ -351,6 +351,9 @@ Papers
 Reports
 shell_scripts
 Tests
+src/proof
+src/*.tar.gz
+
 
 # Files
 *.png
