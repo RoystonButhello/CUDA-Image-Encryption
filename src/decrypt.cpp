@@ -85,12 +85,12 @@ int main()
   }  
 
   clock_t row_random_vec_start = clock();
-  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
   clock_t row_random_vec_end = clock();
   time_array[3] = 1000.0 * (row_random_vec_end - row_random_vec_start) / CLOCKS_PER_SEC;
   
   clock_t col_random_vec_start = clock();
-  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen);
+  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
   clock_t col_random_vec_end = clock();
   time_array[4] = 1000.0 * (col_random_vec_end - col_random_vec_start) / CLOCKS_PER_SEC;
   
@@ -189,7 +189,7 @@ int main()
       }
       
       cv::Mat img_reshape(m,n,CV_8UC3,gpu_enc_vec);
-      cv::imwrite("airplane_undiffused.png",img_reshape);
+      cv::imwrite("mountain1080_undiffused.png",img_reshape);
     }   
     
    }

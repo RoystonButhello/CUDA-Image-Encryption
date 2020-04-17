@@ -53,7 +53,9 @@ namespace config
   uint32_t cols = 512;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
-  int seed_lut_gen = 1234567890;
+  int seed_lut_gen_1 = 1000;
+  int seed_lut_gen_2 = 2000;
+
   int seed_row_rotate = 1000000;
   int seed_col_rotate = 2000000;
   
