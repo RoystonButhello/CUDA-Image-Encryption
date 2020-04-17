@@ -11,6 +11,10 @@ src/proof
 
 #Files
 *.png
+*.tar.gz
+*.userprefs
+*.sln
+*.vcxproj
 src/*.tar.gz
 src/test.cpp
 src/test
