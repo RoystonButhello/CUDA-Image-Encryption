@@ -358,5 +358,6 @@ output
 
 # Files
 *.png
-src/serial
+src/test.cpp
+src/test
 *.tar.gz
