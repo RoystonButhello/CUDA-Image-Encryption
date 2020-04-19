@@ -98,7 +98,7 @@
 #define R_UPPER_LIMIT                1.19000000
 
               
-#define NUMBER_OF_BITS               24
+#define NUMBER_OF_BITS               16
 #define INIT                         100
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 

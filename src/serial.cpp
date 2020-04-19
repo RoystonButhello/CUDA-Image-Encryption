@@ -18,7 +18,7 @@ int main()
   }
   
   clock_t img_read_start = clock();
-  image = cv::imread(config::input_image_path,cv::IMREAD_COLOR);
+  image = cv::imread(config::input_image_path,cv::IMREAD_UNCHANGED);
   clock_t img_read_end = clock();
   time_array[0] = 1000.0 * (img_read_end - img_read_start) / CLOCKS_PER_SEC;
  
