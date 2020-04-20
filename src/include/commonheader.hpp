@@ -23,7 +23,7 @@ using namespace std;
 
 namespace common
 {
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec);
+  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t c);
   static inline void printImageContents(cv::Mat image);
   static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
 
@@ -49,7 +49,7 @@ namespace common
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n);
   
 
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec)
+  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t c)
   {
     cout<<"\nIn flattenImage";
     uint32_t m=0,n=0;
@@ -58,7 +58,7 @@ namespace common
     n=(uint32_t)image.cols;
     total=m*n;
     image=image.reshape(1,1);
-    for(int i=0;i<total*3;++i)
+    for(int i=0;i<total*c;++i)
     {
       img_vec[i]=image.at<uint8_t>(i);
     }

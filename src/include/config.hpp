@@ -52,7 +52,7 @@ namespace config
   uint32_t rows = 1024;
   uint32_t cols = 512;
   int lower_limit = 1;
-  int upper_limit = (rows * cols * 3) + 1;
+  int upper_limit = (rows * cols * 4) + 1;
   int seed_lut_gen_1 = 1000;
   int seed_lut_gen_2 = 2000;
 
@@ -69,7 +69,7 @@ namespace config
 
   slmm slmm_map;
   
-  std::string image_name = "airplane";
+  std::string image_name = "mountain";
   std::string encrypted_image = image_name + "_encrypted_";
   std::string decrypted_image = image_name + "_decrypted_";
   std::string extension = ".png";
