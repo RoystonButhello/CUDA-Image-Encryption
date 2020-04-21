@@ -15,9 +15,13 @@ src/proof
 *.userprefs
 *.sln
 *.vcxproj
-src/*.tar.gz
-src/test.cpp
-src/test
+
+src-parallel-3-channel/*.tar.gz
+src-parallel-4-channel/*.tar.gz
+src-parallel-3-channel/test.cpp
+src-parallel-4-channel/test.cpp
+src-parallel-3-channel/test
+src-parallel-4-channel/test
 
 
 

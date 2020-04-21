@@ -9,7 +9,7 @@ int main()
   long double time_array[16];
   long double total_time = 0.0000;
   clock_t img_read_start = clock();
-  image = cv::imread(config::input_image_path,cv::IMREAD_UNCHANGED);
+  image = cv::imread(config::input_image_path,cv::IMREAD_COLOR);
   clock_t img_read_end = clock();
   time_array[0] = 1000.0 * (img_read_end - img_read_start) / CLOCKS_PER_SEC;
  
@@ -22,7 +22,7 @@ int main()
   if(RESIZE_TO_DEBUG == 1)
   {
     clock_t img_resize_start = clock();
-    //cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
+    cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
     clock_t img_resize_end = clock();
     //time_array[1] = 1000.0 * (img_resize_end - img_resize_start) / CLOCKS_PER_SEC;
   }  
@@ -33,15 +33,15 @@ int main()
     common::printImageContents(image);
   }  
 
-  uint32_t m = 0,n = 0,c = 0,total = 0;
+  uint32_t m = 0,n = 0,channels = 0,total = 0;
   m = image.rows;
   n = image.cols;
-  c = image.channels();
+  channels = image.channels();
   total = m * n;
   
   cout<<"\nm = "<<m;
   cout<<"\nn = "<<n;
-  cout<<"\nChannels = "<<c;
+  cout<<"\nChannels = "<<channels;
   
   
 
@@ -52,13 +52,13 @@ int main()
   time_array[2] = 1000.0 * (img_declare_end - img_declare_start) / CLOCKS_PER_SEC;
   clock_t arr_declare_start = clock();
   
-  uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * c);
-  uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * c);
-  double *x = (double*)malloc(sizeof(double) * total * c);
-  double *y = (double*)malloc(sizeof(double) * total * c);
-  uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * c);
-  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * c);
-  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * c);
+  uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  double *x = (double*)malloc(sizeof(double) * total * 3);
+  double *y = (double*)malloc(sizeof(double) * total * 3);
+  uint32_t *random_array = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
+  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * 3);
   clock_t arr_declare_end = clock();
   time_array[3] = 1000.0 * (arr_declare_end - arr_declare_start) / CLOCKS_PER_SEC;
   cout<<"\nAfter CPU declarations";
@@ -72,9 +72,9 @@ int main()
   uint32_t *gpu_col_swap_lut_vec;
   uint32_t *gpu_u;
   uint32_t *gpu_v;
-  cudaMallocManaged((void**)&gpu_img_vec,total * c * sizeof(uint8_t));
-  cudaMallocManaged((void**)&gpu_enc_vec,total * c * sizeof(uint8_t));
-  cudaMallocManaged((void**)&gpu_final_vec,total * c * sizeof(uint8_t));
+  cudaMallocManaged((void**)&gpu_img_vec,total * 3 * sizeof(uint8_t));
+  cudaMallocManaged((void**)&gpu_enc_vec,total * 3 * sizeof(uint8_t));
+  cudaMallocManaged((void**)&gpu_final_vec,total * 3 * sizeof(uint8_t));
   cudaMallocManaged((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
   cudaMallocManaged((void**)&gpu_u,m * sizeof(uint32_t));
@@ -85,12 +85,12 @@ int main()
 
   /*Random Vector Generation*/
   clock_t row_vec_start = clock();
-  pattern::MTSequence(row_random_vec,total * c,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
+  pattern::MTSequence(row_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
   clock_t row_vec_end = clock();
   time_array[4] = 1000.0 * (row_vec_end - row_vec_start) / CLOCKS_PER_SEC;
   
   clock_t col_vec_start = clock();
-  pattern::MTSequence(col_random_vec,total * c,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
+  pattern::MTSequence(col_random_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
   clock_t col_vec_end = clock();
   time_array[5] = 1000.0 * (col_vec_end - col_vec_start) / CLOCKS_PER_SEC;
   
@@ -109,26 +109,26 @@ int main()
   clock_t lut_vec_swap_end = clock();
   time_array[8] = 1000.0 * (lut_vec_swap_end - lut_vec_swap_start) / CLOCKS_PER_SEC;
   
-  pattern::MTSequence(row_rotation_vec,total * c,config::lower_limit,config::upper_limit,config::seed_row_rotate);
-  pattern::MTSequence(col_rotation_vec,total * c,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  pattern::MTSequence(row_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  pattern::MTSequence(col_rotation_vec,total * 3,config::lower_limit,config::upper_limit,config::seed_col_rotate);
   
   common::genLUTVec(gpu_u,m);
   common::genLUTVec(gpu_v,n);
   
   common::rowColLUTGen(gpu_u,row_rotation_vec,gpu_v,col_rotation_vec,m,n); 
-  common::flattenImage(image,gpu_img_vec,c);
+  common::flattenImage(image,gpu_img_vec);
   
   if(DEBUG_VECTORS == 1)
   {
     
     cout<<"\n\nRow random vector = ";
-    for(int i = 0; i < total * c; ++i)
+    for(int i = 0; i < total * 3; ++i)
     {
       printf(" %d",row_random_vec[i]);
     }
     
     cout<<"\n\nColumn random vector = ";
-    for(int i = 0; i < total * c; ++i)
+    for(int i = 0; i < total * 3; ++i)
     {
       printf(" %d",col_random_vec[i]);
     }
@@ -157,19 +157,19 @@ int main()
     cout<<"\nIn row col rotation";
     
     dim3 grid_enc_gen_cat_map(m,n,1);
-    dim3 block_enc_gen_cat_map(c,1,1);
+    dim3 block_enc_gen_cat_map(3,1,1);
     run_EncGenCatMap(gpu_img_vec,gpu_enc_vec,gpu_v,gpu_u,grid_enc_gen_cat_map,block_enc_gen_cat_map);
     if(DEBUG_VECTORS == 1)
     {
       cout<<"\nAfter row and column prmutation";
       cout<<"\ngpu_img_vec = ";
-      for(int i = 0; i < total * c; ++i)
+      for(int i = 0; i < total * 3; ++i)
       {
         printf("%d ",gpu_img_vec[i]);
         
       }
       cout<<"\ngpu_enc_vec = ";
-      for(int i = 0; i < total * c; ++i)
+      for(int i = 0; i < total * 3; ++i)
       {
         printf(" %d",gpu_enc_vec[i]);
       }
@@ -197,20 +197,20 @@ int main()
   {
     cout<<"\nIn row col swapping";
     dim3 grid_enc_row_col_swap(m,n,1);
-    dim3 block_enc_row_col_swap(c,1,1);
+    dim3 block_enc_row_col_swap(3,1,1);
     run_encRowColSwap(gpu_enc_vec,gpu_final_vec,gpu_row_swap_lut_vec,gpu_col_swap_lut_vec,grid_enc_row_col_swap,block_enc_row_col_swap);
     
     if(DEBUG_VECTORS == 1)
     {
       cout<<"\nAfter row and column swap";
       cout<<"\ngpu_enc_vec = ";
-      for(int i = 0; i < total * c; ++i)
+      for(int i = 0; i < total * 3; ++i)
       {
         printf("%d ",gpu_enc_vec[i]);
         
       }
       cout<<"\ngpu_final_vec = ";
-      for(int i = 0; i < total * c; ++i)
+      for(int i = 0; i < total * 3; ++i)
       {
         printf(" %d",gpu_final_vec[i]);
       }
@@ -251,19 +251,19 @@ int main()
     
   
     clock_t chaotic_map_start = clock();
-    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * c);
+    pattern::twodSineLogisticModulationMap(x,y,random_array,config::slmm_map.alpha,config::slmm_map.beta,total * 3);
     clock_t chaotic_map_end = clock();
     time_array[12] = 1000.0 * (chaotic_map_end - chaotic_map_start) / CLOCKS_PER_SEC;
   
     clock_t gray_level_transform_start = clock();
-    serial::grayLevelTransform(gpu_final_vec,random_array,total * c);
+    serial::grayLevelTransform(gpu_final_vec,random_array,total * 3);
     clock_t gray_level_transform_end = clock();
     time_array[13] = 1000.0 * (gray_level_transform_end - gray_level_transform_start) / CLOCKS_PER_SEC;
     
     if(DEBUG_VECTORS == 1)
     {
       cout<<"\nDiffused image = ";
-      for(int i = 0; i < total * c; ++i)
+      for(int i = 0; i < total * 3; ++i)
       {
        
         printf(" %d",gpu_final_vec[i]);
@@ -313,5 +313,6 @@ int main()
     
   return 0;
 }
+
 
 

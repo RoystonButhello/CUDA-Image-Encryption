@@ -6,8 +6,8 @@ namespace serial
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void xorImageDec(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position);
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total);
-  static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
-  static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total);
+  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,uint32_t m,uint32_t n,uint8_t channels);
+  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,uint32_t m,uint32_t n,uint8_t channels);
 
 
   static inline void xorImageEnc(uint8_t *&img_vec,uint8_t *&img_xor_vec,uint32_t m,uint32_t n,uint16_t xor_position)
@@ -76,10 +76,9 @@ namespace serial
   
   }
 
-  static inline void rowColSwapEnc(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,uint32_t m,uint32_t n,uint8_t channels)
   {
-    int get_row = 0, get_col = 0;
-    int row_constant = (m * 3);
+    cout<<"\nIn rowColSwapEnc";
     int row = 0,col = 0;
     int element_index = 0;
   
@@ -93,22 +92,23 @@ namespace serial
         col = colSwapLUT[j];
         int pixel_index_in = i * n + j;
         int pixel_index_out = row * n + col;
+        //printf("\n%d = %d",pixel_index_in,pixel_index_out);  
         //printf("\n%d",i * m + j);
-        for(k = 0; k < 3; ++k)
+        for(k = 0; k < channels; ++k)
         {
-          int gray_level_index_in = pixel_index_in * 3 + k;
-          int gray_level_index_out = pixel_index_out * 3 + k;
+          int gray_level_index_in = pixel_index_in * channels + k;
+          int gray_level_index_out = pixel_index_out * channels + k;
           img_out[gray_level_index_in] = img_in[gray_level_index_out];
+          
           //printf("\n%d",pixel_index_in * 3 + k);
         } 
        }
      }
   }
 
-  static inline void rowColSwapDec(uint8_t *img_in,uint8_t *img_out,uint32_t *&rowSwapLUT,uint32_t *&colSwapLUT,uint32_t m,uint32_t n,uint32_t total)
+  static inline void rowColSwapDec(uint8_t *&img_in,uint8_t *&img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,uint32_t m,uint32_t n,uint8_t channels)
   {
-    int get_row = 0, get_col = 0;
-    int row_constant = (m * 3);
+    cout<<"\nIn rowColSwapDec";
     int row = 0,col = 0;
     int element_index = 0;
     printf("\nm = %d",m);
@@ -122,10 +122,12 @@ namespace serial
         int pixel_index_in = i * n + j;
         //printf("\npixel_index_in = %d",pixel_index_in);
         int pixel_index_out = row * n + col;
-        for(int k = 0; k < 3; ++k)
+        //printf("\n%d = %d",pixel_index_out,pixel_index_in);
+        for(int k = 0; k < channels; ++k)
         {
-          int gray_level_index_in = pixel_index_in * 3 + k;
-          int gray_level_index_out = pixel_index_out * 3 + k;
+          int gray_level_index_in = pixel_index_in * channels + k;
+          int gray_level_index_out = pixel_index_out * channels + k;
+          
           //printf("\ngray_level_index_in = %d",gray_level_index_in);
           //printf("\ngray_level_index_out = %d",gray_level_index_out);
           img_out[gray_level_index_out] = img_in[gray_level_index_in];

@@ -43,14 +43,16 @@
 #define INIT                           100
 
 #define ROW_COL_ROTATION               1
-#define DIFFUSION                      1
-#define ROW_COL_SWAPPING               1 
+#define DIFFUSION                      0
+#define ROW_COL_SWAPPING               0 
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
 namespace config
 {
-  uint32_t rows = 1024;
-  uint32_t cols = 512;
+  uint32_t rows = 235;
+  uint32_t cols = 2;
+  int read_mode = 24;
+  int write_mode = 0;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 4) + 1;
   int seed_lut_gen_1 = 1000;
@@ -58,6 +60,9 @@ namespace config
 
   int seed_row_rotate = 1000000;
   int seed_col_rotate = 2000000;
+  
+  
+
   
   typedef struct
   {
@@ -69,15 +74,27 @@ namespace config
 
   slmm slmm_map;
   
-  std::string image_name = "mountain";
+  std::string image_name = "ch4";
   std::string encrypted_image = image_name + "_encrypted_";
   std::string decrypted_image = image_name + "_decrypted_";
+  std::string swapped_image = image_name + "_swapped";
+  std::string unswapped_image =  image_name + "_unswapped";
+  std::string rotated_image = image_name + "_rotated";
+  std::string unrotated_image =  image_name + "_unrotated";
+  std::string diffused_image = image_name + "_diffused";
+  std::string undiffused_image = image_name + "_undiffused";
   std::string extension = ".png";
   std::string input = "input"; 
   
   std::string input_image_path = input + separator + image_name + extension;
-  std::string encrypted_image_path = encrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;
-  std::string decrypted_image_path = decrypted_image + std::to_string(rows) + "_" + std::to_string(cols) + extension;   
+  std::string swapped_image_path = swapped_image + extension;
+  std::string unswapped_image_path = unswapped_image + extension;
+  std::string rotated_image_path = rotated_image + extension;
+  std::string unrotated_image_path = unrotated_image + extension;
+  std::string diffused_image_path = diffused_image + extension;
+  std::string undiffused_image_path = undiffused_image + extension; 
+  std::string encrypted_image_path = encrypted_image + extension;
+  std::string decrypted_image_path = decrypted_image + extension;   
 }  
 
 #endif

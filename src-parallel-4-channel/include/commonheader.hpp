@@ -23,7 +23,7 @@ using namespace std;
 
 namespace common
 {
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t c);
+  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t channels);
   static inline void printImageContents(cv::Mat image);
   static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2);
 
@@ -34,9 +34,9 @@ namespace common
   static inline void writeVectorToFile32(uint32_t *&vec,int length,std::string filename);
   static inline void writeVectorToFile8(uint8_t *&vec,int length,std::string filename);
 
-  static inline void printArray8(uint8_t *&arr,int length);
-  static inline void printArray16(uint16_t *&arr,int length);
-  static inline void printArray32(uint32_t *&arr,int length);
+  static inline void printArray8(uint8_t *&arr,uint32_t length);
+  static inline void printArray16(uint16_t *&arr,uint32_t length);
+  static inline void printArray32(uint32_t *&arr,uint32_t length);
   
   static inline uint32_t getLast8Bits(uint32_t number);
   static inline uint64_t getManipulatedSystemTime();
@@ -49,19 +49,21 @@ namespace common
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n);
   
 
-  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t c)
+  static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint8_t channels)
   {
     cout<<"\nIn flattenImage";
     uint32_t m=0,n=0;
     uint32_t total=0;
     m=(uint32_t)image.rows;
     n=(uint32_t)image.cols;
-    total=m*n;
+    total=m * n;
+    int cnt = 0;
     image=image.reshape(1,1);
-    for(int i=0;i<total*c;++i)
+    for(int i=0;i<total * channels; ++i)
     {
-      img_vec[i]=image.at<uint8_t>(i);
-    }
+      img_vec[i] = image.at<uint8_t>(i);
+    }  
+        
   }
 
   static inline void printImageContents(Mat image)
@@ -208,15 +210,7 @@ namespace common
     file.close();
   }
 
-  static inline void printArray8(uint8_t *&arr,int length)
-  {
-    for(int i = 0; i < length; ++i)
-    {
-      printf("%d",arr[i]);
-    }
-  }
-
-  static inline void printArray16(uint16_t *&arr, int length)
+  static inline void printArray8(uint8_t *&arr, uint32_t length)
   {
     for(int i = 0; i < length; ++i)
     {
@@ -224,7 +218,15 @@ namespace common
     }
   }
 
-  static inline void printArray32(uint32_t *&arr, int length)
+  static inline void printArray16(uint16_t *&arr, uint32_t length)
+  {
+    for(int i = 0; i < length; ++i)
+    {
+      printf(" %d",arr[i]);
+    }
+  }
+
+  static inline void printArray32(uint32_t *&arr, uint32_t length)
   {
     for(int i = 0; i < length; ++i)
     {
