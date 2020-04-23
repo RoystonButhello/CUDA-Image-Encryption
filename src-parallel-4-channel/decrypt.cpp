@@ -50,10 +50,9 @@ static inline void imgDifference(cv::Mat plain_image,cv::Mat decrypted_image)
 int main()
 {
   cv::Mat image;
-  cv::Mat plain_image;
   
-  image = cv::imread(config::rotated_image_path,cv::IMREAD_UNCHANGED);
-  plain_image = cv::imread(config::input_image_path,cv::IMREAD_UNCHANGED);
+  
+  image = cv::imread(config::diffused_image_path,cv::IMREAD_UNCHANGED);
    
   if(!image.data)
   {
@@ -67,11 +66,11 @@ int main()
   }
   
   uint32_t m = 0,n = 0,channels = 0, total = 0;
+  double alpha = 0.00,beta = 0.00;
   m = image.rows;
   n = image.cols;
   channels = image.channels();
   total = m * n;
-  //cv::Mat4b img_dec(m,n);
   
   cout<<"\nRows = "<<m;
   cout<<"\nCols = "<<n;
@@ -93,11 +92,21 @@ int main()
   cudaMallocManaged((void**)&U,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&V,n * sizeof(uint32_t));
   
+  double *x = (double*)malloc(sizeof(double) * total * channels);
+  double *y = (double*)malloc(sizeof(double) * total * channels);
   uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
+  uint32_t *diffusion_array = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   
+  /*Vector generation for diffusion*/
+  x[0] = 0.1;
+  y[0] = 0.1;
+  alpha = 1.00;
+  beta = 3.00;
+  pattern::twodSineLogisticModulationMap(x,y,diffusion_array,alpha,beta,total * channels);   
+
   /*Vector generation for row and column swapping*/
   common::genLUTVec(row_swap_lut_vec,m);
   common::genLUTVec(col_swap_lut_vec,n);
@@ -108,8 +117,8 @@ int main()
   /*Vector generation for row and column rotation*/
   common::genLUTVec(U,m);
   common::genLUTVec(V,n);
-  pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_row_rotate);
-  pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  pattern::MTSequence(row_rotation_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  pattern::MTSequence(col_rotation_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_col_rotate);
   common::rowColLUTGen(U,row_rotation_vec,V,col_rotation_vec,m,n);     
   
   /*Flattening image*/
@@ -129,6 +138,24 @@ int main()
     common::printArray32(col_swap_lut_vec,n);*/
   }
   
+  if(DIFFUSION == 1)
+  {
+    cout<<"\nIn Undiffusion";
+    serial::grayLevelTransform(enc_vec,diffusion_array,total * channels);
+
+    if(DEBUG_VECTORS == 1)
+    {
+      printf("\n\nUndiffused image = ");
+      common::printArray8(enc_vec,total * channels);
+    }
+     
+    if(DEBUG_INTERMEDIATE_IMAGES == 1)
+    {
+      cv::Mat img_reshape(m,n,CV_8UC4,enc_vec);
+      cv::imwrite(config::undiffused_image_path,img_reshape);
+    }
+  }  
+
   if(ROW_COL_SWAPPING == 1)
   {
     /*Row and Column Unswapping*/
@@ -141,7 +168,7 @@ int main()
   
     if(DEBUG_VECTORS == 1)
     {
-      printf("\n\nUnswapped image = ");
+      printf("\n\nUndiffused and Unswapped image = ");
       common::printArray8(dec_vec,total * channels);
     }
   
@@ -161,19 +188,18 @@ int main()
     dim3 dec_gen_cat_map_grid(m,n,1);
     dim3 dec_gen_cat_map_blocks(channels,1,1);
   
-    run_DecGenCatMap(enc_vec,final_vec,V,U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
+    run_DecGenCatMap(dec_vec,final_vec,V,U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
   
     if(DEBUG_VECTORS == 1)
     {
-      printf("\n\nUnrotated image = ");
-      common::printArray8(dec_vec,total * channels);
+      printf("\n\nUndiffused Unswapped and Unrotated image = ");
+      common::printArray8(final_vec,total * channels);
     }
   
     if(DEBUG_INTERMEDIATE_IMAGES == 1)
     {
       //printf("\nindex = %d",cnt);
       cv::Mat img_reshape(m,n,CV_8UC4,final_vec);
-      imgDifference(img_reshape,plain_image);
       cv::imwrite(config::unrotated_image_path,img_reshape);  
     }  
   }

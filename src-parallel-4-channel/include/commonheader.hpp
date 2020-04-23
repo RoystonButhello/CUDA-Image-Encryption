@@ -45,7 +45,7 @@ namespace common
   static inline uint32_t getSeed(uint8_t lower_bound,uint8_t upper_bound);
   
   static inline double getRandomNumber(double lower_limit,double upper_limit);
- static inline void rowColLUTGen(uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t m,uint32_t n);
+ static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n);
   
 

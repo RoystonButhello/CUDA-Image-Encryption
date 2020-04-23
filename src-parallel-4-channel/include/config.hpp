@@ -39,18 +39,18 @@
 #define LOWER_LIMIT                    0.000001
 #define UPPER_LIMIT                    0.09
 
-#define NUMBER_OF_BITS                 16
+#define NUMBER_OF_BITS                 31
 #define INIT                           100
 
 #define ROW_COL_ROTATION               1
-#define DIFFUSION                      0
-#define ROW_COL_SWAPPING               0 
+#define DIFFUSION                      1
+#define ROW_COL_SWAPPING               1 
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
 namespace config
 {
   uint32_t rows = 235;
-  uint32_t cols = 2;
+  uint32_t cols = 235;
   int read_mode = 24;
   int write_mode = 0;
   int lower_limit = 1;
@@ -60,6 +60,7 @@ namespace config
 
   int seed_row_rotate = 1000000;
   int seed_col_rotate = 2000000;
+  int seed_diffusion = 3000000;
   
   
 
@@ -74,7 +75,7 @@ namespace config
 
   slmm slmm_map;
   
-  std::string image_name = "ch4";
+  std::string image_name = "mountain_alpha";
   std::string encrypted_image = image_name + "_encrypted_";
   std::string decrypted_image = image_name + "_decrypted_";
   std::string swapped_image = image_name + "_swapped";

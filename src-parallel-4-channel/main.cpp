@@ -62,6 +62,7 @@ int main()
   }
   
   uint32_t m = 0,n = 0,channels = 0, total = 0;
+  double alpha = 0.00,beta = 0.00;
   m = image.rows;
   n = image.cols;
   channels = image.channels();
@@ -86,16 +87,19 @@ int main()
   cudaMallocManaged((void**)&U,m * sizeof(uint32_t));
   cudaMallocManaged((void**)&V,n * sizeof(uint32_t));
   
+  double *x = (double*)malloc(sizeof(double) * total * channels);
+  double *y = (double*)malloc(sizeof(double) * total * channels);
   uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
+  uint32_t *diffusion_array = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   
   /*Vector generation for row and column rotation*/
   common::genLUTVec(U,m);
   common::genLUTVec(V,n);
-  pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_row_rotate);
-  pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_col_rotate);
+  pattern::MTSequence(row_rotation_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_row_rotate);
+  pattern::MTSequence(col_rotation_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_col_rotate);
   common::rowColLUTGen(U,row_rotation_vec,V,col_rotation_vec,m,n);   
 
   /*Vector generation for row and column swapping*/
@@ -103,8 +107,14 @@ int main()
   common::genLUTVec(col_swap_lut_vec,n);
   pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
   pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
-  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);  
-  
+  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
+ 
+  /*Vector generation for diffusion*/
+  x[0] = 0.1;
+  y[0] = 0.1;
+  alpha = 1.00;
+  beta = 3.00;
+  pattern::twodSineLogisticModulationMap(x,y,diffusion_array,alpha,beta,total * channels);
 
   
   /*Flattening image*/
@@ -137,12 +147,24 @@ int main()
       printf("\n\nRotated image = ");
       common::printArray8(enc_vec,total * channels);
     }
-  
+    
+    //dim3 dec_gen_cat_map_grid(m,n,1);
+    //dim3 dec_gen_cat_map_blocks(channels,1,1);
+    //run_DecGenCatMap(enc_vec,final_vec,V,U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
+    //vecDifference(img_vec,final_vec,total * channels);
+    
+    /*if(DEBUG_VECTORS == 1)
+    {
+      printf("\n\nUnrotated image = ");
+      common::printArray8(final_vec,total * channels);
+      
+    }*/
     if(DEBUG_INTERMEDIATE_IMAGES == 1)
     {
       cv::Mat img_reshape(m,n,CV_8UC4,enc_vec);
-      cv::imwrite(config::rotated_image_path,img_reshape);  
+      cv::imwrite(config::rotated_image_path,img_reshape);
     }
+    
  } 
   
   if(ROW_COL_SWAPPING == 1)
@@ -166,6 +188,23 @@ int main()
     }
   
   }
+  
+  if(DIFFUSION == 1)
+  {
+    cout<<"\nIn Diffusion";
+    serial::grayLevelTransform(final_vec,diffusion_array,total * channels);
 
+    if(DEBUG_VECTORS == 1)
+    {
+      printf("\n\nRotated Swapped and Diffused image = ");
+      common::printArray8(final_vec,total * channels);
+    }
+     
+    if(DEBUG_INTERMEDIATE_IMAGES == 1)
+    {
+      cv::Mat img_reshape(m,n,CV_8UC4,final_vec);
+      cv::imwrite(config::diffused_image_path,img_reshape);
+    }
+  }
   return 0;
 }

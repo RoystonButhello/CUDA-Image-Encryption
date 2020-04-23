@@ -23,8 +23,8 @@
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
-        int InDex    = ((gridDim.y)*blockIdx.x + blockIdx.y) * 3  + threadIdx.x;
-        int OutDex   = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * 3  + threadIdx.x;
+        int InDex    = ((gridDim.y)*blockIdx.x + blockIdx.y) * blockDim.x  + threadIdx.x;
+        int OutDex   = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * blockDim.x  + threadIdx.x;
         out[OutDex]  = in[InDex];
     }
 
@@ -32,8 +32,8 @@
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
-        int OutDex   = ((gridDim.y)*blockIdx.x + blockIdx.y) * 3  + threadIdx.x;
-        int InDex    = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * 3  + threadIdx.x;
+        int OutDex   = ((gridDim.y)*blockIdx.x + blockIdx.y) * blockDim.x  + threadIdx.x;
+        int InDex    = ((gridDim.y)*((blockIdx.x + colShift)%gridDim.x) + (blockIdx.y + rowShift)%gridDim.y) * blockDim.x  + threadIdx.x;
         out[OutDex]  = in[InDex];
     }
    
