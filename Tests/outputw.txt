@@ -1,0 +1,95 @@
+
+
+
+
+In Writestructure
+
+WRITING NUMBER OF ROUNDS TO FILE
+pointer position after writing number of rounds = 1
+Size of a round = 20
+Size of an lm_parameter = 24
+SIze of an lma parameter = 48
+Size of an slmm_parameter = 32
+Size of an lasm_parameter = 24
+Size of an lalm_parameter = 24
+
+INITIALIZING ALL PARAMETERS TO ZERO
+Round 0
+Round 1
+Number of rounds = 2
+
+ASSIGNING BASIC PARAMETERS
+Round 0
+map = 2
+seed_lut_gen_1 = 8585906
+seed_lut_gen_2 = 5552328
+seed_row_rotate = 7565050
+seed_col_rotate = 3584468
+Round 1
+map = 2
+seed_lut_gen_1 = 3997656
+seed_lut_gen_2 = 6413999
+seed_row_rotate = 7453174
+seed_col_rotate = 5580716
+
+WRITING BASIC PARAMETERS TO FILE
+fseek status before writing basic parameters to file = 0
+pointer position before writing basic parameters to file = 2
+fwrite status after writing basic parameters to file = 1
+pointer position after writing basic parameters to file = 41
+
+ASSIGNING PARAMETERS TO THE SELECTED MAP AND RUNNING IT
+Round 0
+
+Generating random vectors through LMA
+ In 2dLMA
+ In 2dLMA
+ In 2dLMA
+ In 2dLMA
+i = 0
+x_init = 0.381556
+y_init = 0.330881
+myu1 = 3.099627
+myu2 = 3.248535
+lambda1 = 0.172390
+lambda2 = 0.147473
+x =  0.381556 0.750296 0.680113 0.774117 0.635334 0.829536 0.510473 0.921289 0.244697 0.712607 0.653899 0.820615
+y =  0.330881 0.759310 0.760732 0.735809 0.803872 0.647015 0.922555 0.339980 0.900313 0.332874 0.831269 0.598862
+row_random_vec = 60362 65406 43293 5194 64734 28619 20514 26874 21168 29596 46204 16349
+col_random_vec =  60362 65406 43293 5194 64734 28619 20514 26874 21168 29596 46204 16349
+row_rotation_vec =  60362 65406 43293 5194 64734 28619 20514 26874 21168 29596 46204 16349
+col_rotation_vec =  60362 65406 43293 5194 64734 28619 20514 26874 21168 29596 46204 16349
+Round 1
+
+Generating random vectors through LMA
+ In 2dLMA
+ In 2dLMA
+ In 2dLMA
+ In 2dLMA
+i = 1
+x_init = 0.651830
+y_init = 0.195050
+myu1 = 3.163668
+myu2 = 3.227371
+lambda1 = 0.163047
+lambda2 = 0.147918
+x =  0.651830 0.724190 0.688351 0.817359 0.497777 0.928359 0.230010 0.694168 0.687640 0.783282 0.610640 0.878482
+y =  0.195050 0.588370 0.922242 0.395430 0.918181 0.346713 0.906104 0.313237 0.797711 0.671877 0.880098 0.475220
+row_random_vec = 43076 60478 5517 35852 12223 37168 35961 4350 10791 29220 31053 26913
+col_random_vec =  43076 60478 5517 35852 12223 37168 35961 4350 10791 29220 31053 26913
+row_rotation_vec =  43076 60478 5517 35852 12223 37168 35961 4350 10791 29220 31053 26913
+col_rotation_vec =  43076 60478 5517 35852 12223 37168 35961 4350 10791 29220 31053 26913
+
+WRITING PARAMETERS TO FILE
+Round 0
+fseek status before writing lma_parameters = 0
+pointer position before writing lma_parameters = 42
+fwrite status after writing lma_parameters = 1
+pointer position after writing lma_parameters = 137
+After writing lma_parameters to parameters.bin
+Round 1
+fseek status before writing lma_parameters = 0
+pointer position before writing lma_parameters = 138
+fwrite status after writing lma_parameters = 1
+pointer position after writing lma_parameters = 233
+After writing lma_parameters to parameters.bin
