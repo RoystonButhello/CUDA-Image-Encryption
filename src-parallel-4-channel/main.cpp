@@ -4,48 +4,6 @@
 #include "include/kernel.hpp"
 #include "include/io.hpp"
 
-static inline void vecDifference(uint8_t *img_plain,uint8_t *img_dec,uint32_t total);
-static inline void imgDifference(cv::Mat plain_image,cv::Mat decrypted_image);
-
-static inline void vecDifference(uint8_t *img_plain,uint8_t *img_dec,uint32_t total)
-{ 
-  int cnt = 0;
-  uint8_t from = 0;
-  
-  
-  for(int i = 0; i < total; ++i)
-  {
-    from = img_plain[i] - img_dec[i];
-    if(from != 0)
-    {
-      ++cnt;
-    }
-    //printf("\n%d",img_plain[i] - img_dec[i]);
-  }
-  printf("\ncnt = %d",cnt);
-}
-
-static inline void imgDifference(cv::Mat plain_image,cv::Mat decrypted_image)
-{
-  int cnt = 0;
-  uint8_t from = 0;
-  for(int i = 0; i < plain_image.rows; ++i)
-  {
-    for(int j = 0; j < plain_image.cols; ++j)
-    {
-      for(int k = 0; k < plain_image.channels(); ++k)
-      {
-        from = plain_image.at<Vec3b>(i,j)[k] - decrypted_image.at<Vec3b>(i,j)[k];
-        if(from == 0)
-        {
-          ++cnt;
-        }
-       
-      }
-    }
-  }
-  printf("\ncnt = %d",cnt);
-}
 
 int main()
 {
@@ -79,14 +37,20 @@ int main()
   cout<<"\nCols = "<<n;
   cout<<"\nChannels = "<<channels;
   
+  
   /*Parameter arrays*/
+  config::lm lm_parameters[number_of_rounds];
+  config::lma lma_parameters[number_of_rounds];
+  config::slmm slmm_parameters[number_of_rounds];
+  config::lasm lasm_parameters[number_of_rounds];
+  config::lalm lalm_parameters[number_of_rounds];
   config::mt mt_parameters[number_of_rounds];
   
   /*Initializing parameters to zero for each round*/
-  common::initializeMapParameters(mt_parameters,number_of_rounds);
+  common::initializeMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
   
   /*Assigning parameters for each round*/
-  common::assignMapParameters(mt_parameters,number_of_rounds);
+  common::assignMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
   
   /*Writing parameters*/
   FILE *outfile = fopen(config::constant_parameters_file_path,"wb");
@@ -111,7 +75,7 @@ int main()
   ptr_position = writeMTParameters(outfile,config::constant_parameters_file_path,"ab",mt_parameters,0,number_of_rounds,ptr_position);
   
   /*Display parameters after writing*/
-  common::displayMapParameters(mt_parameters,number_of_rounds);
+  common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
   
   uint8_t *img_vec;
   uint8_t *enc_vec;
@@ -147,7 +111,8 @@ int main()
   
   /*Flattening image*/
   common::flattenImage(image,img_vec,channels);
- 
+  //cout<<"\nplain image = ";
+  //common::printArray8(img_vec,total * channels);
   
   if(ROW_COL_ROTATION == 1)
   {
@@ -175,6 +140,12 @@ int main()
       dim3 enc_gen_cat_map_blocks(channels,1,1);
       run_EncGenCatMap(img_vec,enc_vec,V,U,enc_gen_cat_map_grid,enc_gen_cat_map_blocks);
       
+      //for(int i = 0; i < total * channels; ++i)
+      //{
+        //img_vec[i] = enc_vec[i];
+      //}
+      
+      std::memcpy(img_vec,enc_vec,total * channels);
       //std::swap(img_vec,enc_vec);
       
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
@@ -192,8 +163,8 @@ int main()
       if(DEBUG_VECTORS == 1)
       {
         //cout<<"\n\nAfter swap";
-        //cout<<"\nimg_vec = ";
-        //common::printArray8(img_vec,total * channels);
+        cout<<"\nimg_vec = ";
+        common::printArray8(img_vec,total * channels);
         printf("\nenc_vec = ");
         common::printArray8(enc_vec,total * channels);
         /*cout<<"\nU = ";
@@ -249,12 +220,19 @@ int main()
       
       //std::swap(img_vec,final_vec);
       
+      /*for(int i = 0; i < total * channels; ++i)
+      {
+        img_vec[i] = final_vec[i];
+      }*/
+      
+      std::memcpy(enc_vec,final_vec,total * channels);
+      
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\n\ni = "<<i;
         //printf("\nAfter Swap");
-        //printf("\nimg_vec = ");
-        //common::printArray8(img_vec,total * channels);
+        printf("\nenc_vec = ");
+        common::printArray8(enc_vec,total * channels);
         printf("\nfinal_vec = ");
         common::printArray8(final_vec,total * channels);
         /*cout<<"\n\ni = "<<i;

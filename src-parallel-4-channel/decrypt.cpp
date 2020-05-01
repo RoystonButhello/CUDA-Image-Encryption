@@ -4,50 +4,6 @@
 #include "include/kernel.hpp"
 #include "include/io.hpp"
 
-static inline void vecDifference(uint8_t *img_plain,uint8_t *img_dec,uint32_t total);
-static inline void imgDifference(cv::Mat plain_image,cv::Mat decrypted_image);
-
-static inline void vecDifference(uint8_t *img_plain,uint8_t *img_dec,uint32_t total)
-{ 
-  int cnt = 0;
-  uint8_t from = 0;
-  
-  
-  for(int i = 0; i < total; ++i)
-  {
-    from = img_plain[i] - img_dec[i];
-    if(from != 0)
-    {
-      ++cnt;
-    }
-    //printf("\n%d",img_plain[i] - img_dec[i]);
-  }
-  printf("\ncnt = %d",cnt);
-}
-
-static inline void imgDifference(cv::Mat plain_image,cv::Mat decrypted_image)
-{
-  int cnt = 0;
-  uint8_t from = 0;
-  for(int i = 0; i < plain_image.rows; ++i)
-  {
-    for(int j = 0; j < plain_image.cols; ++j)
-    {
-      for(int k = 0; k < plain_image.channels(); ++k)
-      {
-        from = plain_image.at<Vec3b>(i,j)[k] - decrypted_image.at<Vec3b>(i,j)[k];
-        if(from == 0)
-        {
-          ++cnt;
-        }
-       
-      }
-    }
-  }
-  printf("\ncnt = %d",cnt);
-}
-
-
 int main()
 {
   cv::Mat image;
@@ -100,13 +56,18 @@ int main()
   cout<<"\nNumber of rounds = "<<number_of_rounds;
   
   /*Parameter arrays*/
+  config::lm lm_parameters[number_of_rounds];
+  config::lma lma_parameters[number_of_rounds];
+  config::slmm slmm_parameters[number_of_rounds];
+  config::lasm lasm_parameters[number_of_rounds];
+  config::lalm lalm_parameters[number_of_rounds];
   config::mt mt_parameters[number_of_rounds];
   
   
   ptr_position = readMTParameters(infile,config::constant_parameters_file_path,"rb",mt_parameters,0,number_of_rounds,ptr_position);
   
   /*Display parameters after reading*/
-  common::displayMapParameters(mt_parameters,number_of_rounds);
+  common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
   
   uint8_t *enc_vec;
   uint8_t *dec_vec;
@@ -147,7 +108,8 @@ int main()
   
   /*Flattening image*/
   common::flattenImage(image,enc_vec,channels);
-  
+  //cout<<"\nencrypted image = ";
+  //common::printArray8(enc_vec,total * channels);
   
   if(DIFFUSION == 1)
   {
@@ -172,7 +134,7 @@ int main()
   {
     /*Row and Column Unswapping*/
     cout<<"\nIn row and column unswapping";
-    for(int i = 0; i < number_of_rounds; ++i)
+    for(int i = number_of_rounds - 1; i >= 0; --i)
     {
       
       pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_3);
@@ -193,14 +155,19 @@ int main()
       dim3 dec_row_col_swap_blocks(channels,1,1);
       run_decRowColSwap(enc_vec,dec_vec,row_swap_lut_vec,col_swap_lut_vec,dec_row_col_swap_grid,dec_row_col_swap_blocks);
       
-      //std::swap(enc_vec,dec_vec); 
+      //std::swap(enc_vec,dec_vec);
+      /*for(int i = 0; i < total * channels; ++i) 
+      {
+        enc_vec[i] = dec_vec[i];
+      }*/
+      std::memcpy(enc_vec,dec_vec,total * channels);
           
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\n\ni = "<<i;
         //printf("\nAfter Swap");
-        //printf("\nenc_vec = ");
-        //common::printArray8(enc_vec,total * channels);
+        printf("\nenc_vec = ");
+        common::printArray8(enc_vec,total * channels);
         printf("\ndec_vec = ");
         common::printArray8(dec_vec,total * channels);
         cout<<"\nROUND = "<<i;
@@ -227,7 +194,7 @@ int main()
   {
     /*Row and Column Unrotation*/
     cout<<"\nIn row and column unrotation ";
-    for(int i = 0; i < number_of_rounds; ++i)
+    for(int i = number_of_rounds - 1; i >=0; --i)
     {
       
       cout<<"\nROUND "<<i;
@@ -252,14 +219,17 @@ int main()
       dim3 dec_gen_cat_map_blocks(channels,1,1);
       run_DecGenCatMap(dec_vec,final_vec,V,U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
       //std::swap(enc_vec,final_vec);
-     
-      
+      //for(int i = 0; i < total * channels; ++i)
+      //{
+        //enc_vec[i] = final_vec[i];
+      //}
+      std::memcpy(dec_vec,final_vec,total * channels);
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\ni = "<<i;
         //cout<<"\n\nAfter swap = ";
-        //printf("\nenc_vec = ");
-        //common::printArray8(enc_vec,total * channels);
+        printf("\ndec_vec = ");
+        common::printArray8(dec_vec,total * channels);
         printf("\nfinal_vec = ");
         common::printArray8(final_vec,total * channels);
         /*cout<<"\nU = ";

@@ -58,10 +58,11 @@ namespace common
   
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
   static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
- 
-  static inline void initializeMapParameters(config::mt mt_parameters[],int number_of_rounds);
-  static inline void assignMapParameters(config::mt mt_parameters[],int number_of_rounds);
-  static inline void displayMapParameters(config::mt mt_parameters[],int number_of_rounds);
+  
+  static inline void initializeMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds);
+  static inline void assignMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds);
+  static inline void displayMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds);
+
    
   
   static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint32_t channels)
@@ -384,111 +385,121 @@ namespace common
     }
   }
   
-  static inline void initializeMapParameters(config::mt mt_parameters[],int number_of_rounds)
+  static inline void initializeMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds)
   {
     for(int i = 0; i < number_of_rounds; ++i)
     {
       cout<<"\nROUND "<<i;
       //Initializing all parameters to zero
-      /*lm_parameters[i].x_init = 0.00;
+      lm_parameters[i].x_init = 0.00;
       lm_parameters[i].y_init = 0.00;
-      lm_parameters[i].r = 0.00;*/
+      lm_parameters[i].r = 0.00;
       
-      /*lma_parameters[i].x_init = 0.00;
+      lma_parameters[i].x_init = 0.00;
       lma_parameters[i].y_init = 0.00;
       lma_parameters[i].myu1 = 0.00;
       lma_parameters[i].myu2 = 0.00;
       lma_parameters[i].lambda1 = 0.00;
-      lma_parameters[i].lambda2 = 0.00;*/
+      lma_parameters[i].lambda2 = 0.00;
       
-      /*slmm_parameters[i].x_init = 0.00;
+      slmm_parameters[i].x_init = 0.00;
       slmm_parameters[i].y_init = 0.00;
       slmm_parameters[i].alpha = 0.00;
-      slmm_parameters[i].beta = 0.00;*/
+      slmm_parameters[i].beta = 0.00;
       
-      /*lasm_parameters[i].x_init = 0.00;
+      lasm_parameters[i].x_init = 0.00;
       lasm_parameters[i].y_init = 0.00;
-      lasm_parameters[i].myu = 0.00;*/
+      lasm_parameters[i].myu = 0.00;
       
-      /*lalm_parameters[i].x_init = 0.00;
+      lalm_parameters[i].x_init = 0.00;
       lalm_parameters[i].y_init = 0.00;
-      lalm_parameters[i].myu = 0.00;*/
+      lalm_parameters[i].myu = 0.00;
       
       mt_parameters[i].seed_1 = 0;
       mt_parameters[i].seed_2 = 0;
       mt_parameters[i].seed_3 = 0;
       mt_parameters[i].seed_4 = 0;
-      mt_parameters[i].seed_5 = 0;
+      
     }
+    mt_parameters[0].seed_5 = 0;
   }
   
-  static inline void assignMapParameters(config::mt mt_parameters[],int number_of_rounds)
+  static inline void assignMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds)
   {
     //Assigning random values to parameters
     for(int i = 0; i < number_of_rounds; ++i)
     {
       cout<<"\nROUND "<<i;
-      /*lm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      lm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       lm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
-      lm_parameters[i].r = getRandomDouble(R_LOWER_LIMIT,R_UPPER_LIMIT);*/
+      lm_parameters[i].r = getRandomDouble(R_LOWER_LIMIT,R_UPPER_LIMIT);
       
-      /*lma_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      lma_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       lma_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
       lma_parameters[i].myu1 =  getRandomDouble(MYU1_LOWER_LIMIT,MYU1_UPPER_LIMIT);
       lma_parameters[i].myu2 = getRandomDouble(MYU2_LOWER_LIMIT,MYU2_UPPER_LIMIT);
       lma_parameters[i].lambda1 = getRandomDouble(LAMBDA1_LOWER_LIMIT,LAMBDA1_UPPER_LIMIT);
-      lma_parameters[i].lambda2 = getRandomDouble(LAMBDA2_LOWER_LIMIT,LAMBDA2_UPPER_LIMIT);*/
+      lma_parameters[i].lambda2 = getRandomDouble(LAMBDA2_LOWER_LIMIT,LAMBDA2_UPPER_LIMIT);
       
-      /*slmm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      slmm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       slmm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
       slmm_parameters[i].alpha = getRandomDouble(ALPHA_LOWER_LIMIT,ALPHA_UPPER_LIMIT);
-      slmm_parameters[i].beta = getRandomDouble(BETA_LOWER_LIMIT,BETA_UPPER_LIMIT);*/
+      slmm_parameters[i].beta = getRandomDouble(BETA_LOWER_LIMIT,BETA_UPPER_LIMIT);
 
-      /*lasm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      lasm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       lasm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
-      lasm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);*/
+      lasm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);
       
-      /*lalm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      lalm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       lalm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
-      lalm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);*/
+      lalm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);
       
       mt_parameters[i].seed_1 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
       mt_parameters[i].seed_2 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
       mt_parameters[i].seed_3 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
       mt_parameters[i].seed_4 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
-      mt_parameters[i].seed_5 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
+      
     } 
+    mt_parameters[0].seed_5 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
   }
   
-  static inline void displayMapParameters(config::mt mt_parameters[],int number_of_rounds)
+  static inline void displayMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds)
   {
     for(int i = 0; i < number_of_rounds; ++i)
     {
       cout<<"\n\nROUND "<<i;
-      /*printf("\nlm_parameters.x_init = %f",lm_parameters[i].x_init);
+      printf("\nlm_parameters.x_init = %f",lm_parameters[i].x_init);
       printf("\nlm_parameters.y_init = %f",lm_parameters[i].y_init);
-      printf("\nlm_parameters.r = %f",lm_parameters[i].r);*/
+      printf("\nlm_parameters.r = %f",lm_parameters[i].r);
       
-      /*printf("\nslmm_parameters.x_init = %f",slmm_parameters[i].x_init);
+      printf("\n\nlma_parameters.x_init = %f",lma_parameters[i].x_init);
+      printf("\nlma_parameters.y_init = %f",lma_parameters[i].y_init);
+      printf("\nlma_parameters.myu1 = %f",lma_parameters[i].myu1);
+      printf("\nlma_parameters.myu2 = %f",lma_parameters[i].myu2);
+      printf("\nlma_parameters.lambda1 = %f",lma_parameters[i].lambda1);
+      printf("\nlma_parameters.lambda2 = %f",lma_parameters[i].lambda2);
+      
+      printf("\n\nslmm_parameters.x_init = %f",slmm_parameters[i].x_init);
       printf("\nslmm_parameters.y_init = %f",slmm_parameters[i].y_init);
       printf("\nslmm_parameters.alpha = %f",slmm_parameters[i].alpha);
-      printf("\nslmm_parameters.beta = %f",slmm_parameters[i].beta);*/
+      printf("\nslmm_parameters.beta = %f",slmm_parameters[i].beta);
       
-      /*printf("\nlasm parameters.x_init = %f",lasm_parameters[i].x_init);
+      printf("\n\nlasm parameters.x_init = %f",lasm_parameters[i].x_init);
       printf("\nlasm parameters.y_init = %f",lasm_parameters[i].y_init);
-      printf("\nlasm parameters.myu = %f",lasm_parameters[i].myu);*/
+      printf("\nlasm parameters.myu = %f",lasm_parameters[i].myu);
       
-      /*printf("\nlalm parameters.x_init = %f",lalm_parameters[i].x_init);
+      printf("\n\nlalm parameters.x_init = %f",lalm_parameters[i].x_init);
       printf("\nlalm parameters.y_init = %f",lalm_parameters[i].y_init);
-      printf("\nlalm parameters.myu = %f",lalm_parameters[i].myu);*/
+      printf("\nlalm parameters.myu = %f",lalm_parameters[i].myu);
       
-      printf("\nmt_parameters.seed_1 = %d",mt_parameters[i].seed_1);
+      printf("\n\nmt_parameters.seed_1 = %d",mt_parameters[i].seed_1);
       printf("\nmt_parameters.seed_2 = %d",mt_parameters[i].seed_2);
       printf("\nmt_parameters.seed_3 = %d",mt_parameters[i].seed_3);
       printf("\nmt_parameters.seed_4 = %d",mt_parameters[i].seed_4);
-      printf("\nmt_parameters.seed_5 = %d",mt_parameters[i].seed_5);
+      
 
     }
+      printf("\nmt_parameters.seed_5 = %d",mt_parameters[0].seed_5);
   }
 }
 
