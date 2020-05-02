@@ -44,7 +44,7 @@ int main()
   config::slmm slmm_parameters[number_of_rounds];
   config::lasm lasm_parameters[number_of_rounds];
   config::lalm lalm_parameters[number_of_rounds];
-  config::mt mt_parameters[number_of_rounds];
+  config::mt mt_parameters[0];
   
   /*Initializing parameters to zero for each round*/
   common::initializeMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
@@ -71,8 +71,11 @@ int main()
   
   cout<<"\nNumber of rounds = "<<number_of_rounds;
   
-  
-  ptr_position = writeMTParameters(outfile,config::constant_parameters_file_path,"ab",mt_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = writeLMParameters(outfile,config::constant_parameters_file_path,"ab",lm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = writeLMAParameters(outfile,config::constant_parameters_file_path,"ab",lma_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = writeSLMMParameters(outfile,config::constant_parameters_file_path,"ab",slmm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = writeLASMParameters(outfile,config::constant_parameters_file_path,"ab",lasm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = writeMTParameters(outfile,config::constant_parameters_file_path,"ab",mt_parameters,0,1,ptr_position);
   
   /*Display parameters after writing*/
   common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
@@ -100,15 +103,6 @@ int main()
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *diffusion_array = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   
- 
-
-  /*Vector generation for row and column swapping
-  common::genLUTVec(row_swap_lut_vec,m);
-  common::genLUTVec(col_swap_lut_vec,n);
-  pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
-  pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
-  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);*/
-  
   /*Flattening image*/
   common::flattenImage(image,img_vec,channels);
   //cout<<"\nplain image = ";
@@ -122,31 +116,26 @@ int main()
       cout<<"\nROUND "<<i;
       
       /*Vector generation for row and column rotation*/
-      pattern::MTSequence(row_rotation_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_1);
-      pattern::MTSequence(col_rotation_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_2);
+      x[0] = lm_parameters[i].x_init;
+      y[0] = lm_parameters[i].y_init;
+      pattern::twodLogisticMap(x,y,row_rotation_vec,lm_parameters[i].r,total * channels);
+      
+      x[0] = lma_parameters[i].x_init;
+      y[0] = lma_parameters[i].y_init;
+      pattern::twodLogisticMapAdvanced(x,y,col_rotation_vec,lma_parameters[i].myu1,lma_parameters[i].myu2,lma_parameters[i].lambda1,lma_parameters[i].lambda2,total * channels);
       
       common::genLUTVec(U,m);
       common::genLUTVec(V,n);
       common::rowColLUTGen(U,row_rotation_vec,V,col_rotation_vec,m,n);  
       
       /*Row and Column Rotation*/
-      
-      //cout<<"\n\nBefore swap";
-      //cout<<"\nimg_vec = ";
-      //common::printArray8(img_vec,total * channels);
-      //printf("\nenc_vec = ");
-      //common::printArray8(enc_vec,total * channels);
+
       dim3 enc_gen_cat_map_grid(m,n,1);
       dim3 enc_gen_cat_map_blocks(channels,1,1);
       run_EncGenCatMap(img_vec,enc_vec,V,U,enc_gen_cat_map_grid,enc_gen_cat_map_blocks);
       
-      //for(int i = 0; i < total * channels; ++i)
-      //{
-        //img_vec[i] = enc_vec[i];
-      //}
-      
       std::memcpy(img_vec,enc_vec,total * channels);
-      //std::swap(img_vec,enc_vec);
+      
       
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
       {
@@ -162,7 +151,7 @@ int main()
       
       if(DEBUG_VECTORS == 1)
       {
-        //cout<<"\n\nAfter swap";
+        
         cout<<"\nimg_vec = ";
         common::printArray8(img_vec,total * channels);
         printf("\nenc_vec = ");
@@ -188,49 +177,28 @@ int main()
     for(int i = 0; i < number_of_rounds; ++i)
     {
       /*Vector generation for row and coulumn swapping*/
-      pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_3);
-      pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_4);
+      x[0] = slmm_parameters[i].x_init;
+      y[0] = slmm_parameters[i].y_init;
+      pattern::twodSineLogisticModulationMap(x,y,row_random_vec,slmm_parameters[i].alpha,slmm_parameters[i].beta,total * channels);
+      
+      x[0] = lasm_parameters[i].x_init;
+      y[0] = lasm_parameters[i].y_init;
+      pattern::twodLogisticAdjustedSineMap(x,y,col_random_vec,lasm_parameters[i].myu,total * channels);
       
       common::genLUTVec(row_swap_lut_vec,m);
       common::genLUTVec(col_swap_lut_vec,n);
       common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
       
-      //cout<<"\n\ni = "<<i;
-      //printf("\nBefore Swap");
-      //printf("\nimg_vec = ");
-      //common::printArray8(img_vec,total * channels);
-      //printf("\nfinal_vec = ");
-      //common::printArray8(final_vec,total * channels);
       
       dim3 enc_row_col_swap_grid(m,n,1);
       dim3 enc_row_col_swap_blocks(channels,1,1);
       run_encRowColSwap(enc_vec,final_vec,row_swap_lut_vec,col_swap_lut_vec,enc_row_col_swap_grid,enc_row_col_swap_blocks);
-      
-      /*if(DEBUG_INTERMEDIATE_IMAGES == 1)
-      {
-        //if(i%4 == 0)
-        //{
-          config::swapped_image = "";
-          config::swapped_image = config::image_name + "_swapped" + "_ROUND_" + std::to_string(i) + config::extension;
-          cout<<"\n"<<config::swapped_image;  
-          cv::Mat img_reshape(m,n,CV_8UC3,final_vec);
-          cv::imwrite(config::swapped_image,img_reshape);
-        //}
-      }*/
-      
-      //std::swap(img_vec,final_vec);
-      
-      /*for(int i = 0; i < total * channels; ++i)
-      {
-        img_vec[i] = final_vec[i];
-      }*/
       
       std::memcpy(enc_vec,final_vec,total * channels);
       
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\n\ni = "<<i;
-        //printf("\nAfter Swap");
         printf("\nenc_vec = ");
         common::printArray8(enc_vec,total * channels);
         printf("\nfinal_vec = ");
@@ -244,14 +212,11 @@ int main()
   
       if(DEBUG_INTERMEDIATE_IMAGES == 1)
       {
-        //if(i%4 != 0)
-        //{
-          config::swapped_image = "";
-          config::swapped_image = config::image_name + "_swapped" + "_ROUND_" + std::to_string(i) + config::extension;
-          cout<<"\n"<<config::swapped_image;  
-          cv::Mat img_reshape(m,n,CV_8UC3,final_vec);
-          cv::imwrite(config::swapped_image,img_reshape);
-        //}    
+        config::swapped_image = "";
+        config::swapped_image = config::image_name + "_swapped" + "_ROUND_" + std::to_string(i) + config::extension;
+        cout<<"\n"<<config::swapped_image;  
+        cv::Mat img_reshape(m,n,CV_8UC3,final_vec);
+        cv::imwrite(config::swapped_image,img_reshape); 
       }
     }
   }
@@ -261,7 +226,7 @@ int main()
     
     cout<<"\nIn Diffusion";
     
-    pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[3].seed_5);
+    pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[0].seed_1);
     serial::grayLevelTransform(final_vec,diffusion_array,total * channels);
 
     if(DEBUG_VECTORS == 1)

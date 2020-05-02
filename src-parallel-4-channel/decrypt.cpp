@@ -61,10 +61,13 @@ int main()
   config::slmm slmm_parameters[number_of_rounds];
   config::lasm lasm_parameters[number_of_rounds];
   config::lalm lalm_parameters[number_of_rounds];
-  config::mt mt_parameters[number_of_rounds];
+  config::mt mt_parameters[0];
   
-  
-  ptr_position = readMTParameters(infile,config::constant_parameters_file_path,"rb",mt_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = readLMParameters(infile,config::constant_parameters_file_path,"rb",lm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = readLMAParameters(infile,config::constant_parameters_file_path,"rb",lma_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = readSLMMParameters(infile,config::constant_parameters_file_path,"rb",slmm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = readLASMParameters(infile,config::constant_parameters_file_path,"rb",lasm_parameters,0,number_of_rounds,ptr_position);
+  ptr_position = readMTParameters(infile,config::constant_parameters_file_path,"rb",mt_parameters,0,1,ptr_position);
   
   /*Display parameters after reading*/
   common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
@@ -92,20 +95,6 @@ int main()
   uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   uint32_t *diffusion_array = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
   
-  /*Vector generation for diffusion
-  x[0] = 0.1;
-  y[0] = 0.1;
-  alpha = 1.00;
-  beta = 3.00;
-  pattern::twodSineLogisticModulationMap(x,y,diffusion_array,alpha,beta,total * channels);*/   
-
-  /*Vector generation for row and column swapping
-  common::genLUTVec(row_swap_lut_vec,m);
-  common::genLUTVec(col_swap_lut_vec,n);
-  pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_1);
-  pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,config::seed_lut_gen_2);
-  common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);*/
-  
   /*Flattening image*/
   common::flattenImage(image,enc_vec,channels);
   //cout<<"\nencrypted image = ";
@@ -114,7 +103,7 @@ int main()
   if(DIFFUSION == 1)
   {
     cout<<"\nIn Undiffusion";
-    pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[3].seed_5);
+    pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[0].seed_1);
     serial::grayLevelTransform(enc_vec,diffusion_array,total * channels);
 
     if(DEBUG_VECTORS == 1)
@@ -137,35 +126,27 @@ int main()
     for(int i = number_of_rounds - 1; i >= 0; --i)
     {
       
-      pattern::MTSequence(row_random_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_3);
-      pattern::MTSequence(col_random_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_4);
+      /*Vector generation for row and coulumn swapping*/
+      x[0] = slmm_parameters[i].x_init;
+      y[0] = slmm_parameters[i].y_init;
+      pattern::twodSineLogisticModulationMap(x,y,row_random_vec,slmm_parameters[i].alpha,slmm_parameters[i].beta,total * channels);
+      
+      x[0] = lasm_parameters[i].x_init;
+      y[0] = lasm_parameters[i].y_init;
+      pattern::twodLogisticAdjustedSineMap(x,y,col_random_vec,lasm_parameters[i].myu,total * channels);
       
       common::genLUTVec(row_swap_lut_vec,m);
       common::genLUTVec(col_swap_lut_vec,n);
       common::rowColLUTGen(row_swap_lut_vec,row_random_vec,col_swap_lut_vec,col_random_vec,m,n);
       
-      //cout<<"\n\ni = "<<i;
-      //printf("\nBefore Swap");
-      //printf("\nenc_vec = ");
-      //common::printArray8(enc_vec,total * channels);
-      //printf("\ndec_vec = ");
-      //common::printArray8(dec_vec,total * channels);
-      
       dim3 dec_row_col_swap_grid(m,n,1);
       dim3 dec_row_col_swap_blocks(channels,1,1);
       run_decRowColSwap(enc_vec,dec_vec,row_swap_lut_vec,col_swap_lut_vec,dec_row_col_swap_grid,dec_row_col_swap_blocks);
-      
-      //std::swap(enc_vec,dec_vec);
-      /*for(int i = 0; i < total * channels; ++i) 
-      {
-        enc_vec[i] = dec_vec[i];
-      }*/
       std::memcpy(enc_vec,dec_vec,total * channels);
           
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\n\ni = "<<i;
-        //printf("\nAfter Swap");
         printf("\nenc_vec = ");
         common::printArray8(enc_vec,total * channels);
         printf("\ndec_vec = ");
@@ -199,35 +180,26 @@ int main()
       
       cout<<"\nROUND "<<i;
       
-
       /*Vector generation for row and column unrotation*/
-      pattern::MTSequence(row_rotation_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_1);
-      pattern::MTSequence(col_rotation_vec,total * channels,config::lower_limit,config::upper_limit,mt_parameters[i].seed_2);
+      x[0] = lm_parameters[i].x_init;
+      y[0] = lm_parameters[i].y_init;
+      pattern::twodLogisticMap(x,y,row_rotation_vec,lm_parameters[i].r,total * channels);
+      
+      x[0] = lma_parameters[i].x_init;
+      y[0] = lma_parameters[i].y_init;
+      pattern::twodLogisticMapAdvanced(x,y,col_rotation_vec,lma_parameters[i].myu1,lma_parameters[i].myu2,lma_parameters[i].lambda1,lma_parameters[i].lambda2,total * channels);
       
       common::genLUTVec(U,m);
       common::genLUTVec(V,n);
       common::rowColLUTGen(U,row_rotation_vec,V,col_rotation_vec,m,n);
-      
-      
-      
-      //cout<<"\n\nBefore swap";
-      //cout<<"\nenc_vec = ";
-      //common::printArray8(enc_vec,total * channels);
-      //printf("\ndec_vec = ");
-      //common::printArray8(dec_vec,total * channels);
+
       dim3 dec_gen_cat_map_grid(m,n,1);
       dim3 dec_gen_cat_map_blocks(channels,1,1);
       run_DecGenCatMap(dec_vec,final_vec,V,U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
-      //std::swap(enc_vec,final_vec);
-      //for(int i = 0; i < total * channels; ++i)
-      //{
-        //enc_vec[i] = final_vec[i];
-      //}
       std::memcpy(dec_vec,final_vec,total * channels);
       if(DEBUG_VECTORS == 1)
       {
         cout<<"\ni = "<<i;
-        //cout<<"\n\nAfter swap = ";
         printf("\ndec_vec = ");
         common::printArray8(dec_vec,total * channels);
         printf("\nfinal_vec = ");

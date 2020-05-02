@@ -158,10 +158,6 @@ namespace config
   typedef struct 
   {
     int seed_1;
-    int seed_2;
-    int seed_3;
-    int seed_4;
-    int seed_5;
   }mt;  
   
 

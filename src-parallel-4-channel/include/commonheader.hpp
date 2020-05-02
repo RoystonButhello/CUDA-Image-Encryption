@@ -411,17 +411,14 @@ namespace common
       lasm_parameters[i].y_init = 0.00;
       lasm_parameters[i].myu = 0.00;
       
-      lalm_parameters[i].x_init = 0.00;
+      /*lalm_parameters[i].x_init = 0.00;
       lalm_parameters[i].y_init = 0.00;
-      lalm_parameters[i].myu = 0.00;
+      lalm_parameters[i].myu = 0.00;*/
       
-      mt_parameters[i].seed_1 = 0;
-      mt_parameters[i].seed_2 = 0;
-      mt_parameters[i].seed_3 = 0;
-      mt_parameters[i].seed_4 = 0;
+      
       
     }
-    mt_parameters[0].seed_5 = 0;
+    mt_parameters[0].seed_1 = 0;
   }
   
   static inline void assignMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds)
@@ -450,17 +447,12 @@ namespace common
       lasm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
       lasm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);
       
-      lalm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
+      /*lalm_parameters[i].x_init = getRandomDouble(X_LOWER_LIMIT,X_UPPER_LIMIT);
       lalm_parameters[i].y_init = getRandomDouble(Y_LOWER_LIMIT,Y_UPPER_LIMIT);
-      lalm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);
-      
-      mt_parameters[i].seed_1 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
-      mt_parameters[i].seed_2 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
-      mt_parameters[i].seed_3 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
-      mt_parameters[i].seed_4 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
+      lalm_parameters[i].myu = getRandomDouble(MYU_LOWER_LIMIT,MYU_UPPER_LIMIT);*/
       
     } 
-    mt_parameters[0].seed_5 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
+    mt_parameters[0].seed_1 = getRandomInteger(SEED_LOWER_LIMIT,SEED_UPPER_LIMIT);
   }
   
   static inline void displayMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],int number_of_rounds)
@@ -488,18 +480,16 @@ namespace common
       printf("\nlasm parameters.y_init = %f",lasm_parameters[i].y_init);
       printf("\nlasm parameters.myu = %f",lasm_parameters[i].myu);
       
-      printf("\n\nlalm parameters.x_init = %f",lalm_parameters[i].x_init);
+      /*printf("\n\nlalm parameters.x_init = %f",lalm_parameters[i].x_init);
       printf("\nlalm parameters.y_init = %f",lalm_parameters[i].y_init);
-      printf("\nlalm parameters.myu = %f",lalm_parameters[i].myu);
+      printf("\nlalm parameters.myu = %f",lalm_parameters[i].myu);*/
       
-      printf("\n\nmt_parameters.seed_1 = %d",mt_parameters[i].seed_1);
-      printf("\nmt_parameters.seed_2 = %d",mt_parameters[i].seed_2);
-      printf("\nmt_parameters.seed_3 = %d",mt_parameters[i].seed_3);
-      printf("\nmt_parameters.seed_4 = %d",mt_parameters[i].seed_4);
+     
       
 
     }
-      printf("\nmt_parameters.seed_5 = %d",mt_parameters[0].seed_5);
+       printf("\n\nmt_parameters.seed_1 = %d",mt_parameters[0].seed_1);
+      //printf("\nmt_parameters.seed_5 = %d",mt_parameters[0].seed_5);
   }
 }
 
