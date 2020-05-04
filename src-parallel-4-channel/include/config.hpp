@@ -34,6 +34,7 @@
 #define DEBUG_IMAGES                 1
 #define DEBUG_INTERMEDIATE_IMAGES    1
 #define DEBUG_FILE_CONTENTS          0
+#define MULTI_ROUNDS                 1
 
 #define PRINT_TIMING                 1
 #define PRINT_IMAGES                 0

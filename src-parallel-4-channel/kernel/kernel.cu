@@ -1,4 +1,7 @@
+  #include <iostream>
+  #include <cstdio>
   #include <cstdint>
+  using namespace std;
     __global__ void ArMapImg(uint8_t *in, uint8_t *out)
     {
         int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
@@ -111,16 +114,40 @@
     cudaDeviceSynchronize();  
   }
 
-  extern "C" void run_EncGenCatMap(uint8_t *in,uint8_t *out,uint32_t *colRotate,uint32_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,uint32_t* colRotate,uint32_t* rowRotate,dim3 blocks,dim3 block_size)
   {
+    float time;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+    
     Enc_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
-    cudaDeviceSynchronize();
+    
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time, start, stop);
+
+    printf("\nTime to rotate:  %3.6f us \n", time * 1000.0);
+    
   }
   
   extern "C" void run_DecGenCatMap(uint8_t *in,uint8_t *out,uint32_t *colRotate,uint32_t *rowRotate,dim3 blocks,dim3 block_size)
   {
+     float time;
+     cudaEvent_t start, stop;
+     cudaEventCreate(&start);
+     cudaEventCreate(&stop);
+     cudaEventRecord(start, 0);
+     
      Dec_GenCatMap<<<blocks,block_size>>>(in,out,colRotate,rowRotate);
-     cudaDeviceSynchronize();    
+     
+     cudaEventRecord(stop, 0);
+     cudaEventSynchronize(stop);
+     cudaEventElapsedTime(&time, start, stop);
+     
+     printf("\nTime to unrotate:  %3.6f us \n", time * 1000.0);
+        
   }
 
   extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 block_size)
@@ -148,13 +175,36 @@
   
   extern "C" void run_encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
   {
+    float time;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+    
     encRowColSwap<<<blocks, block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
-    cudaDeviceSynchronize();
+    
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time, start, stop);
+    
+    printf("\nTime to swap:  %3.6f us \n", time * 1000.0);
+    
   }
   
   extern "C" void run_decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
   {
-    decRowColSwap<<<blocks,block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
-    cudaDeviceSynchronize();
+     float time;
+     cudaEvent_t start, stop;
+     cudaEventCreate(&start);
+     cudaEventCreate(&stop);
+     cudaEventRecord(start, 0);
+    
+     decRowColSwap<<<blocks,block_size>>>(img_in,img_out,rowSwapLUT,colSwapLUT);
+     
+     cudaEventRecord(stop, 0);
+     cudaEventSynchronize(stop);
+     cudaEventElapsedTime(&time, start, stop);
+     
+     printf("\nTime to unswap:  %3.6f us \n", time * 1000.0);
   }
 
