@@ -42,6 +42,7 @@
 #define ROW_COL_SWAPPING             1
 #define ROW_COL_ROTATION             1
 #define DIFFUSION                    1
+#define PARALLELIZED_DIFFUSION       1
 
 #define ROUNDS_LOWER_LIMIT           1
 #define ROUNDS_UPPER_LIMIT           2
@@ -93,7 +94,7 @@
 
 namespace config
 {
-  uint32_t rows = 1024;
+  uint32_t rows = 512;
   uint32_t cols = 1024;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;

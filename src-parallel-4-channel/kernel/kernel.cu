@@ -2,27 +2,15 @@
   #include <cstdio>
   #include <cstdint>
   using namespace std;
-    __global__ void ArMapImg(uint8_t *in, uint8_t *out)
-    {
-        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
-        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
-        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x) * 3  + threadIdx.x;
-        int OutDex = ((gridDim.x)*ny + nx) * 3 + threadIdx.x;
-        out[OutDex] = in[InDex];
-    }
+  
 
     __global__ void WarmUp()
     {
       return;
     }
     
-    __global__ void FracXor(uint8_t *in, uint8_t *out, uint8_t *fractal)
-    {
-        int idx = blockIdx.x * 3 + threadIdx.x;
-        out[idx] = in[idx]^fractal[idx];
-    } 
-
-    __global__ void Enc_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate)
+    
+    __global__ void Enc_GenCatMap(uint8_t* in, uint8_t* out, const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -31,7 +19,7 @@
         out[OutDex]  = in[InDex];
     }
 
-    __global__ void Dec_GenCatMap(uint8_t *in, uint8_t *out, uint32_t *colRotate, uint32_t *rowRotate)
+    __global__ void Dec_GenCatMap(uint8_t* in, uint8_t* out, const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -41,35 +29,19 @@
     }
    
     
-    __global__ void ArMapTable(uint32_t *in, uint32_t *out)
-    {
-        int nx = (2*blockIdx.x + blockIdx.y) % gridDim.x;
-        int ny = (blockIdx.x + blockIdx.y) % gridDim.y;
-        int InDex = ((gridDim.x)*blockIdx.y + blockIdx.x);
-        int OutDex = ((gridDim.x)*ny + nx);
-        out[OutDex] = in[InDex];
-    }
-   
-    __global__ void ArMapTabletoImg(uint8_t *in, uint8_t *out, uint32_t *table)
-    {
-        uint32_t InDex = blockIdx.x * 3 + threadIdx.x;
-        uint32_t OutDex = table[blockIdx.x] * 3 + threadIdx.x;
-        out[OutDex] = in[InDex];
-    }
-
-   __global__ void generateU(double *P,uint16_t *U,double n)
+   __global__ void generateU(double* P,uint16_t* U,double n)
    {
        int tid = blockIdx.x *blockDim.x + threadIdx.x;
        U[tid]  = (int)fmod((P[tid]*100000000.00),n);
    }
 
-   __global__ void grayLevelTransform(uint8_t *img_vec, uint16_t *random_array)
+   __global__ void grayLevelTransform(uint8_t* img_vec, const uint32_t* __restrict__ random_array)
    {
      int tid = blockIdx.x * blockDim.x + threadIdx.x;
      img_vec[tid] = img_vec[tid] ^ random_array[tid];
    }
    
-   __global__ void encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT)
+   __global__ void encRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT, const uint32_t* __restrict__ colSwapLUT)
    {
       int blockId = blockIdx.y * gridDim.x + blockIdx.x;
       int threadId = blockId * blockDim.x + threadIdx.x;
@@ -83,7 +55,7 @@
       
    }
    
-  __global__ void decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT)
+  __global__ void decRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT)
   {
     int blockId= blockIdx.y * gridDim.x + blockIdx.x;
     int threadId = blockId * blockDim.x + threadIdx.x;
@@ -96,25 +68,13 @@
     img_out[gray_level_index_out] = img_in[gray_level_index_in];
   }   
 
-   extern "C" void run_ArMapImg(uint8_t *in, uint8_t *out,dim3 blocks,dim3 block_size)
-   {
-     ArMapImg<<<blocks,block_size>>>(in,out);
-     cudaDeviceSynchronize();
-   }
-
-   extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
-   {
-     WarmUp<<<blocks,block_size>>>();
-     cudaDeviceSynchronize();
-   }
-  
-  extern "C" void run_FracXor(uint8_t *in,uint8_t *out,uint8_t *fractal,dim3 blocks,dim3 block_size)
+  extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
   {
-    FracXor<<<blocks,block_size>>>(in,out,fractal);
-    cudaDeviceSynchronize();  
+     WarmUp<<<blocks,block_size>>>();
+     
   }
-
-  extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,uint32_t* colRotate,uint32_t* rowRotate,dim3 blocks,dim3 block_size)
+  
+  extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size)
   {
     float time;
     cudaEvent_t start, stop;
@@ -128,11 +88,11 @@
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
 
-    printf("\nTime to rotate:  %3.6f us \n", time * 1000.0);
+    printf("\nTime to rotate:  %3.6f \u03BCs \n", time * 1000.0);
     
   }
   
-  extern "C" void run_DecGenCatMap(uint8_t *in,uint8_t *out,uint32_t *colRotate,uint32_t *rowRotate,dim3 blocks,dim3 block_size)
+  extern "C" void run_DecGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size)
   {
      float time;
      cudaEvent_t start, stop;
@@ -146,34 +106,36 @@
      cudaEventSynchronize(stop);
      cudaEventElapsedTime(&time, start, stop);
      
-     printf("\nTime to unrotate:  %3.6f us \n", time * 1000.0);
+     printf("\nTime to unrotate:  %3.6f \u03BCs \n", time * 1000.0);
         
   }
 
-  extern "C" void run_ArMapTable(uint32_t *in,uint32_t *out,dim3 blocks, dim3 block_size)
-  {
-    ArMapTable<<<blocks,block_size>>>(in,out);
-    cudaDeviceSynchronize();
-  }
-
-  extern "C" void run_ArMapTabletoImg(uint8_t *in,uint8_t *out,uint32_t *table,dim3 blocks,dim3 block_size)
-  {
-    ArMapTabletoImg<<<blocks,block_size>>>(in,out,table);
-    cudaDeviceSynchronize();
-  }
   
-  extern "C" void run_generateU(double *P,uint16_t *U,double n,dim3 blocks,dim3 block_size)
+  extern "C" void run_generateU(double* P,uint16_t* U,double n,dim3 blocks,dim3 block_size)
   {
     generateU<<<blocks,block_size>>>(P,U,n);
-    cudaDeviceSynchronize();
+    
   }
 
-  extern "C" void run_grayLevelTransform(uint8_t *img_vec, uint16_t *random_array, dim3 blocks, dim3 block_size)
+  extern "C" void run_grayLevelTransform(uint8_t* img_vec, const uint32_t* __restrict__ random_array, dim3 blocks, dim3 block_size)
   {
+    float time;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+    
     grayLevelTransform<<<blocks, block_size>>>(img_vec, random_array);
+    
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time, start, stop);
+    
+    printf("\nTime to diffuse:  %3.6f \u03BCs \n", time * 1000.0);
+    
   }
   
-  extern "C" void run_encRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
+  extern "C" void run_encRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT, const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size)
   {
     float time;
     cudaEvent_t start, stop;
@@ -187,11 +149,11 @@
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
     
-    printf("\nTime to swap:  %3.6f us \n", time * 1000.0);
+    printf("\nTime to swap:  %3.6f \u03BCs \n", time * 1000.0);
     
   }
   
-  extern "C" void run_decRowColSwap(uint8_t *img_in,uint8_t *img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,dim3 blocks,dim3 block_size)
+  extern "C" void run_decRowColSwap(uint8_t* img_in,uint8_t* img_out,const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size)
   {
      float time;
      cudaEvent_t start, stop;
@@ -205,6 +167,6 @@
      cudaEventSynchronize(stop);
      cudaEventElapsedTime(&time, start, stop);
      
-     printf("\nTime to unswap:  %3.6f us \n", time * 1000.0);
+     printf("\nTime to unswap:  %3.6f \u03BCs \n", time * 1000.0);
   }
 

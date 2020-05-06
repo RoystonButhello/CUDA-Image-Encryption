@@ -15,7 +15,7 @@ namespace pattern
 
   static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint32_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,uint32_t number)
   {
-    printf("\n In 2dLMA");
+    //printf("\n In 2dLMA");
     int i = 0;
     for(i = 0; i < number - 1; ++i)
     {
@@ -32,7 +32,7 @@ namespace pattern
 
   static inline void twodLogisticAdjustedSineMap(double *&x,double *&y,uint32_t *&random_array,double myu,uint32_t total)
   {
-    printf("\nIn 2dLASM");
+    //printf("\nIn 2dLASM");
     int i=0;
 
     for(i = 0; i < (total) - 1; ++i)
@@ -51,7 +51,7 @@ namespace pattern
 
   static inline void MTSequence(uint32_t *&random_array,uint32_t total,int lower_limit,int upper_limit,int seed)
   {
-    cout<<"\nIn MTMap";
+    //cout<<"\nIn MTMap";
     //std::random_device r;
     //std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
     std::mt19937 seeder(seed);
@@ -68,7 +68,7 @@ namespace pattern
 
   static inline void twodSineLogisticModulationMap(double *&x, double *&y,uint32_t *&random_array,double alpha, double beta, uint32_t total)
   {
-    printf("\nIn 2dSLMM");
+    //printf("\nIn 2dSLMM");
     for(int i = 0; i < (total) - 1; ++i)
     {
       x[i + 1] = alpha * (sin(M_PI * y[i]) + beta) * x[i] * (1 - x[i]);
@@ -83,7 +83,7 @@ namespace pattern
   
   static inline void twodLogisticAdjustedLogisticMap(double *&x,double *&y,double *&x_bar,double *&y_bar,uint32_t *&random_array,double myu,uint32_t total)
   {
-    printf("\nIn 2dLALM");
+    //printf("\nIn 2dLALM");
     for(uint32_t i = 0; i < total - 1; ++i)
     {
        x_bar[i + 1] = myu * (y[i] * 3) * x[i] * (1 - x[i]);
@@ -100,7 +100,7 @@ namespace pattern
 
   static inline void twodLogisticMap(double *&x, double *&y, uint32_t *&random_array,double r,uint32_t total)
   {
-    printf("\nIn 2dLM");
+    //printf("\nIn 2dLM");
     for(uint32_t i = 0; i < (total) - 1; ++i)
     {
       //cout<<"\nindex = "<<i;

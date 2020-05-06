@@ -13,7 +13,7 @@ int main()
    
   if(!image.data)
   {
-    cout<<"\nCould not open image from "<<"airplane_swapped_ROUND_3.png"<<" \nExiting...";
+    cout<<"\nCould not open image from "<<config::diffused_image_path<<" \nExiting...";
     exit(0);
   }
 
@@ -70,39 +70,35 @@ int main()
   ptr_position = readMTParameters(infile,config::constant_parameters_file_path,"rb",mt_parameters,0,1,ptr_position);
   
   /*Display parameters after reading*/
-  common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
+  //common::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,number_of_rounds);
   
-  /*CPU Vector Declarations*/
-  uint8_t *enc_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * channels);
-  uint8_t *dec_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * channels);
-  uint8_t *final_vec = (uint8_t*)malloc(sizeof(uint8_t) * total * channels);
-  uint32_t *row_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * m);
-  uint32_t *col_swap_lut_vec = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  uint32_t *U = (uint32_t*)malloc(sizeof(uint32_t) * m);;
-  uint32_t *V = (uint32_t*)malloc(sizeof(uint32_t) * n);
-  double *x = (double*)malloc(sizeof(double) * total * channels);
-  double *y = (double*)malloc(sizeof(double) * total * channels);
-  uint32_t *row_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
-  uint32_t *col_rotation_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
-  uint32_t *row_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
-  uint32_t *col_random_vec = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
-  uint32_t *diffusion_array = (uint32_t*)malloc(sizeof(uint32_t) * total * channels);
+  /*CPU vector declarations*/
+  uint8_t *enc_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
+  uint8_t *dec_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
+  uint8_t *final_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
+  uint32_t *row_swap_lut_vec = (uint32_t*)calloc(m,sizeof(uint32_t));
+  uint32_t *col_swap_lut_vec = (uint32_t*)calloc(n,sizeof(uint32_t));
+  uint32_t *U = (uint32_t*)calloc(m,sizeof(uint32_t));
+  uint32_t *V = (uint32_t*)calloc(n,sizeof(uint32_t));
+  double *x = (double*)calloc(total * channels,sizeof(double));
+  double *y = (double*)calloc(total * channels,sizeof(double));
+  uint32_t *row_rotation_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
+  uint32_t *col_rotation_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
+  uint32_t *row_random_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
+  uint32_t *col_random_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
+  uint32_t *diffusion_array = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
   
   /*GPU Vector Declarations*/
   uint8_t *gpu_enc_vec;
   uint8_t *gpu_dec_vec;
   uint8_t *gpu_final_vec;
-  uint32_t *gpu_row_swap_lut_vec;
-  uint32_t *gpu_col_swap_lut_vec;
-  uint32_t *gpu_U;
-  uint32_t *gpu_V;
-  cudaMalloc((void**)&gpu_enc_vec,total * channels * sizeof(uint8_t));
-  cudaMalloc((void**)&gpu_dec_vec,total * channels * sizeof(uint8_t));
-  cudaMalloc((void**)&gpu_final_vec,total * channels * sizeof(uint8_t));
-  cudaMalloc((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
-  cudaMalloc((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
-  cudaMalloc((void**)&gpu_U,m * sizeof(uint32_t));
-  cudaMalloc((void**)&gpu_V,n * sizeof(uint32_t));
+  const uint32_t *gpu_row_swap_lut_vec;
+  const uint32_t *gpu_col_swap_lut_vec;
+  const uint32_t *gpu_U;
+  const uint32_t *gpu_V;
+  const uint32_t *gpu_diffusion_array;
+
+  
   
   
   /*Flattening image*/
@@ -110,11 +106,51 @@ int main()
   //cout<<"\nencrypted image = ";
   //common::printArray8(enc_vec,total * channels);
   
+  /*Warming up kernel*/
+  dim3 warm_up_grid(1,1,1);
+  dim3 warm_up_block(1,1,1);
+  run_WarmUp(warm_up_grid,warm_up_block);
+  
   if(DIFFUSION == 1)
   {
     cout<<"\nIn Undiffusion";
-    pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[0].seed_1);
-    serial::grayLevelTransform(enc_vec,diffusion_array,total * channels);
+    
+    if(PARALLELIZED_DIFFUSION == 0)
+    {
+      long double diffusion_time = 0.00;
+      pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[0].seed_1);
+      
+      clock_t diffusion_start = std::clock(); 
+      serial::grayLevelTransform(final_vec,diffusion_array,total * channels);
+      clock_t diffusion_end = std::clock();
+      diffusion_time = 1000.0 * ((diffusion_end - diffusion_start) / CLOCKS_PER_SEC );
+      cout<<"\nundiffusion time = "<<diffusion_time<<" ms";
+    
+    }
+    
+    else
+    {
+      pattern::MTSequence(diffusion_array,total * channels,config::lower_limit,config::upper_limit,mt_parameters[0].seed_1);
+      
+      //Allocating GPU memory
+      cudaMalloc((void**)&gpu_enc_vec,total * channels * sizeof(uint32_t));
+      cudaMalloc((void**)&gpu_diffusion_array,total * channels * sizeof(uint32_t));
+      
+      //Transferring CPU vectors to GPU memory
+      cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
+      cudaMemcpy((void*)gpu_diffusion_array,diffusion_array,total * channels * sizeof(uint32_t),cudaMemcpyHostToDevice);
+      
+      dim3 grid_gray_level_transform(m * n,1,1);
+      dim3 block_gray_level_transform(channels,1,1);
+      
+      run_grayLevelTransform(gpu_enc_vec,(const uint32_t*)gpu_diffusion_array,grid_gray_level_transform,block_gray_level_transform);
+      
+      //Getting results from GPU memory 
+      cudaMemcpy(enc_vec,gpu_enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
+      //Free GPU memory
+      cudaFree((void*)gpu_enc_vec);
+      cudaFree((void*)gpu_diffusion_array);
+    }
 
     if(DEBUG_VECTORS == 1)
     {
@@ -127,6 +163,8 @@ int main()
       cv::Mat img_reshape(m,n,CV_8UC3,enc_vec);
       cv::imwrite(config::undiffused_image_path,img_reshape);
     }
+    
+
   }  
 
   if(ROW_COL_SWAPPING == 1)
@@ -152,24 +190,33 @@ int main()
       dim3 dec_row_col_swap_grid(m,n,1);
       dim3 dec_row_col_swap_blocks(channels,1,1);
       
+      //Allocating GPU memory
+      cudaMalloc((void**)&gpu_enc_vec,total * channels * sizeof(uint8_t));
+      cudaMalloc((void**)&gpu_dec_vec,total * channels * sizeof(uint8_t));
+      cudaMalloc((void**)&gpu_row_swap_lut_vec,m * sizeof(uint32_t));
+      cudaMalloc((void**)&gpu_col_swap_lut_vec,n * sizeof(uint32_t));
+      
+      
       //Transferring CPU vectors to GPU memory
       cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
-      cudaMemcpy(gpu_row_swap_lut_vec,row_swap_lut_vec,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
-      cudaMemcpy(gpu_col_swap_lut_vec,col_swap_lut_vec,n * sizeof(uint32_t),cudaMemcpyHostToDevice);
+      cudaMemcpy((void*)gpu_row_swap_lut_vec,row_swap_lut_vec,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
+      cudaMemcpy((void*)gpu_col_swap_lut_vec,col_swap_lut_vec,n * sizeof(uint32_t),cudaMemcpyHostToDevice);
       
-      run_decRowColSwap(gpu_enc_vec,gpu_dec_vec,gpu_row_swap_lut_vec,gpu_col_swap_lut_vec,dec_row_col_swap_grid,dec_row_col_swap_blocks);
+      run_decRowColSwap(gpu_enc_vec,gpu_dec_vec,(const uint32_t*)gpu_row_swap_lut_vec,(const uint32_t*)gpu_col_swap_lut_vec,dec_row_col_swap_grid,dec_row_col_swap_blocks);
       
+      //Getting results from GPU memory
       cudaMemcpy(enc_vec,gpu_enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       cudaMemcpy(dec_vec,gpu_dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
-      if(number_of_rounds > 0)
+      //Swapping
+      if(number_of_rounds > 1)
       {
         cudaMemcpy(enc_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       }
       
-      //std::memcpy(enc_vec,dec_vec,total * channels);
+      
       
           
       if(DEBUG_VECTORS == 1)
@@ -197,7 +244,15 @@ int main()
         cv::Mat img_reshape(m,n,CV_8UC3,dec_vec);
         cv::imwrite(config::unswapped_image,img_reshape);  
       }
-    }
+    
+    //Freeing GPU memory
+    cudaFree((void*)gpu_enc_vec);
+    cudaFree((void*)gpu_dec_vec);
+    cudaFree((void*)gpu_row_swap_lut_vec);
+    cudaFree((void*)gpu_col_swap_lut_vec); 
+   }
+    
+
   } 
   
   if(ROW_COL_ROTATION == 1)
@@ -224,29 +279,32 @@ int main()
 
       dim3 dec_gen_cat_map_grid(m,n,1);
       dim3 dec_gen_cat_map_blocks(channels,1,1);
-      
-
+      //Allocating GPU memory
+      cudaMalloc((void**)&gpu_dec_vec,total * channels * sizeof(uint8_t));
+      cudaMalloc((void**)&gpu_final_vec,total * channels * sizeof(uint8_t));
+      cudaMalloc((void**)&gpu_U,m * sizeof(uint32_t));
+      cudaMalloc((void**)&gpu_V,n * sizeof(uint32_t));
       
       /*Transferring CPU Vectors to GPU Memory*/
       cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy(gpu_final_vec,final_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
-      cudaMemcpy(gpu_U,U,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
-      cudaMemcpy(gpu_V,V,n * sizeof(uint32_t),cudaMemcpyHostToDevice);
+      cudaMemcpy((void*)gpu_U,U,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
+      cudaMemcpy((void*)gpu_V,V,n * sizeof(uint32_t),cudaMemcpyHostToDevice);
       
-      run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,gpu_V,gpu_U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
+      run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,(const uint32_t*)gpu_V,(const uint32_t*)gpu_U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
       
+      //Getting results from GPU
       cudaMemcpy(dec_vec,gpu_dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       cudaMemcpy(final_vec,gpu_final_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
-      
-      
+      //Swapping
       if(number_of_rounds > 1)
       {
         cudaMemcpy(dec_vec,final_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       }
 
-      //std::memcpy(dec_vec,final_vec,total * channels);
+      
       
       if(DEBUG_VECTORS == 1)
       {
@@ -277,6 +335,13 @@ int main()
         int imwrite_status = cv::imwrite(config::unrotated_image,img_reshape);
         cout<<"\nimwrite_status = "<<imwrite_status;
       }
+      
+      //Free GPU memory
+      cudaFree((void*)gpu_dec_vec);
+      cudaFree((void*)gpu_final_vec);
+      cudaFree((void*)gpu_U);
+      cudaFree((void*)gpu_V);
+      
       //Swapping input and output vectors
       
       
