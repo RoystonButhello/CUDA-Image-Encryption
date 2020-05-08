@@ -69,11 +69,12 @@ namespace serial
 
   static inline void grayLevelTransform(uint8_t *&img_vec,uint32_t *random_array,uint32_t total)
   {
-    for(int i = 0; i < total; ++i)
+    int i = 0;
+    for(i = 0; i < total; ++i)
     {
       img_vec[i] = img_vec[i] ^ random_array[i];
     }
-  
+    //printf("\n i after diffusion = %d",i);
   }
 
   static inline void rowColSwapEnc(uint8_t *&img_in,uint8_t *&img_out,uint32_t *rowSwapLUT,uint32_t *colSwapLUT,uint32_t m,uint32_t n,uint8_t channels)

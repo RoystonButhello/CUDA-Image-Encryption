@@ -75,7 +75,7 @@
   }
   
   extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size)
-  {
+  { 
     float time;
     cudaEvent_t start, stop;
     cudaEventCreate(&start);

@@ -34,7 +34,6 @@
 #define DEBUG_IMAGES                 1
 #define DEBUG_INTERMEDIATE_IMAGES    1
 #define DEBUG_FILE_CONTENTS          0
-#define MULTI_ROUNDS                 1
 
 #define PRINT_TIMING                 1
 #define PRINT_IMAGES                 0
@@ -42,7 +41,7 @@
 #define ROW_COL_SWAPPING             1
 #define ROW_COL_ROTATION             1
 #define DIFFUSION                    1
-#define PARALLELIZED_DIFFUSION       1
+#define PARALLELIZED_DIFFUSION       0
 
 #define ROUNDS_LOWER_LIMIT           1
 #define ROUNDS_UPPER_LIMIT           2
@@ -94,8 +93,8 @@
 
 namespace config
 {
-  uint32_t rows = 512;
-  uint32_t cols = 1024;
+  uint32_t rows = 200;
+  uint32_t cols = 100;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen_1 = 1000;
@@ -112,7 +111,8 @@ namespace config
     TwoDLogisticMapAdvanced,
     TwoDLogisticAdjustedSineMap,
     TwoDSineLogisticModulationMap,
-    TwoDLogisticAdjustedLogisticMap
+    TwoDLogisticAdjustedLogisticMap,
+    AllMaps
   };
   
   
@@ -161,6 +161,7 @@ namespace config
   {
     int seed_1;
   }mt;  
+  
   
 
   std::string image_name = "airplane";
