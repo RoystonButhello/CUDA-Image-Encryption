@@ -23,6 +23,8 @@ int main()
   }
   
   uint32_t m = 0,n = 0,channels = 0, total = 0;
+  
+  
   double alpha = 0.00,beta = 0.00;
   int number_of_rounds = 0, i = 0;
   long ptr_position = 0; 
@@ -62,31 +64,22 @@ int main()
   config::ChaoticMap map_col_rotation_vec;
   config::ChaoticMap map_diffusion_array;
   
-  int map_choice_array[5];
+  uint32_t *map_choice_array = (uint32_t*)calloc(5,sizeof(uint32_t));
   
   
-  /*Reading map choice array
-  infile = fopen(config::constant_parameters_file_path,"rb");
+  /*Reading map choice array*/
+  infile = fopen("map_choices.bin","rb");
   if(infile == NULL)
   {
     printf("\nCould not open parameters.bin for reading map choices array\nExiting...");
     exit(0);
   }
   
-  cout<<"\npointer position before reading map choices array = "<<ptr_position;
-  //Offset pointer position by length of previous record
-  if(ptr_position > 0)
-  {
-      fseek_status = fseek(infile,(ptr_position),SEEK_SET);
-      ptr_position = ftell(infile);
-  }
-  
   cout<<"\nfseek status before reading map choices array = "<<fseek_status;
-  cout<<"\npointer position before reading map choices array = "<<ptr_position;
   size_t size = 5 * sizeof(map_choice_array[0]);
   fread_status = fread(map_choice_array,size,1,infile);
   cout<<"\nfread status after reading map choices array = "<<fread_status;
-  fclose(infile);*/
+  fclose(infile);
   
   /*Parameter arrays*/
   config::lm lm_parameters[number_of_rounds];
@@ -97,11 +90,11 @@ int main()
   config::mt mt_parameters[number_of_rounds];
   
   /*Assigning chaotic map choices for each vector*/
-  map_row_random_vec = config::ChaoticMap(3);
-  map_col_random_vec = config::ChaoticMap(1);
-  map_row_rotation_vec = config::ChaoticMap(2);
-  map_col_rotation_vec = config::ChaoticMap(4);
-  map_diffusion_array = config::ChaoticMap(5);
+  map_row_random_vec = config::ChaoticMap(map_choice_array[0]);
+  map_col_random_vec = config::ChaoticMap(map_choice_array[1]);
+  map_row_rotation_vec = config::ChaoticMap(map_choice_array[2]);
+  map_col_rotation_vec = config::ChaoticMap(map_choice_array[3]);
+  map_diffusion_array = config::ChaoticMap(map_choice_array[4]);
   
   //if(DEBUG_VECTORS == 1)
   //{
@@ -142,6 +135,8 @@ int main()
   uint32_t *col_rotation_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
   uint32_t *row_random_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
   uint32_t *col_random_vec = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
+  
+  
   uint32_t *diffusion_array = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
   uint32_t *dummy_lut_vec = (uint32_t*)calloc(2,sizeof(uint32_t));
   

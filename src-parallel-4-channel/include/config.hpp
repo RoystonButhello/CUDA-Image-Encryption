@@ -93,8 +93,8 @@
 
 namespace config
 {
-  uint32_t rows = 200;
-  uint32_t cols = 100;
+  uint32_t rows = 1024;
+  uint32_t cols = 1024;
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
   int seed_lut_gen_1 = 1000;
@@ -111,8 +111,7 @@ namespace config
     TwoDLogisticMapAdvanced,
     TwoDLogisticAdjustedSineMap,
     TwoDSineLogisticModulationMap,
-    TwoDLogisticAdjustedLogisticMap,
-    AllMaps
+    TwoDLogisticAdjustedLogisticMap
   };
   
   

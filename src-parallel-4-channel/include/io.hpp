@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-  static inline long writeLMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position);
+  long writeLMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long writeLMAParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lma lma_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long writeSLMMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::slmm slmm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long writeLASMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lasm lasm_parameters[],int iteration,int number_of_rounds,long ptr_position);
@@ -10,7 +10,7 @@
   
   
 
-  static inline long readLMParameters(FILE *infile,const char *file_path,const char *read_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position);
+  long readLMParameters(FILE *infile,const char *file_path,const char *read_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long readLMAParameters(FILE *infile,const char *file_path,const char *read_mode,config::lma lma_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long readSLMMParameters(FILE *infile,const char *file_path,const char *read_mode,config::slmm slmm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long readLASMParameters(FILE *infile,const char *file_path,const char *read_mode,config::lasm lasm_parameters[],int iteration,int number_of_rounds,long ptr_position);
@@ -18,7 +18,7 @@
   static inline long readMTParameters(FILE *infile,const char *file_path,const char *read_mode,config::mt mt_parameters[],int iteration,int number_of_rounds,long ptr_position);
   
 
-static inline long writeLMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position)
+long writeLMParameters(FILE *outfile,const char *file_path,const char *write_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
     int fwrite_status = 9,fseek_status = 9;
@@ -223,7 +223,7 @@ static inline long writeLMParameters(FILE *outfile,const char *file_path,const c
   }  
   
   
-  static inline long readLMParameters(FILE *infile,const char *file_path,const char *read_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position)
+  long readLMParameters(FILE *infile,const char *file_path,const char *read_mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     
     int fread_status = 9,fseek_status = 9;

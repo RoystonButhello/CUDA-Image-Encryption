@@ -29,6 +29,7 @@ int main()
   
   long ptr_position = 0;
   double alpha = 0.00,beta = 0.00;
+  
   cudaEvent_t start_rotate,stop_rotate,start_swap,stop_swap;
 
 
@@ -48,7 +49,7 @@ int main()
   config::ChaoticMap map_col_rotation_vec;
   config::ChaoticMap map_diffusion_array;
   
-  int map_choice_array[5];
+  
   
   
   /*Parameter arrays*/
@@ -79,7 +80,7 @@ int main()
   
   uint32_t *dummy_lut_vec = (uint32_t*)calloc(2,sizeof(uint32_t));
   uint32_t *map_array = (uint32_t*)calloc(15,sizeof(uint32_t));
-  uint32_t *map_lut_array = (uint32_t*)calloc(5,sizeof(uint32_t));
+  uint32_t *map_choice_array = (uint32_t*)calloc(5,sizeof(uint32_t));
   
   /*GPU vector declarations*/
   uint8_t *gpu_img_vec;
@@ -109,15 +110,15 @@ int main()
   
   /*Generating and swapping chaotic map lut*/
   pattern::MTSequence(map_array,15,1,15,1000);
-  common::genMapLUTVec(map_lut_array,5);
-  common::swapLUT(map_lut_array,map_array,5);
+  common::genMapLUTVec(map_choice_array,5);
+  common::swapLUT(map_choice_array,map_array,5);
   
   /*Assigning chaotic map choices for each vector*/
-  map_row_random_vec = config::ChaoticMap(3);
-  map_col_random_vec = config::ChaoticMap(1);
-  map_row_rotation_vec = config::ChaoticMap(2);
-  map_col_rotation_vec = config::ChaoticMap(4);
-  map_diffusion_array = config::ChaoticMap(5);
+  map_row_random_vec = config::ChaoticMap(map_choice_array[0]);
+  map_col_random_vec = config::ChaoticMap(map_choice_array[1]);
+  map_row_rotation_vec = config::ChaoticMap(map_choice_array[2]);
+  map_col_rotation_vec = config::ChaoticMap(map_choice_array[3]);
+  map_diffusion_array = config::ChaoticMap(map_choice_array[4]);
   
   /*Storing each map choice into an array for writing
   map_choice_array[0] = int(map_row_random_vec);
@@ -169,28 +170,23 @@ int main()
   
   cout<<"\nNumber of rounds = "<<number_of_rounds;
   
-  /*Writing map choices array
-  outfile = fopen(config::constant_parameters_file_path,"ab");
+  /*Writing map choices array*/
+  outfile = fopen("map_choices.bin","wb");
   if(outfile == NULL)
   {
     printf("\nCould not open parameters.bin for writing map choices array\nExiting...");
     exit(0);
   }
   
-  cout<<"\npointer position before writing map choices array = "<<ptr_position;
-  //Offset pointer position by length of previous record
-  if(ptr_position > 0)
-  {
-      fseek_status = fseek(outfile,(ptr_position + 1),SEEK_SET);
-      ptr_position = ftell(outfile);
-  }
+  //cout<<"\npointer position before writing map choices array = "<<ptr_position;
+  
   
   cout<<"\nfseek status before writing map choices array = "<<fseek_status;
-  cout<<"\npointer position before wriitng map choices array = "<<ptr_position;
+  //cout<<"\npointer position before wriitng map choices array = "<<ptr_position;
   size_t size = 5 * sizeof(map_choice_array[0]);
   fwrite_status = fwrite(map_choice_array,size,1,outfile);
   cout<<"\nfwrite status after writing map choices array = "<<fwrite_status;
-  fclose(outfile);*/ 
+  fclose(outfile); 
   
   /*Writing map parameters*/
   ptr_position = pattern::writeMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,outfile,ptr_position,number_of_rounds);  
