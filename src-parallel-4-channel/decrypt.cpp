@@ -19,27 +19,28 @@ int main()
 
   if(RESIZE_TO_DEBUG == 1)
   {
-    cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
+    //cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
   }
   
   uint32_t m = 0,n = 0,channels = 0, total = 0;
   
   
   double alpha = 0.00,beta = 0.00;
-  int number_of_rounds = 0, i = 0;
+  int number_of_rotation_rounds = 0, number_of_swapping_rounds = 0,i = 0;
   long ptr_position = 0; 
   m = image.rows;
   n = image.cols;
   channels = image.channels();
   total = m * n;
-  int fread_status = 9,fseek_status = 9;  
+  int fread_status = 9,fseek_status = 9,seed = 0;  
 
   cout<<"\nRows = "<<m;
   cout<<"\nCols = "<<n;
   cout<<"\nChannels = "<<channels;
+  uint32_t *map_choice_array = (uint32_t*)calloc(6,sizeof(uint32_t)); 
+  uint32_t *map_array = (uint32_t*)calloc(15,sizeof(uint32_t));
   
-  
-  /*Reading number of rounds*/
+  /*Reading number of rotation rounds*/
   FILE *infile = fopen(config::constant_parameters_file_path,"rb");
   
   if(infile == NULL)
@@ -48,14 +49,85 @@ int main()
     exit(0);
   }
   
-  cout<<"\npointer position before reading the number of rounds = "<<number_of_rounds;
+  cout<<"\npointer position before reading the number of rotation rounds = "<<ptr_position;
 
-  fread_status = fread(&number_of_rounds,sizeof(number_of_rounds),1,infile);
+  fread_status = fread(&number_of_rotation_rounds,sizeof(number_of_rotation_rounds),1,infile);
   ptr_position =  ftell(infile);
-  cout<<"\npointer position after reading the number of rounds = "<<ptr_position; 
+  cout<<"\npointer position after reading the number of rotation rounds = "<<ptr_position; 
   fclose(infile);
   
-  cout<<"\nNumber of rounds = "<<number_of_rounds;
+  /*Reading number of swapping rounds*/
+  infile = fopen(config::constant_parameters_file_path,"rb");
+  
+  if(infile == NULL)
+  {
+    cout<<"\nCould not open "<<config::constant_parameters_file_path<<" for reading\nExiting...";
+    exit(0);
+  }
+  
+  if(ptr_position > 0)
+  {
+     fseek_status = fseek(infile,(ptr_position),SEEK_SET);
+     ptr_position = ftell(infile);
+  }
+  
+  if(DEBUG_READ_WRITE == 1)
+  {
+    cout<<"\npointer position before reading the number of swapping rounds = "<<ptr_position;
+  }
+  
+  fread_status = fread(&number_of_swapping_rounds,sizeof(number_of_swapping_rounds),1,infile);
+  ptr_position =  ftell(infile);
+  
+  if(DEBUG_READ_WRITE == 1)
+  {
+    cout<<"\nfread status after reading the number of swapping rounds = "<<fread_status;
+    cout<<"\npointer position after reading the number of swapping rounds = "<<ptr_position; 
+  }
+  fclose(infile);
+  
+  /*Reading seed*/
+  
+  infile = fopen(config::constant_parameters_file_path,"rb");
+  
+  if(infile == NULL)
+  {
+    cout<<"\nCould not open "<<config::constant_parameters_file_path<<" for writing\nExiting...";
+    exit(0);
+  }
+  
+  
+  if(ptr_position > 0)
+  {
+     fseek_status = fseek(infile,(ptr_position),SEEK_SET);
+     ptr_position = ftell(infile);
+  }
+  
+  if(DEBUG_READ_WRITE == 1)
+  {
+    cout<<"\npointer position before reading seed = "<<ptr_position;
+  }
+  
+  fread_status = fread(&seed,sizeof(seed),1,infile);
+  ptr_position =  ftell(infile);
+  
+  if(DEBUG_READ_WRITE == 1)
+  {
+    cout<<"\nfread status after reading seed = "<<fread_status;
+    cout<<"\npointer position after reading seed = "<<ptr_position; 
+  }
+  
+  fclose(infile);
+  
+  
+  cout<<"\nnumber of rotation rounds = "<<number_of_rotation_rounds;
+  cout<<"\nnumber of swapping rounds = "<<number_of_swapping_rounds;
+  cout<<"\nseed = "<<seed;
+  
+  /*Generating and swapping chaotic map lut*/
+  pattern::MTSequence(map_array,15,1,15,seed);
+  common::genMapLUTVec(map_choice_array,6);
+  common::swapLUT(map_choice_array,map_array,6);
   
   /*Chaotic map choice variables*/
   config::ChaoticMap map_row_random_vec;
@@ -64,30 +136,13 @@ int main()
   config::ChaoticMap map_col_rotation_vec;
   config::ChaoticMap map_diffusion_array;
   
-  uint32_t *map_choice_array = (uint32_t*)calloc(5,sizeof(uint32_t));
-  
-  
-  /*Reading map choice array*/
-  infile = fopen("map_choices.bin","rb");
-  if(infile == NULL)
-  {
-    printf("\nCould not open parameters.bin for reading map choices array\nExiting...");
-    exit(0);
-  }
-  
-  cout<<"\nfseek status before reading map choices array = "<<fseek_status;
-  size_t size = 5 * sizeof(map_choice_array[0]);
-  fread_status = fread(map_choice_array,size,1,infile);
-  cout<<"\nfread status after reading map choices array = "<<fread_status;
-  fclose(infile);
-  
   /*Parameter arrays*/
-  config::lm lm_parameters[number_of_rounds];
-  config::lma lma_parameters[number_of_rounds];
-  config::slmm slmm_parameters[number_of_rounds];
-  config::lasm lasm_parameters[number_of_rounds];
-  config::lalm lalm_parameters[number_of_rounds];
-  config::mt mt_parameters[number_of_rounds];
+  config::lm lm_parameters[6];
+  config::lma lma_parameters[6];
+  config::slmm slmm_parameters[6];
+  config::lasm lasm_parameters[6];
+  config::lalm lalm_parameters[6];
+  config::mt mt_parameters[6];
   
   /*Assigning chaotic map choices for each vector*/
   map_row_random_vec = config::ChaoticMap(map_choice_array[0]);
@@ -99,24 +154,24 @@ int main()
   //if(DEBUG_VECTORS == 1)
   //{
     cout<<"\nMap choice array after reading = ";
-    for(int i = 0; i < 5; ++i)
+    for(int i = 0; i < 6; ++i)
     {
-      printf(" %d",int(map_choice_array[i]));
+      printf(" %d",map_choice_array[i]);
     }
   //}
   
   /*Reading map parameters*/
-  ptr_position = pattern::readMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,infile,ptr_position,number_of_rounds);  
-  ptr_position = pattern::readMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,infile,ptr_position,number_of_rounds);
-  ptr_position = pattern::readMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,infile,ptr_position,number_of_rounds);
-  ptr_position = pattern::readMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_random_vec,infile,ptr_position,number_of_rounds);
-  ptr_position = pattern::readMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_diffusion_array,infile,ptr_position,1);
+  ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,infile,"rb",ptr_position,number_of_rotation_rounds);  
+  ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,infile,"rb",ptr_position,number_of_rotation_rounds);
+  ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,infile,"rb",ptr_position,number_of_swapping_rounds);
+  ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_random_vec,infile,"rb",ptr_position,number_of_swapping_rounds);
+  ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_diffusion_array,infile,"rb",ptr_position,1);
   
   /*Diplaying map parameters*/
-  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,number_of_rounds);
-  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,number_of_rounds);
-  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,number_of_rounds);
-  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_random_vec,number_of_rounds);  
+  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,number_of_rotation_rounds);
+  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,number_of_rotation_rounds);
+  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,number_of_swapping_rounds);
+  pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_random_vec,number_of_swapping_rounds);  
   pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_diffusion_array,1);  
   
   /*CPU vector declarations*/
@@ -233,13 +288,24 @@ int main()
     /*Reading map parameters*/
     
     /*Display map parameters*/
-    for(i = number_of_rounds - 1; i >= 0; --i)
+    for(i = number_of_swapping_rounds - 1; i >= 0; --i)
     {
       
       /*Vector generation for row and coulumn swapping*/
-      pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_random_vec,row_swap_lut_vec,map_row_random_vec,i,m,total * channels);
-      pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_random_vec,col_swap_lut_vec,map_col_random_vec,i,n,total * channels);  
-      
+      if(MULTIPLE_ARRAY_GENERATION == 1)
+      {
+        pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_random_vec,row_swap_lut_vec,map_row_random_vec,i,m,total * channels);
+        pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_random_vec,col_swap_lut_vec,map_col_random_vec,i,n,total * channels);  
+      }
+
+      else
+      {
+        if(i == number_of_swapping_rounds - 1)
+        {
+          pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_random_vec,row_swap_lut_vec,map_row_random_vec,0,m,total * channels);
+          pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_random_vec,col_swap_lut_vec,map_col_random_vec,0,n,total * channels); 
+        }
+      }
       dim3 dec_row_col_swap_grid(m,n,1);
       dim3 dec_row_col_swap_blocks(channels,1,1);
       
@@ -256,7 +322,7 @@ int main()
       cudaMemcpy(dec_vec,gpu_dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
       //Swapping
-      if(number_of_rounds > 1)
+      if(number_of_swapping_rounds > 1)
       {
         cudaMemcpy(enc_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
@@ -305,15 +371,26 @@ int main()
     /*Display map parameters*/
     
     
-    for(i = number_of_rounds - 1; i >= 0; --i)
+    for(i = number_of_rotation_rounds - 1; i >= 0; --i)
     {
       
       cout<<"\nROUND "<<i;
       
       /*Vector generation for row and column unrotation*/
-      pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_rotation_vec,U,map_row_rotation_vec,i,m,total * channels);
-      pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_rotation_vec,V,map_col_rotation_vec,i,n,total * channels);
-      
+      if(MULTIPLE_ARRAY_GENERATION == 1)
+      {
+        pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_rotation_vec,U,map_row_rotation_vec,i,m,total * channels);
+        pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_rotation_vec,V,map_col_rotation_vec,i,n,total * channels);
+      }
+
+      else
+      {
+        if(i == number_of_rotation_rounds - 1)
+        {
+          pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_rotation_vec,U,map_row_rotation_vec,0,m,total * channels);
+          pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_rotation_vec,V,map_col_rotation_vec,0,n,total * channels);
+        }
+      }
       dim3 dec_gen_cat_map_grid(m,n,1);
       dim3 dec_gen_cat_map_blocks(channels,1,1);
       
@@ -330,7 +407,7 @@ int main()
       cudaMemcpy(final_vec,gpu_final_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
       //Swapping
-      if(number_of_rounds > 1)
+      if(number_of_rotation_rounds > 1)
       {
         cudaMemcpy(dec_vec,final_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);

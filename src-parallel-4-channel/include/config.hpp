@@ -28,67 +28,70 @@
   #error "Unknown compiler"
 #endif
 
-#define RESIZE_TO_DEBUG              1
-#define DEBUG_VECTORS                0
+#define RESIZE_TO_DEBUG                    1
+#define DEBUG_READ_WRITE                   0
+#define DEBUG_VECTORS                      0
 
-#define DEBUG_IMAGES                 1
-#define DEBUG_INTERMEDIATE_IMAGES    1
-#define DEBUG_FILE_CONTENTS          0
+#define DEBUG_IMAGES                       1
+#define DEBUG_INTERMEDIATE_IMAGES          1
+#define DEBUG_FILE_CONTENTS                0
 
-#define PRINT_TIMING                 1
-#define PRINT_IMAGES                 0
+#define PRINT_TIMING                       1
+#define PRINT_IMAGES                       0
 
-#define ROW_COL_SWAPPING             1
-#define ROW_COL_ROTATION             1
-#define DIFFUSION                    1
-#define PARALLELIZED_DIFFUSION       0
+#define ROW_COL_SWAPPING                   1
+#define ROW_COL_ROTATION                   1
+#define DIFFUSION                          1
+#define PARALLELIZED_DIFFUSION             0
+#define MULTIPLE_ARRAY_GENERATION          1
 
-#define ROUNDS_LOWER_LIMIT           1
-#define ROUNDS_UPPER_LIMIT           2
 
-#define X_LOWER_LIMIT                0.10000000
-#define X_UPPER_LIMIT                0.20000000
+#define ROUNDS_LOWER_LIMIT                 1
+#define ROUNDS_UPPER_LIMIT                 2
 
-#define Y_LOWER_LIMIT                0.10000000
-#define Y_UPPER_LIMIT                0.20000000
+#define X_LOWER_LIMIT                      0.10000000
+#define X_UPPER_LIMIT                      0.20000000
 
-#define MYU_LOWER_LIMIT              0.50000000
-#define MYU_UPPER_LIMIT              0.90000000
+#define Y_LOWER_LIMIT                      0.10000000
+#define Y_UPPER_LIMIT                      0.20000000
 
-#define LASM_LOWER_LIMIT             0.40000000
-#define LASM_UPPER_LIMIT             0.90000000
+#define MYU_LOWER_LIMIT                    0.50000000
+#define MYU_UPPER_LIMIT                    0.90000000
 
-#define MYU1_LOWER_LIMIT             3.01000000
-#define MYU1_UPPER_LIMIT             3.29000000
+#define LASM_LOWER_LIMIT                   0.40000000
+#define LASM_UPPER_LIMIT                   0.90000000
 
-#define MYU2_LOWER_LIMIT             3.01000000
-#define MYU2_UPPER_LIMIT             3.30000000
+#define MYU1_LOWER_LIMIT                   3.01000000
+#define MYU1_UPPER_LIMIT                   3.29000000
 
-#define LAMBDA1_LOWER_LIMIT          0.16000000
-#define LAMBDA1_UPPER_LIMIT          0.21000000
+#define MYU2_LOWER_LIMIT                   3.01000000
+#define MYU2_UPPER_LIMIT                   3.30000000
 
-#define LAMBDA2_LOWER_LIMIT          0.14000000
-#define LAMBDA2_UPPER_LIMIT          0.15000000
+#define LAMBDA1_LOWER_LIMIT                0.16000000
+#define LAMBDA1_UPPER_LIMIT                0.21000000
 
-#define ALPHA_LOWER_LIMIT            0.90500000
-#define ALPHA_UPPER_LIMIT            1.00000000
+#define LAMBDA2_LOWER_LIMIT                0.14000000
+#define LAMBDA2_UPPER_LIMIT                0.15000000
 
-#define BETA_LOWER_LIMIT             2.97000000
-#define BETA_UPPER_LIMIT             3.20000000
+#define ALPHA_LOWER_LIMIT                  0.90500000
+#define ALPHA_UPPER_LIMIT                  1.00000000
 
-#define R_LOWER_LIMIT                1.11000000
-#define R_UPPER_LIMIT                1.19000000
+#define BETA_LOWER_LIMIT                   2.97000000
+#define BETA_UPPER_LIMIT                   3.20000000
 
-#define SEED_LOWER_LIMIT             30000
-#define SEED_UPPER_LIMIT             90000
+#define R_LOWER_LIMIT                      1.11000000
+#define R_UPPER_LIMIT                      1.19000000
 
-#define MAP_LOWER_LIMIT              1
-#define MAP_UPPER_LIMIT              5
+#define SEED_LOWER_LIMIT                   30000
+#define SEED_UPPER_LIMIT                   90000
 
-#define LOWER_LIMIT                  0.000001
-#define UPPER_LIMIT                  0.09
-#define NUMBER_OF_BITS               31
-#define INIT                         100
+#define MAP_LOWER_LIMIT                    1
+#define MAP_UPPER_LIMIT                    5
+
+#define LOWER_LIMIT                        0.000001
+#define UPPER_LIMIT                        0.09
+#define NUMBER_OF_BITS                     31
+#define INIT                               100
 #define BIT_RETURN(A,LOC) (( (A >> LOC ) & 0x1) ? 1:0)
 
 namespace config
