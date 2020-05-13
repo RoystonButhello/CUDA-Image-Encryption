@@ -1,7 +1,29 @@
-# Ignore following directories
-__pycache__\\
-catmap\\
-temp\\
+#Directories
+shell_scripts
+Miscellaneous
+Tests
+CUDA
+CURAND
+Papers
+Reports
+Chaotic-Maps
+src/proof
 
-# Ignore output file
-out.png
+#Files
+*.png
+*.tar.gz
+*.userprefs
+*.sln
+*.vcxproj
+
+src-parallel-3-channel/*.tar.gz
+src-parallel-4-channel/*.tar.gz
+src-parallel-3-channel/test.cpp
+src-parallel-4-channel/test.cpp
+src-parallel-3-channel/test
+src-parallel-4-channel/test
+src-parallel-4-channel/input/*.xcf
+
+
+
+
