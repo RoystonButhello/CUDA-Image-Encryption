@@ -8,10 +8,9 @@
   static inline long rwLASMParameters(FILE *outfile,const char *file_path,const char *mode,config::lasm lasm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long rwLALMParameters(FILE *outfile,const char *file_path,const char *mode,config::lalm lalm_parameters[],int iteration,int number_of_rounds,long ptr_position);
   static inline long rwMTParameters(FILE *outfile,const char *file_path,const char *mode,config::mt mt_parameters[],int iteration,int number_of_rounds,long ptr_position);
-  static inline long rwIntegerArray(FILE *outfile,const char *file_path,const char *mode,uint32_t *map_choice_array,int length,long ptr_position);
-  void rwInteger(FILE *outfile,const char *file_path,const char *mode,int seed,int length,long ptr_position);
   
-
+  
+/*Read or write Logistic Map parameters*/
 static inline long rwLMParameters(FILE *outfile,const char *file_path,const char *mode,config::lm lm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
@@ -93,6 +92,8 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
     return pointer_position;
   }
   
+  
+  /*Read or write Logistic Map Advanced parameters*/
   static inline long rwLMAParameters(FILE *outfile,const char *file_path,const char *mode,config::lma lma_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
@@ -173,6 +174,7 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
   }
   
   
+  /*Read or write Sine Logistic Modulation Map parameters*/
   static inline long rwSLMMParameters(FILE *outfile,const char *file_path,const char *mode,config::slmm slmm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
@@ -251,6 +253,7 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
     return pointer_position;
   }
   
+  /*Read or write Logistic Adjusted Sine Map parameters*/
   static inline long rwLASMParameters(FILE *outfile,const char *file_path,const char *mode,config::lasm lasm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
@@ -331,6 +334,7 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
     return pointer_position;
   } 
   
+  /*Read or write Logistic Adjusted Logistic Map parameters*/
   static inline long rwLALMParameters(FILE *outfile,const char *file_path,const char *mode,config::lalm lalm_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     long pointer_position = ptr_position;
@@ -411,6 +415,8 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
     return pointer_position;
   }
   
+ 
+  /*Read or write Mersenne Twister seed*/ 
   static inline long rwMTParameters(FILE *outfile,const char *file_path,const char *mode,config::mt mt_parameters[],int iteration,int number_of_rounds,long ptr_position)
   {
     int fseek_status = 9,fwrite_status = 9,fread_status = 9;
@@ -488,138 +494,8 @@ static inline long rwLMParameters(FILE *outfile,const char *file_path,const char
     
     fclose(outfile);
     return pointer_position;
-  }  
-  
-  
-  static inline long rwIntegerArray(FILE *outfile,const char *file_path,const char *mode,uint32_t *map_choice_array,int length,long ptr_position)
-  {
-    int fwrite_status = 9,fseek_status = 9,fread_status = 9;
-    long pointer_position = ptr_position;
-    outfile = fopen(file_path,mode);
-    
-    if(outfile == NULL)
-    {
-      printf("\nCould not open parameters.bin for writing map choices array\nExiting...");
-      exit(0);
-    }
-    
-    if(strcmp("wb",mode) == 0 || strcmp("ab",mode) == 0)
-    {
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\npointer position before writing map choices array = "<<ptr_position;
-      }
-      
-      //Offset pointer position by length of previous record
-      if(pointer_position > 0)
-      {
-        fseek_status = fseek(outfile,(pointer_position + 1),SEEK_SET);
-        pointer_position = ftell(outfile);
-      }
-    
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\nfseek status before writing map choices array = "<<fseek_status;
-        cout<<"\npointer position after wriitng map choices array = "<<pointer_position;
-      }
-    
-      size_t size = length * sizeof(map_choice_array[0]);
-      fwrite_status = fwrite(map_choice_array,size,1,outfile);
-      cout<<"\nfwrite status after writing map choices array = "<<fwrite_status;
-    }
-    
-    else
-    {
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\npointer position before reading map choices array = "<<ptr_position;
-      }
-      
-      //Offset pointer position by length of previous record
-      if(pointer_position > 0)
-      {
-        fseek_status = fseek(outfile,(pointer_position),SEEK_SET);
-        pointer_position = ftell(outfile);
-      }
-    
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\nfseek status before reading map choices array = "<<fseek_status;
-        cout<<"\npointer position after reading map choices array = "<<pointer_position;
-      }
-    
-      size_t size = length * sizeof(map_choice_array[0]);
-      fread_status = fread(map_choice_array,size,1,outfile);
-      cout<<"\nfread status after reading map choices array = "<<fread_status;
-    }
-    fclose(outfile);
-    return pointer_position; 
   }
   
-  
-  void rwInteger(FILE *outfile,const char *file_path,const char *mode,int seed,int length,long ptr_position)
-  {
-    int fwrite_status = 9,fseek_status = 9,fread_status = 9;
-    long pointer_position = ptr_position;
-    outfile = fopen(file_path,mode);
-    
-    if(outfile == NULL)
-    {
-      printf("\nCould not open parameters.bin for writing integer\nExiting...");
-      exit(0);
-    }
-    
-    if(strcmp("wb",mode) == 0 || strcmp("ab",mode) == 0)
-    {
-      //Offset pointer position by length of previous record
-      if(pointer_position > 0)
-      {
-        fseek_status = fseek(outfile,(pointer_position + 1),SEEK_SET);
-        pointer_position = ftell(outfile);
-      }
-    
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\nfseek status before writing integer = "<<fseek_status;
-        cout<<"\npointer position before writing integer = "<<pointer_position;
-      }
-    
-      size_t size = sizeof(seed);
-      fwrite_status = fwrite(&seed,size,1,outfile);
-      cout<<"\nfwrite status after writing integer = "<<fwrite_status;
-      cout<<"\npointer position after writing integer = "<<pointer_position;
-    }
-    
-    else
-    {
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\npointer position before reading integer = "<<ptr_position;
-      }
-      
-      //Offset pointer position by length of previous record
-      if(pointer_position > 0)
-      {
-        fseek_status = fseek(outfile,(pointer_position),SEEK_SET);
-        pointer_position = ftell(outfile);
-      }
-    
-      if(DEBUG_READ_WRITE == 1)
-      {
-        cout<<"\nfseek status before reading integer = "<<fseek_status;
-        cout<<"\npointer position before reading integer = "<<pointer_position;
-      }
-    
-      size_t size = sizeof(seed);
-      fread_status = fread(&seed,size,1,outfile);
-      cout<<"\nfread status after reading integer = "<<fread_status;
-      cout<<"\npointer position after reading integer = "<<pointer_position;
-    }
-    
-    cout<<"\nClosed file in rwInteger";    
-    fclose(outfile);
-    //return pointer_position;  
-  }
 
 #endif
 

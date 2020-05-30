@@ -13,16 +13,14 @@ namespace pattern
   static inline void twodLogisticMap(double *&x, double *&y, uint32_t *&random_array,double r,uint32_t total);
   
   static inline void initializeMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds);
-  
   static inline void assignMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds);
-  
   static inline void displayMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds);  
 
   static inline long rwMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,FILE *outfile,const char *mode,long ptr_position,int number_of_rounds);
-
   static inline void selectChaoticMap(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],double* x,double* y,double* x_bar,double* y_bar,uint32_t*& random_array,uint32_t*& lut_vec,config::ChaoticMap map,int iteration,uint32_t m,uint32_t random_array_length);
   
-
+  /*Produces a pseudorandom sequence of 32-bit unsigned integers using chaotic map*/
+  
   static inline void twodLogisticMapAdvanced(double *&x, double *&y, uint32_t *&random_array, double myu1, double myu2, double lambda1, double lambda2,uint32_t number)
   {
     //printf("\n In 2dLMA");
@@ -125,6 +123,7 @@ namespace pattern
     } 
   }
   
+  /*Initializes all chaotic map parameters to zero*/
   static inline void initializeMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds)
   {
     
@@ -183,10 +182,10 @@ namespace pattern
     }  
   }
   
+  /*Initializes all chaotic map parameters to random values*/
   static inline void assignMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds)
   {
-    //Assigning random values to parameters
-    
+        
     for(int i = 0; i < number_of_rounds; ++i)
     {
       if(int(map) == 1)
@@ -241,6 +240,8 @@ namespace pattern
     }
   }
   
+  
+  /*Displays all chaotic map parameters*/
   static inline void displayMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,int number_of_rounds)
   {
     
@@ -298,6 +299,7 @@ namespace pattern
     }
  }
   
+  /*Reads or writes parameters of chosen chaotic map*/
   static inline long rwMapParameters(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],config::ChaoticMap map,FILE *outfile,const char *mode,long ptr_position,int number_of_rounds)
   {
     if(int(map) == 1)
@@ -337,12 +339,12 @@ namespace pattern
     }
   }
   
-  
+  /*Selects the chaotic map according to given chaotic map choice*/
   static inline void selectChaoticMap(config::lm lm_parameters[],config::lma lma_parameters[],config::slmm slmm_parameters[],config::lasm lasm_parameters[],config::lalm lalm_parameters[],config::mt mt_parameters[],double* x,double* y,double* x_bar,double* y_bar,uint32_t*& random_array,uint32_t*& lut_vec,config::ChaoticMap map,int iteration,uint32_t m,uint32_t random_array_length)
   {
     if(int(map) == 1)
     {
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nLM chosen";
       
       x[0] = lm_parameters[iteration].x_init;
@@ -355,7 +357,7 @@ namespace pattern
     
     else if(int(map) == 2)
     {
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nLMA chosen";
       x[0] = lma_parameters[iteration].x_init;
       y[0] = lma_parameters[iteration].y_init;
@@ -368,7 +370,7 @@ namespace pattern
     
     else if(int(map) == 3)
     {
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nSLMM chosen";
       x[0] = slmm_parameters[iteration].x_init;
       y[0] = slmm_parameters[iteration].y_init;
@@ -381,7 +383,7 @@ namespace pattern
     
     else if(int(map) == 4)
     {
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nLASM chosen";
       x[0] = lasm_parameters[iteration].x_init;
       y[0] = lasm_parameters[iteration].y_init;
@@ -394,7 +396,7 @@ namespace pattern
     
     else if(int(map) == 5)
     {
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nLALM chosen";
       x[0] = lalm_parameters[iteration].x_init;
       y[0] = lalm_parameters[iteration].y_init;
@@ -408,7 +410,7 @@ namespace pattern
     else if(int(map) == 6)
     {
       
-      cout<<"\n\nIteration = "<<iteration;
+      //cout<<"\n\nIteration = "<<iteration;
       //cout<<"\nMT chosen";
       MTSequence(random_array,random_array_length,config::lower_limit,config::upper_limit,mt_parameters[iteration].seed_1);
       

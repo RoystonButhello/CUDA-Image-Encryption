@@ -34,17 +34,14 @@
 
 #define DEBUG_IMAGES                       1
 #define DEBUG_INTERMEDIATE_IMAGES          1
-#define DEBUG_FILE_CONTENTS                0
+#define DEBUG_MAP_PARAMETERS               0
+#define DEBUG_MAP_CHOICES_ARRAY            0
 
-#define PRINT_TIMING                       1
-#define PRINT_IMAGES                       0
+#define WRITE_INPUT_THROUGH_OPENCV         1
 
 #define ROW_COL_SWAPPING                   1
 #define ROW_COL_ROTATION                   1
 #define DIFFUSION                          1
-#define PARALLELIZED_DIFFUSION             0
-#define MULTIPLE_ARRAY_GENERATION          1
-
 
 #define ROUNDS_LOWER_LIMIT                 1
 #define ROUNDS_UPPER_LIMIT                 2
@@ -96,17 +93,13 @@
 
 namespace config
 {
+  /*Resized image dimensions*/
   uint32_t rows = 1024;
   uint32_t cols = 1024;
+  
+  /*Range of pseudorandom values to be produced by Mersenne Twister*/
   int lower_limit = 1;
   int upper_limit = (rows * cols * 3) + 1;
-  int seed_lut_gen_1 = 1000;
-  int seed_lut_gen_2 = 2000;
-
-  int seed_row_rotate = 1000000;
-  int seed_col_rotate = 2000000;
-  int seed_diffusion = 3000000;
-  
   
   enum class ChaoticMap
   {
@@ -116,7 +109,6 @@ namespace config
     TwoDSineLogisticModulationMap,
     TwoDLogisticAdjustedLogisticMap
   };
-  
   
   typedef struct
   {
@@ -164,51 +156,14 @@ namespace config
     int seed_1;
   }mt;  
   
-  
-
-  std::string image_name = "airplane";
-  std::string encrypted_image = image_name + "_encrypted_";
-  std::string decrypted_image = image_name + "_decrypted_";
-  std::string swapped_image = "_swapped";
-  std::string unswapped_image =  image_name + "_unswapped";
-  std::string rotated_image = image_name + "_rotated"; 
-  std::string unrotated_image =  image_name + "_unrotated";
-  std::string diffused_image = image_name + "_diffused";
-  std::string undiffused_image = image_name + "_undiffused";
-  std::string extension = ".png";
-  std::string input = "input";   
-
-  std::string input_image_path = input + separator + image_name + extension;
-  std::string swapped_image_path = swapped_image + extension;
-  std::string unswapped_image_path = unswapped_image + extension;
-  std::string rotated_image_path = rotated_image + extension;
-  std::string unrotated_image_path = unrotated_image + extension;
-  std::string diffused_image_path = diffused_image + extension;
-  std::string undiffused_image_path = undiffused_image + extension; 
-  std::string encrypted_image_path = encrypted_image + extension;
-  std::string decrypted_image_path = decrypted_image + extension;
-  std::string final_rotated_image_path = rotated_image + "_ROUND_" + std::to_string(1) + extension;  
-  std::string final_swapped_image_path = swapped_image + "_ROUND_" + std::to_string(1) + extension;  
   /*Parameter file paths*/
-  
   std::string parameters_file = "parameters";
   std::string binary_extension = ".bin";
   std::string parameters_file_path = parameters_file + binary_extension; 
   
-  
-  /*File open modes*/
-  std::string write_mode = "w";
-  std::string append_mode = "ab";
-  std::string read_mode = "r";
-  
   /*char* constant strings for use with standard C file handling functions*/
-
   char *constant_parameters_file_path = const_cast<char*>(parameters_file_path.c_str());
   
-  char *constant_append_mode = const_cast<char*>(append_mode.c_str());          
-  char *constant_read_mode = const_cast<char*>(read_mode.c_str());
-  char *constant_write_mode = const_cast<char*>(write_mode.c_str());
-   
 }  
 
 #endif
