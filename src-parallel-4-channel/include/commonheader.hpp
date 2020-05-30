@@ -18,6 +18,10 @@
 #include <cmath>    /*For sqrt()*/ 
 #include <cstdlib>  /*For exit()*/
 #include <ctime>    /*For clock()*/
+#include <openssl/sha.h> /*For SHA256 hash*/
+#include <iomanip> /*For setw()*/
+#include <sstream> /*For stringstream*/
+#include <vector>  /*For std::vector*/
 #include "config.hpp"
 
 
@@ -44,31 +48,30 @@ namespace common
   static inline void printArray32(uint32_t *&arr,int length);
   static inline void printArrayDouble(double *&arr,int length);
   
-  //static inline uint32_t getLast8Bits(uint32_t number);
-  //static inline uint64_t getManipulatedSystemTime();
-  //static inline uint32_t getLargestPrimeFactor(uint8_t n); 
-  //static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time);
-  
   static inline uint32_t getRandomUnsignedInteger32(uint32_t lower_bound,uint32_t upper_bound);
   static inline int getRandomInteger(int lower_bound,int upper_bound);
   static inline uint8_t getRandomUnsignedInteger8(uint8_t lower_bound,uint8_t upper_bound);
   static inline double getRandomDouble(double lower_limit,double upper_limit);
   
   static inline config::ChaoticMap mapAssigner(int lower_limit, int upper_limit);
-  
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n);
-   
   static inline void swapLUT(uint32_t *&swapLUT,uint32_t *randVec,uint32_t m);
-  
   static inline void genLUTVec(uint32_t *&lutVec,uint32_t n);
   
   static inline void genMapLUTVec(uint32_t *&lut_vec,uint32_t n);
+  static inline std::string getFileNameFromPath(std::string filename);
   
-   
+  static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH]);
+  static inline std::string calc_sha256(const char* path);
   
+  static inline void checkImageVectors(uint8_t *plain_img_vec,uint8_t *decrypted_img_vec,uint32_t total);
+  static inline bool checkImages(cv::Mat image_1,cv::Mat image_2);
+  
+  
+  /*Converts an image of dimensions N x M into a 1D vector of length N x M*/
   static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint32_t channels)
   {
-    cout<<"\nIn flattenImage";
+    //cout<<"\nIn flattenImage";
     uint16_t m=0,n=0;
     uint32_t total=0;
     m=(uint16_t)image.rows;
@@ -81,6 +84,7 @@ namespace common
     }
   }
 
+  /*Prints the gray level values in a cv::Mat image in row major order*/
   static inline void printImageContents(cv::Mat image,uint32_t channels)
   {
     //cout<<"\nIn printImageContents";
@@ -100,10 +104,10 @@ namespace common
     }
   }
 
-
+  /*Checks if a 16-bit integer exceeds 255*/
   static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
   {
-    //cout<<"\nIn checkOverflow";
+    
     if((number_1*number_2)>=512)
     {
       printf("\n%d , %d exceeded 512",number_1,number_2);
@@ -118,7 +122,7 @@ namespace common
     return 0;
   }
 
-  /* formatted output of ieee-754 representation of float */
+  /*formatted output of ieee-754 representation of float */
   static inline void show_ieee754 (double f)
   {
     union {
@@ -138,7 +142,8 @@ namespace common
             "                   |\n\n");
   }
 
-  //Print bits of an integer
+  
+  /*Print bits of an integer*/
   static inline void print_int_bits(int num)
   {   
     int x=1;
@@ -150,6 +155,7 @@ namespace common
     }
   }
 
+  /*Transfers last n bits from a double to an n-bit unsigned integer*/
   static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits)
   {
     union {
@@ -184,7 +190,7 @@ namespace common
     return bit_store_16;
   }
 
-
+  /*Writes a 32-bit vector to a .txt file*/
   static inline void writeVectorToFile32(uint32_t *&vec,int length,std::string filename)
   {
     std::ofstream file(filename);
@@ -205,6 +211,7 @@ namespace common
     file.close();
   }
 
+  /*Writes an 8-bit vector to a .txt file*/
   static inline void writeVectorToFile8(uint8_t *&vec,int length,std::string filename)
   {
     std::ofstream file(filename);
@@ -224,7 +231,8 @@ namespace common
     file<<elements;
     file.close();
   }
-
+  
+  /*Prints an 8-bit integer array*/
   static inline void printArray8(uint8_t *&arr,int length)
   {
     for(int i = 0; i < length; ++i)
@@ -233,6 +241,7 @@ namespace common
     }
   }
 
+  /*Prints a 16-bit integer array*/
   static inline void printArray16(uint16_t *&arr, int length)
   {
     for(int i = 0; i < length; ++i)
@@ -241,6 +250,7 @@ namespace common
     }
   }
 
+  /*Prints a 32-bit integer array*/
   static inline void printArray32(uint32_t *&arr, int length)
   {
     for(int i = 0; i < length; ++i)
@@ -249,6 +259,7 @@ namespace common
     }
   }
   
+  /*Prints a double array*/
   static inline void printArrayDouble(double *&arr,int length)
   {
     for(int i = 0; i < length; ++i)
@@ -257,60 +268,8 @@ namespace common
     }
   }
   
-  /*static inline uint32_t getLast8Bits(uint32_t number)
-  {
-    //cout<<"\nIn getLast8Bits";
-    uint32_t  result=number & 0xFF;
-    return result;
-
-  }*/
-
-  /*static inline uint64_t getManipulatedSystemTime()
-  {
-    //cout<<"\nIn getManipulatedSystemTime";
-    uint64_t microseconds_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    uint64_t manip_sys_time=(microseconds_since_epoch%255);  
-    //printf("\n\n\nMicroseconds since epoch=%ld\t",microseconds_since_epoch);
-    return manip_sys_time;
-  }*/
-
-  /*static inline uint32_t getLargestPrimeFactor(uint32_t number)
-  {
-     //cout<<"\nIn getLargestPrimeFactor";
-     int i=0;
-     for (i = 2; i <= number; i++) {
-            if (number % i == 0) {
-                number /= i;
-                i--;
-            }
-        }
-
-    //cout<<"\ni= "<<i;
-    return i;
-
-  }*/
-
-  /*static inline void generatePRNG(uint8_t *&random_array,uint32_t alpha,uint32_t manip_sys_time)
-  {
-    //cout<<"\nIn generatePRNG";
-    uint32_t largest_prime_factor=0;
-
-    for(uint32_t i=0;i<256;++i)
-    {
-    
-      manip_sys_time=manip_sys_time+alpha;
-      largest_prime_factor=getLargestPrimeFactor(manip_sys_time);
-    
-      printf("\n\nlargest_prime_factor = %d",largest_prime_factor);
-      printf("\n\nmanip_sys_time = %d",manip_sys_time);
-      printf("\n\nalpha = %d",alpha);
-      printf("\n\nrandom_number= %d",random_number);
-    
-      random_array[i]=(getLast8Bits(largest_prime_factor*manip_sys_time));
-      //printf("\n\nrandom_array[%d]= %d",i,random_array[i]);
-    }
-  }*/
   
+  /*Returns a random 8-bit unsigned integer*/
   static inline uint8_t getRandomUnsignedInteger8(uint8_t lower_bound,uint8_t upper_bound)
   {
       std::random_device r;
@@ -321,6 +280,7 @@ namespace common
       return alpha;
   }
 
+  /*Returns a random 32-bit unsigned integer*/
   static inline uint32_t getRandomUnsignedInteger32(uint32_t lower_bound,uint32_t upper_bound)
   {
       //cout<<"\nIn getSeed";
@@ -332,6 +292,7 @@ namespace common
       return alpha;
   }
   
+  /*Returns a random integer*/
   static inline int getRandomInteger(int lower_bound,int upper_bound)
   {
       //cout<<"\nIn getSeed";
@@ -343,6 +304,7 @@ namespace common
       return alpha;
   }  
 
+  /*Returns a random double*/
   static inline double getRandomDouble(double lower_limit,double upper_limit)
   {
      std::random_device r;
@@ -354,6 +316,7 @@ namespace common
      return randnum;
   }
   
+  /*Assigns a chaotic map choice*/
   static inline config::ChaoticMap mapAssigner(int lower_limit, int upper_limit)
   {
     config::ChaoticMap chaotic_map;
@@ -361,6 +324,7 @@ namespace common
     return chaotic_map;
   }
 
+  /*Generates shuffled row and column Lookup Tables using Fisher - Yates Shuffle for row and column rotation or swapping*/
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
   {
 
@@ -378,6 +342,7 @@ namespace common
     } 
   }  
   
+  /*Shuffles the Lookup Table used to shuffle chaotic map choices array*/
   static inline void swapLUT(uint32_t *&swapLUT,uint32_t *randVec,uint32_t m)
   {
 
@@ -390,7 +355,7 @@ namespace common
   
   }
   
-  
+  /*Generates a Lookup Table with values from 0 to n - 1 in ascending order for row and column swapping or rotating*/
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n)
   {
     for(int i = 0; i < n; ++i)
@@ -399,6 +364,7 @@ namespace common
     }
   }
   
+  /*Generates a Lookup Table with values from 1 to n in ascending order for shuffling the chaotic map choices array*/
   static inline void genMapLUTVec(uint32_t *&lut_vec,uint32_t n)
   {
     int i = 0;
@@ -408,6 +374,136 @@ namespace common
     }
   }
   
+  
+  /*Gets file name from given file path*/
+  static inline std::string getFileNameFromPath(std::string filename)
+  {
+    const size_t last_slash_idx = filename.find_last_of("\\/");
+    if (std::string::npos != last_slash_idx)
+    {
+      filename.erase(0, last_slash_idx + 1);
+    }
+
+    // Remove extension if present.
+    const size_t period_idx = filename.rfind('.');
+    if (std::string::npos != period_idx)
+    {
+      filename.erase(period_idx);
+    }
+      
+    return filename;
+  }
+  
+  
+  /*Converts unsigned char SHA256 array into SHA256 std::string*/
+  static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH])
+  {
+    
+
+    stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+    
+    return ss.str();
+
+    
+  }
+  
+  /*Calculates SHA256 Hash of a given file*/
+  static inline std::string calc_sha256(const char* path)
+  {
+    FILE* file = fopen(path,"rb");
+    
+    if(file==NULL) 
+    {
+        printf("\n File Not found.\n Exiting..."); 
+        exit(0);
+    }
+        
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    const int bufSize = 32768;
+    char* buffer = (char*)malloc(bufSize);
+    int bytesRead = 0;
+    
+    if(buffer==NULL) 
+    {
+        printf("\n File Not found.\n Exiting..."); 
+        exit(0);   
+    }
+    
+    while((bytesRead = fread(buffer, 1, bufSize, file)))
+    {
+        SHA256_Update(&sha256, buffer, bytesRead);
+    }
+    
+    SHA256_Final(hash, &sha256);
+
+    std::string hash_final = sha256_hash_string(hash);
+    cout<<"\nSHA256 hash of "<<path<<" is "<<hash_final;
+    
+    fclose(file);
+    return hash_final;
+  }      
+  
+  /*Finds differences between 2 image vectors*/
+  static inline void checkImageVectors(uint8_t *plain_img_vec,uint8_t *decrypted_img_vec,uint32_t total)
+  {
+    int cnt=0;
+    for(int i=0; i < total; ++i)
+    {
+      if(decrypted_img_vec[i]-plain_img_vec[i]!=0)
+      {
+        ++cnt;
+      }
+    
+    }
+    printf("\nNumber of vector differences= %d",cnt);
+    
+  }
+  
+  /*Finds differences between 2 cv::Mat images*/
+  static inline bool checkImages(cv::Mat image_1,cv::Mat image_2)
+  {
+    if(image_1.rows != image_2.rows or image_1.cols != image_2.cols)
+    {
+      cout<<"\nCould not comapare images\nExiting...";
+      exit(0);
+    }
+    
+    uint8_t difference = 0;
+    uint32_t count_differences = 0;
+    for(int i = 0; i < image_1.rows; ++i)
+    {
+      for(int j = 0; j < image_1.cols; ++j)
+      {
+        for(int k = 0; k < image_1.channels(); ++k)
+        {
+          difference = image_1.at<Vec3b>(i,j)[k] - image_2.at<Vec3b>(i,j)[k];
+          if(difference != 0)
+          {
+            ++count_differences;
+          }
+        }
+      }
+    }
+    
+    if(count_differences != 0)
+    {
+      cout<<"\nDifferences between decrypted image and plain image = "<<count_differences;
+      return 0;
+    }
+    
+    else
+    {
+      cout<<"\nDifferences between decrypted image and plain image = "<<count_differences;
+      return 1;
+    }
+  }
+   
 }
 
 #endif

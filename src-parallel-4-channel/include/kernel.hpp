@@ -3,18 +3,15 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 
-
+/*Gets GPU ready to perform computation. Helps achieve accurate GPU benchmarking*/
 extern "C" void run_WarmUp(dim3 blocks,dim3 block_size);
-/*Phase 7 start Arnold Map Encryption*/
+/*Rotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M*/
 extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate,const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size);
-/*Phase 8 start Arnold Map Decryption*/
+/*Unrotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M*/
 extern "C" void run_DecGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate,const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size);
-/*Phase 10 Miscellaneous*/
-extern "C" void run_generateU(double* P,uint16_t* U,double n,dim3 blocks,dim3 block_size);
-/*Phase 11 gray level transform*/
-extern "C" void run_grayLevelTransform(uint8_t* img_vec, const uint32_t* __restrict__ random_array, dim3 blocks, dim3 block_size);
-/*Phase 12 row column swapping*/
+/*Swaps image rows and columns. Accepts images of dimensions N x N and N x M*/
 extern "C" void run_encRowColSwap(uint8_t* img_in,uint8_t* img_out,const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size);
+/*Unwaps image rows and columns. Accepts images of dimensions N x N and N x M*/
 extern "C" void run_decRowColSwap(uint8_t* img_in,uint8_t* img_out,const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size);
  
 #endif
