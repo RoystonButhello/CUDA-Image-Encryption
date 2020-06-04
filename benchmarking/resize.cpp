@@ -9,7 +9,9 @@
 
 using namespace std;
 using namespace cv;
-
+/**
+ * Resize an image
+ */
 static inline std::string getFileNameFromPath(std::string filename)
 {
   const size_t last_slash_idx = filename.find_last_of("\\/");

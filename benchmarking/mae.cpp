@@ -7,7 +7,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-/*Calculates the Mean Absolute Error between the plain image and the encrypted image*/
+using namespace std;
+using namespace cv;
+
+/**
+ * Calculates the Mean Absolute Error between the plain image and the encrypted image
+ */
 
 static inline void MAE(cv::Mat img1,cv::Mat img2,int m,int n,int ch) 
 {
@@ -27,7 +32,7 @@ static inline void MAE(cv::Mat img1,cv::Mat img2,int m,int n,int ch)
     }
   }
   
-  sum_mae = (sum_mae * 100) / (m * n * ch);
+  sum_mae = (sum_mae) / (m * n * ch);
   printf("\nMAE = %F",sum_mae);
   
 }

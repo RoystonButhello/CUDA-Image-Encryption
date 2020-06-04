@@ -6,7 +6,9 @@
 
 int main(int argc,char *argv[])
 {
-  /*Get encrypted file path*/
+  /**
+   * Get encrypted file path
+   */
   std::string input_image_path = std::string(argv[1]);
   
   if(input_image_path == "")
@@ -15,7 +17,9 @@ int main(int argc,char *argv[])
     exit(0);
   }
   
-  /*Get encrypted image name from file path*/
+  /**
+   * Get encrypted image name from file path
+   */
   std::string image_name = common::getFileNameFromPath(input_image_path);
   
   input_image_path = "";
@@ -32,15 +36,8 @@ int main(int argc,char *argv[])
     exit(0);
   }
 
-  if(RESIZE_TO_DEBUG == 1)
-  {
-    cv::resize(image,image,cv::Size(config::cols,config::rows),CV_INTER_LANCZOS4);
-  }
   
   uint32_t m = 0,n = 0,channels = 0, total = 0;
-  
- 
-
   double alpha = 0.00,beta = 0.00;
   int number_of_rotation_rounds = 0, number_of_swapping_rounds = 0,i = 0;
   long ptr_position = 0; 
@@ -56,7 +53,9 @@ int main(int argc,char *argv[])
   uint32_t *map_choice_array = (uint32_t*)calloc(6,sizeof(uint32_t)); 
   uint32_t *map_array = (uint32_t*)calloc(15,sizeof(uint32_t));
   
-  /*Reading number of rotation rounds*/
+  /** 
+   * Reading number of rotation rounds
+   */
   FILE *infile = fopen(config::constant_parameters_file_path,"rb");
   
   if(infile == NULL)
@@ -80,7 +79,9 @@ int main(int argc,char *argv[])
   
   fclose(infile);
   
-  /*Reading number of swapping rounds*/
+  /**
+   * Reading number of swapping rounds
+   */
   infile = fopen(config::constant_parameters_file_path,"rb");
   
   if(infile == NULL)
@@ -111,7 +112,9 @@ int main(int argc,char *argv[])
   
   fclose(infile);
   
-  /*Reading seed*/
+  /**
+   * Reading seed for shuffling map_array
+   */
   
   infile = fopen(config::constant_parameters_file_path,"rb");
   
@@ -151,19 +154,25 @@ int main(int argc,char *argv[])
     cout<<"\nseed = "<<seed;
   }
   
-  /*Generating and swapping chaotic map lut*/
+  /**
+   * Generating and swapping chaotic map lut
+   */
   pattern::MTSequence(map_array,15,1,15,seed);
   common::genMapLUTVec(map_choice_array,6);
   common::swapLUT(map_choice_array,map_array,6);
   
-  /*Chaotic map choice variables*/
+  /**
+   * Chaotic map choice variables
+   */
   config::ChaoticMap map_row_random_vec;
   config::ChaoticMap map_col_random_vec;
   config::ChaoticMap map_row_rotation_vec;
   config::ChaoticMap map_col_rotation_vec;
   config::ChaoticMap map_diffusion_array;
   
-  /*Parameter arrays*/
+  /**
+   * Parameter arrays
+   */
   config::lm lm_parameters[6];
   config::lma lma_parameters[6];
   config::slmm slmm_parameters[6];
@@ -171,7 +180,9 @@ int main(int argc,char *argv[])
   config::lalm lalm_parameters[6];
   config::mt mt_parameters[6];
   
-  /*Assigning chaotic map choices for each vector*/
+  /**
+   * Assigning chaotic map choices for each vector
+   */
   map_row_random_vec = config::ChaoticMap(map_choice_array[0]);
   map_col_random_vec = config::ChaoticMap(map_choice_array[1]);
   map_row_rotation_vec = config::ChaoticMap(map_choice_array[2]);
@@ -188,7 +199,9 @@ int main(int argc,char *argv[])
     }
   }
   
-  /*Reading map parameters*/
+  /**
+   * Reading map parameters
+   */
   ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,infile,"rb",ptr_position,number_of_rotation_rounds);  
   ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,infile,"rb",ptr_position,number_of_rotation_rounds);
   ptr_position = pattern::rwMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,infile,"rb",ptr_position,number_of_swapping_rounds);
@@ -197,7 +210,9 @@ int main(int argc,char *argv[])
   
   if(DEBUG_MAP_PARAMETERS == 1)
   {
-    /*Diplaying map parameters*/
+    /** 
+     * Diplaying map parameters
+     */
     pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_rotation_vec,number_of_rotation_rounds);
     pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_col_rotation_vec,number_of_rotation_rounds);
     pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_row_random_vec,number_of_swapping_rounds);
@@ -205,7 +220,9 @@ int main(int argc,char *argv[])
     pattern::displayMapParameters(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,map_diffusion_array,1);  
   }
   
-  /*CPU vector declarations*/
+  /** 
+   * CPU vector declarations
+   */
   uint8_t *enc_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
   uint8_t *dec_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
   uint8_t *final_vec = (uint8_t*)calloc(total * channels,sizeof(uint8_t));
@@ -226,7 +243,9 @@ int main(int argc,char *argv[])
   uint32_t *diffusion_array = (uint32_t*)calloc(total * channels,sizeof(uint32_t));
   uint32_t *dummy_lut_vec = (uint32_t*)calloc(2,sizeof(uint32_t));
   
-  /*GPU Vector Declarations*/
+  /** 
+   * GPU Vector Declarations
+   */
   uint8_t *gpu_enc_vec;
   uint8_t *gpu_dec_vec;
   uint8_t *gpu_final_vec;
@@ -236,7 +255,9 @@ int main(int argc,char *argv[])
   const uint32_t *gpu_V;
   const uint32_t *gpu_diffusion_array;
 
-  //Allocating GPU memory
+  /**
+   * Allocating GPU memory
+   */
   cudaMalloc((void**)&gpu_enc_vec,total * channels * sizeof(uint8_t));
   cudaMalloc((void**)&gpu_dec_vec,total * channels * sizeof(uint8_t));
   cudaMalloc((void**)&gpu_final_vec,total * channels * sizeof(uint8_t));
@@ -247,22 +268,29 @@ int main(int argc,char *argv[])
   cudaMalloc((void**)&gpu_diffusion_array,total * channels * sizeof(uint32_t));
   
   
-  /*Flattening image*/
+  /** 
+   * Flattening 2D N X M image to 1D N X M vector
+   */
   common::flattenImage(image,enc_vec,channels);
   
+  if(DEBUG_VECTORS == 1)
+  {
+    cout<<"\nencrypted image = ";
+    common::printArray8(enc_vec,total * channels);
+  }
   
-  //cout<<"\nencrypted image = ";
-  //common::printArray8(enc_vec,total * channels);
-  
-  /*Warming up kernel*/
+  /**
+   * Warming up kernel
+   */
   dim3 warm_up_grid(1,1,1);
   dim3 warm_up_block(1,1,1);
   run_WarmUp(warm_up_grid,warm_up_block);
   
+  /**
+   * Undiffusion
+   */
   if(DIFFUSION == 1)
   {
-    //cout<<"\nIn Undiffusion";
-    
     pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,diffusion_array,dummy_lut_vec,map_diffusion_array,0,2,total * channels); 
       
     auto undiffusion_start = std::chrono::system_clock::now(); 
@@ -297,26 +325,30 @@ int main(int argc,char *argv[])
       }
     }
   }  
-
+  
+  /**
+   * Row and Column Unswapping
+   */
   if(ROW_COL_SWAPPING == 1)
   {
-    /*Row and Column Unswapping*/
-    //cout<<"\nIn row and column unswapping";
-    
-    
-    
-    /*Display map parameters*/
+    /** 
+     * Display map parameters
+     */
     for(i = number_of_swapping_rounds - 1; i >= 0; --i)
     {
       
-      /*Vector generation for row and coulumn swapping*/
+      /**
+       * Vector generation for row and coulumn swapping
+       */
       pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_random_vec,row_swap_lut_vec,map_row_random_vec,i,m,total * channels);
       pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_random_vec,col_swap_lut_vec,map_col_random_vec,i,n,total * channels);  
       
       dim3 dec_row_col_swap_grid(m,n,1);
       dim3 dec_row_col_swap_blocks(channels,1,1);
       
-      //Transferring CPU vectors to GPU memory
+      /** 
+       * Transferring CPU vectors to GPU memory
+       */
       cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy((void*)gpu_row_swap_lut_vec,row_swap_lut_vec,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
@@ -324,17 +356,20 @@ int main(int argc,char *argv[])
       
       run_decRowColSwap(gpu_enc_vec,gpu_dec_vec,(const uint32_t*)gpu_row_swap_lut_vec,(const uint32_t*)gpu_col_swap_lut_vec,dec_row_col_swap_grid,dec_row_col_swap_blocks);
       
-      //Getting results from GPU memory
+      /** 
+       * Getting results from GPU memory
+       */
       cudaMemcpy(enc_vec,gpu_enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       cudaMemcpy(dec_vec,gpu_dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
-      //Swapping
+      /**
+       * Swapping
+       */
       if(number_of_swapping_rounds > 1)
       {
         cudaMemcpy(enc_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_enc_vec,enc_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       }
-      
       
       if(DEBUG_VECTORS == 1)
       {
@@ -376,26 +411,34 @@ int main(int argc,char *argv[])
     
 
   } 
+   
+  /**
+   * Row and Column Unrotation
+   */
   
   if(ROW_COL_ROTATION == 1)
   {
-    /*Row and Column Unrotation*/
-    //cout<<"\nIn row and column unrotation ";
-    
-    /*Display map parameters*/
+
+    /**
+     * Display map parameters
+     */
     for(i = number_of_rotation_rounds - 1; i >= 0; --i)
     {
       
       cout<<"\nROUND "<<i;
       
-      /*Vector generation for row and column unrotation*/
+      /** 
+       * Vector generation for row and column unrotation
+       */
       pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,row_rotation_vec,U,map_row_rotation_vec,i,m,total * channels);
       pattern::selectChaoticMap(lm_parameters,lma_parameters,slmm_parameters,lasm_parameters,lalm_parameters,mt_parameters,x,y,x_bar,y_bar,col_rotation_vec,V,map_col_rotation_vec,i,n,total * channels);
       
       dim3 dec_gen_cat_map_grid(m,n,1);
       dim3 dec_gen_cat_map_blocks(channels,1,1);
       
-      /*Transferring CPU Vectors to GPU Memory*/
+      /** 
+       * Transferring CPU Vectors to GPU Memory
+       */
       cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy(gpu_final_vec,final_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       cudaMemcpy((void*)gpu_U,U,m * sizeof(uint32_t),cudaMemcpyHostToDevice);
@@ -403,19 +446,21 @@ int main(int argc,char *argv[])
       
       run_DecGenCatMap(gpu_dec_vec,gpu_final_vec,(const uint32_t*)gpu_V,(const uint32_t*)gpu_U,dec_gen_cat_map_grid,dec_gen_cat_map_blocks);
       
-      //Getting results from GPU
+      /**
+       * Getting results from GPU
+       */
       cudaMemcpy(dec_vec,gpu_dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       cudaMemcpy(final_vec,gpu_final_vec,total * channels * sizeof(uint8_t),cudaMemcpyDeviceToHost);
       
-      //Swapping
+      /**
+       * Swapping
+       */
       if(number_of_rotation_rounds > 1)
       {
         cudaMemcpy(dec_vec,final_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToHost);
         cudaMemcpy(gpu_dec_vec,dec_vec,total * channels * sizeof(uint8_t),cudaMemcpyHostToDevice);
       }
 
-      
-      
       if(DEBUG_VECTORS == 1)
       {
         
@@ -467,8 +512,8 @@ int main(int argc,char *argv[])
   
   auto end = std::chrono::system_clock::now();
   
-  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  cout<<"\nTotal decryption time = "<<elapsed<<" ms";
+  auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+  cout<<"\nTotal decryption time = "<<elapsed / 1000000<<" s";
   
   
   std::string plain_image_path = std::string(argv[1]);
@@ -477,13 +522,17 @@ int main(int argc,char *argv[])
   char *constant_plain_image_path = const_cast<char*>(plain_image_path.c_str());
   char *constant_decrypted_image_path = const_cast<char*>(decrypted_image_path.c_str());
   
-  /*Comparison of plain and decrypted images*/
+  /** 
+   * Comparison of plain and decrypted images
+   */
   cv::Mat plain_image = cv::imread(plain_image_path,cv::IMREAD_UNCHANGED);
   cv::Mat decrypted_image = cv::imread(decrypted_image_path,cv::IMREAD_UNCHANGED);
   bool decryption_status = common::checkImages(plain_image,decrypted_image);
   
   
-  /*Compare SHA256 hashes of plain image and decrypted image*/  
+  /** 
+   * Compare SHA256 hashes of plain image and decrypted image
+   */  
   std::string plain_image_hash = common::calc_sha256(constant_plain_image_path);
   std::string decrypted_image_hash = common::calc_sha256(constant_decrypted_image_path);
   bool hash_equality_status = 0;
@@ -501,18 +550,23 @@ int main(int argc,char *argv[])
   
   if(decryption_status == 0)
   {
-    cout<<"\nDECRYPTION UNSUCCESSFUL";
+    cout<<"\nDECRYPTION UNSUCCESSFUL\nHASHES DON'T MATCH AND DIFFERENCE IMAGE IS NONZERO";
   }
   
   else if(decryption_status == 1 and hash_equality_status == 1)
   {
     cout<<"\nDECRYPTION SUCCESSFUL\nHASHES EQUAL AS IMAGES HAVE BEEN MODIFIED THROUGH OPENCV";
   }
+  
   else if(decryption_status == 1 and hash_equality_status == 0)
   {
      cout<<"\nDECRYPTION SUCCESSFUL\nHASHES UNEQUAL AS IMAGES HAVE NOT BEEN MODIFIED THROUGH OPENCV";
   }    
-    
+  
+  else
+  {
+    cout<<"\nDECRYPTION UNSUCCESSFUL\nHASHES DON'T MATCH AND DIFFERENCE IMAGE IS NONZERO";
+  }  
    
   
   return 0;

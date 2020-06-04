@@ -3,13 +3,19 @@
   #include <cstdint>
   using namespace std;
    
-      
+  /**
+   * CUDA kernel. Gets GPU ready to perform computation. Helps achieve accurate GPU benchmarking. Takes the number of blocks and block size as arguments
+   */  
     
     __global__ void WarmUp()
     {
       return;
     }
     
+    
+  /**
+   * CUDA kernel. Rotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
     
     __global__ void Enc_GenCatMap(uint8_t* in, uint8_t* out, const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate)
     {
@@ -20,7 +26,10 @@
         out[OutDex]  = in[InDex];
     }
 
-    __global__ void Dec_GenCatMap(uint8_t* in, uint8_t* out, const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate)
+  /**
+   *  CUDA kernel. Unrotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */ 
+   __global__ void Dec_GenCatMap(uint8_t* in, uint8_t* out, const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate)
     {
         int colShift = colRotate[blockIdx.y];
         int rowShift = rowRotate[(blockIdx.x + colShift)%gridDim.x];
@@ -30,7 +39,9 @@
     }
    
     
-  
+   /**
+    * CUDA kernel. Swaps image rows and columns. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+    */
    __global__ void encRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT, const uint32_t* __restrict__ colSwapLUT)
    {
       int blockId = blockIdx.y * gridDim.x + blockIdx.x;
@@ -45,6 +56,9 @@
       
    }
    
+  /**
+   * CUDA kernel. Unswaps image rows and columns. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
   __global__ void decRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT)
   {
     int blockId= blockIdx.y * gridDim.x + blockIdx.x;
@@ -58,7 +72,9 @@
     img_out[gray_level_index_out] = img_in[gray_level_index_in];
   }   
 
-  /*Gets GPU ready to perform computation. Helps achieve accurate GPU benchmarking*/
+  /**
+   * CUDA kernel wrapper function. Gets GPU ready to perform computation. Helps achieve accurate GPU benchmarking. Takes the number of blocks and block size as arguments
+   */
   extern "C" void run_WarmUp(dim3 blocks,dim3 block_size)
   {
      
@@ -66,7 +82,9 @@
      
   }
   
-  /*Rotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M*/
+  /**
+   * CUDA kernel wrapper function. Rotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
   extern "C" void run_EncGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size)
   { 
     float time;
@@ -85,7 +103,9 @@
     
   }
   
-  /*Unrotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M*/
+  /**
+   *  CUDA kernel wrapper function. Unrotates image rows and columns. Based on Arnold Cat Map. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
   extern "C" void run_DecGenCatMap(uint8_t* in,uint8_t* out,const uint32_t* __restrict__ colRotate, const uint32_t* __restrict__ rowRotate,dim3 blocks,dim3 block_size)
   {
      float time;
@@ -104,7 +124,9 @@
         
   }
 
-  /*Swaps image rows and columns. Accepts images of dimensions N x N and N x M*/
+  /**
+   * CUDA kernel wrapper function. Swaps image rows and columns. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
   extern "C" void run_encRowColSwap(uint8_t* img_in,uint8_t* img_out, const uint32_t* __restrict__ rowSwapLUT, const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size)
   {
     float time;
@@ -123,7 +145,9 @@
     
   }
   
-  /*Unswaps image rows and columns. Accepts images of dimensions N x N and N x M*/
+  /**
+   * CUDA kernel wrapper function. nswaps image rows and columns. Accepts images of dimensions N x N and N x M. Takes two N X M 1D vectors and the number of blocks and block size as arguments
+   */
   extern "C" void run_decRowColSwap(uint8_t* img_in,uint8_t* img_out,const uint32_t* __restrict__ rowSwapLUT,const uint32_t* __restrict__ colSwapLUT,dim3 blocks,dim3 block_size)
   {
      float time;

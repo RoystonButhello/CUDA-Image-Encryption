@@ -28,7 +28,9 @@
   #error "Unknown compiler"
 #endif
 
-#define RESIZE_TO_DEBUG                    1
+/**
+ * All control flags. Use this header file to configure operation of the algorithm 
+ */
 #define DEBUG_READ_WRITE                   0
 #define DEBUG_VECTORS                      0
 
@@ -37,14 +39,12 @@
 #define DEBUG_MAP_PARAMETERS               0
 #define DEBUG_MAP_CHOICES_ARRAY            0
 
-#define WRITE_INPUT_THROUGH_OPENCV         1
-
 #define ROW_COL_SWAPPING                   1
 #define ROW_COL_ROTATION                   1
 #define DIFFUSION                          1
 
 #define ROUNDS_LOWER_LIMIT                 1
-#define ROUNDS_UPPER_LIMIT                 2
+#define ROUNDS_UPPER_LIMIT                 5
 
 #define X_LOWER_LIMIT                      0.10000000
 #define X_UPPER_LIMIT                      0.20000000
@@ -93,14 +93,15 @@
 
 namespace config
 {
-  /*Resized image dimensions*/
-  uint32_t rows = 1024;
-  uint32_t cols = 1024;
+  /**
+   * Range of pseudorandom values to be produced by Mersenne Twister
+   */
+  int lower_limit = 10000;
+  int upper_limit = 3145729;
   
-  /*Range of pseudorandom values to be produced by Mersenne Twister*/
-  int lower_limit = 1;
-  int upper_limit = (rows * cols * 3) + 1;
-  
+  /**
+   * Enumeration class used to denote Chaotic Map choices
+   */
   enum class ChaoticMap
   {
     TwoDLogisticMap = 1,
@@ -110,12 +111,19 @@ namespace config
     TwoDLogisticAdjustedLogisticMap
   };
   
+  /**
+   * Structure to store Logistic Adjusted Logistic Map parameters
+   */
   typedef struct
   {
     double x_init;
     double y_init;
     double myu;
   }lalm;
+  
+  /**
+   * Structure to store Logistic Adjusted Sine Map parameters
+   */
   
   typedef struct
   {
@@ -124,6 +132,10 @@ namespace config
     double myu;
   }lasm;
   
+  /**
+   * Structure to store Sine Logistic Modulation Map parameters
+   */
+  
   typedef struct
   {
     double x_init;
@@ -131,6 +143,10 @@ namespace config
     double alpha;
     double beta;
   }slmm; 
+  
+  /**
+   * Structure to store Advanced Logistic Map parameters
+   */
   
   typedef struct
   {
@@ -142,6 +158,9 @@ namespace config
     double lambda2;
   }lma;  
    
+  /**
+   * Structure to store Logistic Map parameters
+   */
 
   typedef struct
   {
@@ -150,18 +169,25 @@ namespace config
     double r;
   }lm; 
   
+  /**
+   * Structure to store Mersenne Twister parameters
+   */
   
   typedef struct 
   {
     int seed_1;
   }mt;  
   
-  /*Parameter file paths*/
+  /**
+   * The file path of the parameter file where all parameters are stored
+   */
   std::string parameters_file = "parameters";
   std::string binary_extension = ".bin";
   std::string parameters_file_path = parameters_file + binary_extension; 
   
-  /*char* constant strings for use with standard C file handling functions*/
+  /**
+   * char* constant strings for use with standard C file handling functions
+   */
   char *constant_parameters_file_path = const_cast<char*>(parameters_file_path.c_str());
   
 }  

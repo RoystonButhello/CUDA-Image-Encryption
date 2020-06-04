@@ -10,7 +10,9 @@
 using namespace std;
 using namespace cv;
 
-/*Calculates the Number of Pixels Change Rate between two encrypted images whose corresponding plain images differ by a single pixel*/
+/**
+ * Calculates the Number of Pixels Change Rate between two encrypted images whose corresponding plain images differ by a single pixel
+ */
 
 static inline void NPCR_UACI(cv::Mat img1,cv::Mat img2,int m,int n,int ch) 
 {
@@ -46,7 +48,7 @@ int main(int argc,char *argv[])
   std::string image_name_2 = std::string(argv[2]);
   
   cv::Mat img1 = cv::imread(image_name_1,cv::IMREAD_UNCHANGED);
-  cv::Mat img2 = cv::imread(image_name_2,cv::IMREAD_UNCHANGED);
+  //cv::Mat img2 = cv::imread(image_name_2,cv::IMREAD_UNCHANGED);
   
   
   
@@ -58,7 +60,7 @@ int main(int argc,char *argv[])
   cout<<"\nColumns = "<<n;
   cout<<"\nChannels = "<<ch;
   
-  NPCR_UACI(img1,img2,m,n,ch);
+  //NPCR_UACI(img1,img2,m,n,ch);
   
   return 0;
 }

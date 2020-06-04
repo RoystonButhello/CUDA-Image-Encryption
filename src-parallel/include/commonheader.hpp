@@ -1,32 +1,36 @@
 /*These two lines prevent the compiler from reading the same header file twice*/
+/**
+ * This header file contains functions common to all files in the implementation 
+ */
 
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-#include <iostream> 
-#include <cstdio>   
-#include <string>   
-#include <random>   
-#include <chrono>   
-#include <fstream>  
-#include <cstdint>  
-#include <cstdbool> 
-#include <opencv2/opencv.hpp> 
+#include <iostream> /*For IO*/
+#include <cstdio>   /*For printf()*/
+#include <string>   /*for std::string*/
+#include <random>   /*For Mersenne Twister PRNG*/
+#include <chrono>   /*For measuring execution time using std::chrono::system_clock::now()*/
+#include <fstream>  /*For file handling*/
+#include <cstdint>  /*For standardized variable types*/
+#include <cstdbool> /*For boolean variables*/
+#include <opencv2/opencv.hpp> /*For opencv*/
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <typeinfo>
-#include <cmath>     
-#include <cstdlib>  
-#include <ctime>    
-#include <openssl/sha.h> 
-#include <iomanip> 
-#include <sstream> 
-#include <vector>  
-#include "config.hpp"
+#include <typeinfo> 
+#include <cmath>    /*For the standard C Math library*/ 
+#include <cstdlib>  /*For malloc() and calloc()*/
+#include <ctime>    /*For std::clock()*/
+#include <openssl/sha.h> /*For generating SHA256 Hashes*/
+#include <iomanip> /*For setw()*/
+#include <sstream> /*For stringstream*/
+#include <vector>  /*For std::vector*/
+#include "config.hpp" 
 
 
 using namespace cv;
 using namespace std;
+
 
 
 namespace common
@@ -37,7 +41,7 @@ namespace common
 
   static inline void show_ieee754 (double f);
   static inline void print_int_bits(int num);
-  static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits);
+  static inline uint32_t get_n_mantissa_bits_safe(double f,int number_of_bits);
   
 
   static inline void writeVectorToFile32(uint32_t *&vec,int length,std::string filename);
@@ -68,10 +72,12 @@ namespace common
   static inline bool checkImages(cv::Mat image_1,cv::Mat image_2);
   
   
-  /*Converts an image of dimensions N x M into a 1D vector of length N x M*/
+  /**
+   * Converts an image of dimensions N x M into a 1D vector of length N x M. Takes a 2D N X M image, a 1D vector of length N X M, and the number of channels as arguments
+   */
   static inline void flattenImage(cv::Mat image,uint8_t *&img_vec,uint32_t channels)
   {
-    //cout<<"\nIn flattenImage";
+    
     uint16_t m=0,n=0;
     uint32_t total=0;
     m=(uint16_t)image.rows;
@@ -84,27 +90,28 @@ namespace common
     }
   }
 
-  /*Prints the gray level values in a cv::Mat image in row major order*/
+  /**
+   * Prints the gray level values in a cv::Mat image in row major order. Takes 2D N X M image and number of channels as parameters
+   */
   static inline void printImageContents(cv::Mat image,uint32_t channels)
   {
-    //cout<<"\nIn printImageContents";
-    //cout<<"\nImage Matrix=";
     for(uint32_t i=0;i<image.rows;++i)
     { 
       printf("\n");
-      //printf("\ni=%d\t",i);
       for(uint32_t j=0;j<image.cols;++j)
       {
          for(uint32_t k=0;k < channels;++k)
          {
-          //printf("\nj=%d\t",j);
+          
           printf("%d\t",image.at<Vec3b>(i,j)[k]); 
          } 
        }
     }
   }
 
-  /*Checks if a 16-bit integer exceeds 255*/
+  /**
+   * Checks if the product of 2 16-bit unsigned integers exceeds 255. Takes the 2 16-bit unsigned integers as arguments
+   */
   static inline uint8_t checkOverflow(uint16_t  number_1,uint16_t number_2)
   {
     
@@ -122,7 +129,9 @@ namespace common
     return 0;
   }
 
-  /*formatted output of ieee-754 representation of float */
+  /**
+   * formatted output of ieee-754 representation of double-precision floating-point 
+   */
   static inline void show_ieee754 (double f)
   {
     union {
@@ -143,7 +152,9 @@ namespace common
   }
 
   
-  /*Print bits of an integer*/
+  /**
+   * Print bits of a 32-bit signed integer. Takes the number of bits as argument
+   */
   static inline void print_int_bits(int num)
   {   
     int x=1;
@@ -155,42 +166,37 @@ namespace common
     }
   }
 
-  /*Transfers last n bits from a double to an n-bit unsigned integer*/
-  static inline uint16_t get_n_mantissa_bits_safe(double f,int number_of_bits)
+  /**
+   * Transfers the last n bits from a double to an n-bit unsigned integer. Takes the double and and the number of bits as arguments
+   */
+  static inline uint32_t get_n_mantissa_bits_safe(double f,int number_of_bits)
   {
     union {
         double f;
         uint32_t u;
     } fu = { .f = f };
-    //int i = sizeof f * CHAR_BIT;
+    
     int i=number_of_bits;
-    int bit_store_32=0;
     uint8_t bit_store_8=0;
     uint16_t bit_store_16=0;
+    uint32_t bit_store_32 = 0;
     
-    //printf("\nBefore assigining any bits to bit_store_32=\n");
-    //print_int_bits(bit_store_16);
-
     while (i--)
     {
         
         if(BIT_RETURN(fu.u,i)==1)
         {
-            bit_store_16 |= 1 << i;
+            bit_store_32 |= 1 << i;
         }
         
     }
     
-    
-    //printf("\nAfter assigining bits to bit_store_32=\n");
-    //print_int_bits(bit_store_16);
-    
-
-    //bit_store_8=(uint8_t)bit_store_32;
-    return bit_store_16;
+    return bit_store_32;
   }
 
-  /*Writes a 32-bit vector to a .txt file*/
+  /**
+   * Writes a 32-bit vector to a .txt file. Takes a vector of length 'length', and its length as arguments
+   */
   static inline void writeVectorToFile32(uint32_t *&vec,int length,std::string filename)
   {
     std::ofstream file(filename);
@@ -211,7 +217,9 @@ namespace common
     file.close();
   }
 
-  /*Writes an 8-bit vector to a .txt file*/
+  /**
+   * Writes an 8-bit unsigned integer vector to a .txt file. Takes a vector of length 'length' and file path as arguments
+   */
   static inline void writeVectorToFile8(uint8_t *&vec,int length,std::string filename)
   {
     std::ofstream file(filename);
@@ -232,7 +240,9 @@ namespace common
     file.close();
   }
   
-  /*Prints an 8-bit integer array*/
+  /**
+   * Prints an 8-bit unsigned integer array of length 'length'. Takes the array and its length as arguments
+   */
   static inline void printArray8(uint8_t *&arr,int length)
   {
     for(int i = 0; i < length; ++i)
@@ -241,7 +251,9 @@ namespace common
     }
   }
 
-  /*Prints a 16-bit integer array*/
+  /**
+   * Prints a 16-bit unsigned integer array of length 'length'. Takes the array and its length as arguments
+   */
   static inline void printArray16(uint16_t *&arr, int length)
   {
     for(int i = 0; i < length; ++i)
@@ -250,7 +262,9 @@ namespace common
     }
   }
 
-  /*Prints a 32-bit integer array*/
+  /**
+   * Prints a 32-bit unsigned integer array of length 'length'. Takes the array and its length as arguments
+   */
   static inline void printArray32(uint32_t *&arr, int length)
   {
     for(int i = 0; i < length; ++i)
@@ -259,7 +273,9 @@ namespace common
     }
   }
   
-  /*Prints a double array*/
+  /**
+   * Prints a double array of length 'length'. Takes the array and its length as arguments
+   */
   static inline void printArrayDouble(double *&arr,int length)
   {
     for(int i = 0; i < length; ++i)
@@ -269,7 +285,9 @@ namespace common
   }
   
   
-  /*Returns a random 8-bit unsigned integer*/
+  /**
+   * Returns a random 8-bit unsigned integer within a range of (lower_bound,upper_bound). Takes the lower_bound and upper_bound as arguments
+   */
   static inline uint8_t getRandomUnsignedInteger8(uint8_t lower_bound,uint8_t upper_bound)
   {
       std::random_device r;
@@ -280,7 +298,10 @@ namespace common
       return alpha;
   }
 
-  /*Returns a random 32-bit unsigned integer*/
+  
+  /**
+   * Returns a random 32-bit unsigned integer within a range of (lower_bound,upper_bound). Takes the lower_bound and upper_bound as arguments
+   */
   static inline uint32_t getRandomUnsignedInteger32(uint32_t lower_bound,uint32_t upper_bound)
   {
       //cout<<"\nIn getSeed";
@@ -292,7 +313,10 @@ namespace common
       return alpha;
   }
   
-  /*Returns a random integer*/
+  
+  /**
+   * Returns a random 32-bit signed integer within a range of (lower_bound,upper_bound). Takes the lower_bound and upper_bound as arguments
+   */
   static inline int getRandomInteger(int lower_bound,int upper_bound)
   {
       //cout<<"\nIn getSeed";
@@ -304,19 +328,24 @@ namespace common
       return alpha;
   }  
 
-  /*Returns a random double*/
+  
+  /**
+   * Returns a random double within a range of (lower_bound,upper_bound). Takes the lower_bound and upper_bound as arguments
+   */
   static inline double getRandomDouble(double lower_limit,double upper_limit)
   {
      std::random_device r;
      std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
      mt19937 seeder(seed);
-     //uniform_int_distribution<int> intGen(1, 32);
      uniform_real_distribution<double> realGen(lower_limit, upper_limit);   
      auto randnum=realGen(seeder);
      return randnum;
   }
   
-  /*Assigns a chaotic map choice*/
+  
+  /**
+   * Returns a value of type ChaoticMap within a range of (lower_limit,upper_limit). Takes the lower_limit and upper_limit as arguments
+   */
   static inline config::ChaoticMap mapAssigner(int lower_limit, int upper_limit)
   {
     config::ChaoticMap chaotic_map;
@@ -324,7 +353,9 @@ namespace common
     return chaotic_map;
   }
 
-  /*Generates shuffled row and column Lookup Tables using Fisher - Yates Shuffle for row and column rotation or swapping*/
+  /**
+   * Generates shuffled row and column Lookup Tables using Fisher - Yates Shuffle for row and column rotation or swapping. Takes two 1D vectors of length N X M and two vectors of length M-1 and N-1
+   */
   static inline void rowColLUTGen(uint32_t *&rowSwapLUT,uint32_t *&rowRandVec,uint32_t *&colSwapLUT,uint32_t *&colRandVec,uint32_t m,uint32_t n)
   {
 
@@ -342,7 +373,9 @@ namespace common
     } 
   }  
   
-  /*Shuffles the Lookup Table used to shuffle chaotic map choices array*/
+  /**
+   * Shuffles the Lookup Table used to shuffle chaotic map choices array. Takes a 1D vector of length M-1 and a 1D vector of length N X M and M as arguments
+   */
   static inline void swapLUT(uint32_t *&swapLUT,uint32_t *randVec,uint32_t m)
   {
 
@@ -355,7 +388,9 @@ namespace common
   
   }
   
-  /*Generates a Lookup Table with values from 0 to n - 1 in ascending order for row and column swapping or rotating*/
+  /**
+   * Generates a Lookup Table with values from 0 to n - 1 in ascending order for row and column swapping or rotating. Takes a vector of length N and its length as arguments
+   */
   static inline void genLUTVec(uint32_t *&lut_vec,uint32_t n)
   {
     for(int i = 0; i < n; ++i)
@@ -364,7 +399,9 @@ namespace common
     }
   }
   
-  /*Generates a Lookup Table with values from 1 to n in ascending order for shuffling the chaotic map choices array*/
+  /**
+   * Generates a Lookup Table with values from 1 to n in ascending order for shuffling the chaotic map choices array. Takes a vector of length N and its length as arguments 
+   */
   static inline void genMapLUTVec(uint32_t *&lut_vec,uint32_t n)
   {
     int i = 0;
@@ -375,7 +412,9 @@ namespace common
   }
   
   
-  /*Gets file name from given file path*/
+  /**
+   * Gets the file name from the given file path. Takes the file path as an argument
+   */
   static inline std::string getFileNameFromPath(std::string filename)
   {
     const size_t last_slash_idx = filename.find_last_of("\\/");
@@ -395,7 +434,9 @@ namespace common
   }
   
   
-  /*Converts unsigned char SHA256 array into SHA256 std::string*/
+  /**
+   * Converts an 8-bit unsigned char SHA256 array into a SHA256 std::string. Takes the 8-bit unsigned char hash array of length 64 as an argument
+   */
   static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH])
   {
     
@@ -411,7 +452,9 @@ namespace common
     
   }
   
-  /*Calculates SHA256 Hash of a given file*/
+  /**
+   * Calculates SHA256 Hash of a given file. Takes the file path as an argument
+   */
   static inline std::string calc_sha256(const char* path)
   {
     FILE* file = fopen(path,"rb");
@@ -449,7 +492,9 @@ namespace common
     return hash_final;
   }      
   
-  /*Finds differences between 2 image vectors*/
+  /**
+   * Finds differences between two image vectors. Takes two image vectors of length total and the length total as arguments
+   */
   static inline void checkImageVectors(uint8_t *plain_img_vec,uint8_t *decrypted_img_vec,uint32_t total)
   {
     int cnt=0;
@@ -465,7 +510,9 @@ namespace common
     
   }
   
-  /*Finds differences between 2 cv::Mat images*/
+  /**
+   * Finds differences between two 2D N x M images. Takes two 2D N X M images as arguments
+   */
   static inline bool checkImages(cv::Mat image_1,cv::Mat image_2)
   {
     if(image_1.rows != image_2.rows or image_1.cols != image_2.cols)
