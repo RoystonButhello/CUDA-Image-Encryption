@@ -65,6 +65,7 @@ namespace common
   static inline void genMapLUTVec(uint32_t *&lut_vec,uint32_t n);
   static inline std::string getFileNameFromPath(std::string filename);
   
+  static inline std::string getFileNameFromPath(std::string filename);
   static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH]);
   static inline std::string calc_sha256(const char* path);
   

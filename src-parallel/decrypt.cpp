@@ -187,7 +187,7 @@ int main(int argc,char *argv[])
   map_col_random_vec = config::ChaoticMap(map_choice_array[1]);
   map_row_rotation_vec = config::ChaoticMap(map_choice_array[2]);
   map_col_rotation_vec = config::ChaoticMap(map_choice_array[3]);
-  map_diffusion_array = config::ChaoticMap(map_choice_array[4]);
+  map_diffusion_array = config::ChaoticMap(6);
   
   
   if(DEBUG_MAP_CHOICES_ARRAY == 1)

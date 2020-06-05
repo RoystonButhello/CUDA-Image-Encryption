@@ -44,8 +44,6 @@ int main(int argc,char *argv[])
   int fseek_status = 9,fwrite_status = 9,i = 0;
   
 
-
-
   long ptr_position = 0;
   double alpha = 0.00,beta = 0.00;
   
@@ -62,8 +60,8 @@ int main(int argc,char *argv[])
  /**
   * Assign the number of rotation and swapping rounds
   */
-  number_of_rotation_rounds = common::getRandomInteger(MAP_LOWER_LIMIT,MAP_UPPER_LIMIT);
-  number_of_swapping_rounds = common::getRandomInteger(MAP_LOWER_LIMIT,MAP_UPPER_LIMIT);
+  number_of_rotation_rounds = common::getRandomInteger(5,5);
+  number_of_swapping_rounds = common::getRandomInteger(5,5);
    
 
   config::ChaoticMap map_row_random_vec;
@@ -157,7 +155,7 @@ int main(int argc,char *argv[])
   map_col_random_vec = config::ChaoticMap(map_choice_array[1]);
   map_row_rotation_vec = config::ChaoticMap(map_choice_array[2]);
   map_col_rotation_vec = config::ChaoticMap(map_choice_array[3]);
-  map_diffusion_array = config::ChaoticMap(map_choice_array[4]);
+  map_diffusion_array = config::ChaoticMap(6);
   
   if(DEBUG_MAP_CHOICES_ARRAY == 1)
   {
@@ -498,9 +496,9 @@ int main(int argc,char *argv[])
     }
   }
   
-   /**
-    * Diffusion
-    */
+  /**
+   * Diffusion
+   */
   
   if(DIFFUSION == 1)
   {
