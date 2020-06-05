@@ -12,7 +12,7 @@ To use the GUI, simply click on the Select Image and Run Button. A dialog box wi
 
 To configure the algorithm to run using different modes, use the config.hpp header file and set the flags to either 1 or 0 to enable or disable a feature, respectively.
 
-Occasionally, the diffusion step may not produce a histogram-equalized image. This is due to excessive hyperchaotic behavior of the chaotic map
+Very rarely, the diffusion step may not produce an image with equal distribution of Red, Green and Blue colors. This is due to some repetition of values in the random sequence, due to certain particular sets of initial conditions in the chaotic map, which cannot be eliminated.
 
 
 
