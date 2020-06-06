@@ -7,7 +7,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-/*Calculates the Mean Squared Error between the corresponding plain images of 2 encrypted images, one of which is noisy*/
+using namespace std;
+using namespace cv;
+
+/**
+ * Calculates the Mean Squared Error between the corresponding plain images of 2 encrypted images, one of which is noisy
+ */
 
 static inline void MSE(cv::Mat img1,cv::Mat img2,int m,int n,int ch) 
 {
@@ -27,7 +32,7 @@ static inline void MSE(cv::Mat img1,cv::Mat img2,int m,int n,int ch)
     }
   }
   
-  sum_mae = (sum_mse * 100) / (m * n * ch);
+  sum_mse = (sum_mse * 100) / (m * n * ch);
   printf("\nMSE = %F",sum_mse);
   
 }

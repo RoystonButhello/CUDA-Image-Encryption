@@ -1,0 +1,4 @@
+<map id="pattern::assignMapParameters" name="pattern::assignMapParameters">
+<area shape="rect" id="node2" href="$namespacecommon.html#a12a446716f47a68b976efc5af7838c99" title="Returns a random double within a range of (lower_bound,upper_bound). " alt="" coords="253,5,441,32"/>
+<area shape="rect" id="node3" href="$namespacecommon.html#a1145794ccd6ba6c8b9250ae43ebe673b" title="Returns a random 32&#45;bit signed integer within a range of (lower_bound,upper_bound). " alt="" coords="254,56,441,83"/>
+</map>

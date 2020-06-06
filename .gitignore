@@ -10,11 +10,8 @@ Chaotic-Maps
 src/proof
 
 #Files
-*.png
 *.tar.gz
-*.userprefs
-*.sln
-*.vcxproj
+*.zip
 
 src-parallel-3-channel
 src-parallel-4-channel/*.tar.gz

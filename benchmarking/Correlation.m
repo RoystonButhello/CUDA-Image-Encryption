@@ -1,6 +1,6 @@
 pkg load image
 pkg load nan
-img_name = "/home/saswat/image_data/1024_1024/lena/5/lena_unrotated_ROUND_0.png"
+img_name = "peppers/peppers_1024_1024_unrotated_ROUND_1.png"
 P =im2double(imread(img_name));
 
 x1 = double(P(:,1:end-1)); 
