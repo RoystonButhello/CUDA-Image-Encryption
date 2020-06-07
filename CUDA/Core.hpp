@@ -14,39 +14,41 @@ using namespace cv;
 using namespace chrono;
 using namespace thrust;
 
+// Store generated parameters in vectors as File I/O is somehow proving to be the most trying part of this code
+vector<Permuter> pVec;
+vector<Diffuser> dVec;
+
 // Initiliaze parameters
 void Initialize()
 {
     string file;
     cout << "Filename: ";
     cin >> file;
-    //cout << "No. of rounds: ";
-    //scanf("%u", &cfg.rounds);
-    cfg.rounds = 1;
+    cout << "Rounds: ";
+    scanf("%d", &cfg.rounds);
+    cfg.rounds = (cfg.rounds > 0) ? cfg.rounds : 2;
+    cfg.rotations = 2;
     buildPaths(file);
 }
 
 // Generate vector of N random numbers in [0,M]
-int* getPermVec(const int M, const int N, CRNG &crng, Mode m)
+int* getPermVec(const int M, const int N, Permuter &crng, Mode m)
 {
     //Initiliaze CRNG
     if (m == Mode::ENC)
     {
-        crng.map = Chaos::Arnold;
+        crng.map = Chaos::Logistic2Dv1;
         random_device randev;
         uniform_real_distribution<double> realGen(0, 1);
-        uniform_int_distribution<int> offsetGen(0, 256);
         crng.core = randev();
         crng.x = realGen(randev);
         crng.y = realGen(randev);
-        crng.offset = offsetGen(randev);
     }
 
     //Initiliaze Parameters
     mt19937 seeder(crng.core);
     double x = crng.x;
     double y = crng.y;
-    const unsigned short int offset = crng.offset;
 
     host_vector<int> ranVec(N);
     const int exp = (int)pow(10, 9);
@@ -57,7 +59,7 @@ int* getPermVec(const int M, const int N, CRNG &crng, Mode m)
     {
         case Chaos::Arnold:
         {
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             { ArnoldIteration(x, y);}
             for (i = 0; i < N; i++)
             {
@@ -68,10 +70,10 @@ int* getPermVec(const int M, const int N, CRNG &crng, Mode m)
         }
         case Chaos::Logistic2Dv1:
         {
-            uniform_real_distribution<double> rGen(1.12, 1.19);
+            uniform_real_distribution<double> rGen(1.18, 1.19);
             const double r = rGen(seeder);
 
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             { Logistic2Dv1Iteration(x, y, r);}
             for (i = 0; i < N; i++)
             {
@@ -85,7 +87,7 @@ int* getPermVec(const int M, const int N, CRNG &crng, Mode m)
             uniform_real_distribution<double> u1Gen(2.75, 3.4), u2Gen(2.75, 3.45), v1Gen(0.15, 0.21), v2Gen(0.13, 0.15);
             const vector<double> args{ u1Gen(seeder), u2Gen(seeder), v1Gen(seeder),v2Gen(seeder) };
 
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             { Logistic2Dv2Iteration(x, y, args);
             }
             for (i = 0; i < N; i++)
@@ -102,8 +104,8 @@ int* getPermVec(const int M, const int N, CRNG &crng, Mode m)
     return (int *)(thrust::raw_pointer_cast(&dVec[0]));
 }
 
-// Generate 2 vectors of N random numbers in [0,M] each
-void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int M, const int N, CRNG& crng, Mode m)
+// Generate 2 vectors of N random numbers in (0,1] each
+void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int M, const int N, Diffuser& crng, Mode m)
 {
     //Initiliaze CRNG
     if (m == Mode::ENC)
@@ -111,18 +113,15 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
         crng.map = Chaos::Logistic2Dv1;
         random_device randev;
         uniform_real_distribution<double> realGen(0, 1);
-        uniform_int_distribution<int> offsetGen(0, 256);
         crng.core = randev();
         crng.x = realGen(randev);
         crng.y = realGen(randev);
-        crng.offset = offsetGen(randev);
     }
 
     //Initiliaze Parameters
     mt19937 seeder(crng.core);
     double x = crng.x;
     double y = crng.y;
-    const unsigned short int offset = crng.offset;
 
     const int exp = (int)pow(10, 9);
     int i = 0;
@@ -131,7 +130,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     {
         case Chaos::Arnold:
         {
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             {
                 ArnoldIteration(x, y);
             }
@@ -145,10 +144,10 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
         }
         case Chaos::Logistic2Dv1:
         {
-            uniform_real_distribution<double> rGen(1.12, 1.19);
+            uniform_real_distribution<double> rGen(1.18, 1.19);
             const double r = rGen(seeder);
 
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             {
                 Logistic2Dv1Iteration(x, y, r);
             }
@@ -165,7 +164,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
             uniform_real_distribution<double> u1Gen(2.75, 3.4), u2Gen(2.75, 3.45), v1Gen(0.15, 0.21), v2Gen(0.13, 0.15);
             const vector<double> args{ u1Gen(seeder), u2Gen(seeder), v1Gen(seeder),v2Gen(seeder) };
 
-            for (i = 0; i < offset; i++)
+            for (i = 0; i < 32; i++)
             {
                 Logistic2Dv2Iteration(x, y, args);
             }
@@ -184,8 +183,8 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
 cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m)
 {
     // Generate permutation vectors
-    auto ptrU = getPermVec(dim[0], dim[1], permuter[0], m);
-    auto ptrV = getPermVec(dim[1], dim[0], permuter[1], m);
+    auto ptrU = getPermVec(dim[0], dim[1], perm[0], m);
+    auto ptrV = getPermVec(dim[1], dim[0], perm[1], m);
     
     // Set grid and block data_size
     const dim3 grid(dim[0], dim[1], 1);
@@ -202,31 +201,27 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
 {
     // Initiliaze diffusion vectors
     host_vector<double> randRowX(dim[1]), randRowY(dim[1]);
-    host_vector<double> randColX(dim[0]), randColY(dim[0]);
 
-    getDiffVecs(randRowX, randRowY, dim[0], dim[1], cfg.diffuser[0], m);
-    getDiffVecs(randColX, randColY, dim[1], dim[0], cfg.diffuser[1], m);
+    getDiffVecs(randRowX, randRowY, dim[0], dim[1], diff, m);
 
     device_vector<double> DRowX = randRowX, DRowY = randRowY;
-    device_vector<double> DColX = randColX, DColY = randColY;
 
     const double* rowXptr = (double*)(thrust::raw_pointer_cast(&DRowX[0]));
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
-    const double* colXptr = (double*)(thrust::raw_pointer_cast(&DColX[0]));
-    const double* colYptr = (double*)(thrust::raw_pointer_cast(&DColY[0]));
 
     // Initiliaze control parameter
     if (m == Mode::ENC)
     {
         random_device rd;
-        uniform_real_distribution<double> rGen(1.12, 1.19);
-        cfg.diff_r = rGen(rd);
+        uniform_real_distribution<double> rGen(1.18, 1.19);
+        diff.r = rGen(rd);
     }
 
     auto start = steady_clock::now();
-    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, colXptr, dim, cfg.diff_r, int(m));
+    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diff.r, int(m));
     cout << "Diffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
-
+    swap(d_img, d_imgtmp);
+   
     return cudaDeviceSynchronize();
 }
 
@@ -253,12 +248,6 @@ int Encrypt()
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
 
-    if (FILE* temp = fopen("key.dat", "r"))
-    {
-        fclose(temp);
-        remove("key.dat");
-    }
-
     // Show original image
     imshow("Original", img);
 
@@ -267,33 +256,35 @@ int Encrypt()
     cout << "----------------------------------------------------------------------------------------\n\n";
 
     cudaError_t cudaStatus;
-    FILE* outfile = fopen("key.dat", "w");
-    fwrite(&cfg, sizeof(mainConfig), 1, outfile);
 
-    // Permute image
+    // Encryption rounds
     for (int i = 0; i < cfg.rounds; i++)
     {
-        cout << "X------ROUND " << i << "------X\n";
-        cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::ENC);
+        cout << "X------ROUND " << i + 1 << "------X\n";
+
+        // Permute Image
+        for (int j = 0; j < cfg.rotations; j++)
+        {
+            cout << "\n     --Rotation " << j + 1 << "--     \n";
+            cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::ENC);
+            if (cudaStatus != cudaSuccess)
+            {
+                cerr << "ENC_Permutation Failed!\n";
+                return -1;
+            }
+            pVec.push_back(perm[0]);
+            pVec.push_back(perm[1]);
+        }
+
+        // Diffuse image
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::ENC);
         if (cudaStatus != cudaSuccess)
         {
-            cerr << "ENC_Permutation Failed!\n";
+            cerr << "ENC_Diffusion Failed!\n";
             return -1;
         }
-        fwrite(&permuter[0], sizeof(CRNG), 2, outfile);
+        dVec.push_back(diff);
     }
-
-    // Diffuse image
-    cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::ENC);
-    if (cudaStatus != cudaSuccess)
-    {
-        cerr << "ENC_Diffusion Failed!\n";
-        return -1;
-    }
-
-    fseek(outfile, 0, SEEK_SET);
-    fwrite(&cfg, sizeof(mainConfig), 1, outfile);
-    fclose(outfile);
 
     // Display encrypted image
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
@@ -309,7 +300,7 @@ int Decrypt()
     kernel_WarmUp();
 
     // Read the file and confirm it's been opened
-    Mat img = imread(path.fn_img_enc, 1);
+    Mat img = imread(path.fn_img_enc, -1);
     if (!img.data)
     {
         cout << "Image not found!\n";
@@ -331,43 +322,32 @@ int Decrypt()
     cout << "----------------------------------------------------------------------------------------\n\n";
     
     cudaError_t cudaStatus;
-    vector<CRNG> crngVec;
-    FILE* infile = fopen("key.dat", "r");
-    if (infile == NULL)
-    {
-        cout << "Key not found!\n";
-        return -1;
-    }
-    fread(&cfg, sizeof(mainConfig), 1, infile);
-    for (int i = 0; i < cfg.rounds; i++)
-    {
-        fread(&permuter, sizeof(CRNG), 2, infile);
-        crngVec.push_back(permuter[0]);
-        crngVec.push_back(permuter[1]);
-    }
-    fclose(infile);
 
-    cout << crngVec.size()/2 << " vs " << (int)cfg.rounds << endl;
-
-    // Undiffuse image
-    cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DEC);
-    if (cudaStatus != cudaSuccess)
-    {
-        cerr << "DEC_Diffusion Failed!\n";
-        return -1;
-    }
-
-    // Unpermute image
+    // Decryption rounds
     for (int i = cfg.rounds - 1; i >= 0; i--)
     {
-        cout << "X------ROUND " << i << "------X\n";
-        permuter[0] = crngVec[2 * i];
-        permuter[1] = crngVec[2 * i + 1];
-        cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::DEC);
+        cout << "X------ROUND " << i + 1 << "------X\n";
+
+        // Undiffuse image
+        diff = dVec[i];
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DEC);
         if (cudaStatus != cudaSuccess)
         {
-            cerr << "DEC_Permutation Failed!\n";
+            cerr << "DEC_Diffusion Failed!\n";
             return -1;
+        }
+
+        for (int j = cfg.rotations - 1, idx = 4 * i + 2 * j; j >= 0; j--, idx-=2)
+        {
+            cout << "\n     --Rotation " << j + 1 << "--     \n";
+            perm[0] = pVec[idx];
+            perm[1] = pVec[idx+1];
+            cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::DEC);
+            if (cudaStatus != cudaSuccess)
+            {
+                cerr << "DEC_Permutation Failed!\n";
+                return -1;
+            }
         }
     }
 
