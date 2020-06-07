@@ -7,7 +7,7 @@ using namespace std;
 enum class Chaos { Arnold, Logistic2Dv1, Logistic2Dv2 };
 enum class Mode { ENC, DEC };
 
-// Comntains paths
+// Contains paths
 struct paths
 {
     string file;
@@ -18,21 +18,28 @@ struct paths
 }path;
 
 // Contains getRandVec params
-struct CRNG
+struct Permuter
 {
     Chaos map;
     int core;
     double x;
     double y;
-    unsigned short int offset;
-}permuter[2];
+}perm[2];
+
+struct Diffuser
+{
+    Chaos map;
+    int core;
+    double x;
+    double y;
+    double r;
+}diff;
 
 // Contains details on no. of rounds
 struct mainConfig
 {
-    uint8_t rounds = 4;
-    CRNG diffuser[2];
-    double diff_r;
+    uint8_t rounds = 2;
+    uint8_t rotations = 1;
 }cfg;
 
 void buildPaths(string file)
@@ -42,9 +49,4 @@ void buildPaths(string file)
     path.fn_img = path.file + path.type;
     path.fn_img_enc = path.file + "_ENC" + path.type;
     path.fn_img_dec = path.file + "_DEC" + path.type;
-}
-
-void showPermuter(CRNG tmp)
-{
-    cout << "Core: " << tmp.core << " : " << tmp.x << endl;
 }
