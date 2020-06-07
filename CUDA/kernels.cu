@@ -49,166 +49,36 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
     }
 }
 
-// ENC::SELF-XOR (top-down)
-__global__ void ENC_XOR_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xRow, const int rows)
-{
-    // Initialize parameters
-    const int stride = gridDim.x * blockDim.x;
-    int prev = blockIdx.x * blockDim.x + threadIdx.x;
-    int curr = prev + stride;
-
-    // Initialize top row
-    out[prev] = in[prev] ^ (uint8_t)(xRow[blockIdx.x] * 256);
-
-    // Each thread diffuses one channel of a column
-    for (int i = 1; i < rows; i++)
-    {
-        out[curr] = in[curr] ^ out[prev];
-        prev = curr;
-        curr += stride;
-    }
-}
-
 // ENC::SELF-XOR (left-right)
-__global__ void ENC_XOR_LR(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xCol, const int cols)
+__global__ void ENC_XOR_LR(uint8_t* __restrict__ in, const int cols)
 {
     // Initialize parameters
-    double x = xCol[blockIdx.x];
-    const int stride = blockDim.x;
     int prev = cols * blockIdx.x * blockDim.x + threadIdx.x;
-    int curr = prev + stride;
-
-    // Initialize leftmost column
-    out[prev] = in[prev] ^ (uint8_t)(xCol[blockIdx.x] * 256);
+    int curr = prev + blockDim.x;
 
     // Each thread diffuses one channel of a row
     for (int i = 1; i < cols; i++)
     {
-        out[curr] = in[curr] ^ out[prev];
+         in[curr] ^= in[prev];
         prev = curr;
-        curr += stride;
+        curr += blockDim.x;
     }
-}
-
-// ENC::SELF-XOR (bottom-up)
-__global__ void ENC_XOR_BU(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xRow, const int rows)
-{
-    // Initialize parameters
-    const int stride = gridDim.x * blockDim.x;
-    int prev = blockIdx.x * blockDim.x + threadIdx.x + (rows - 1) * stride;
-    int curr = prev - stride;
-
-    // Initialize bottom row
-    out[prev] = in[prev] ^ (uint8_t)(xRow[blockIdx.x] * 256);
-
-    // Each thread diffuses one channel of a column
-    for (int i = 1; i < rows; i++)
-    {
-        out[curr] = in[curr] ^ out[prev];
-        prev = curr;
-        curr -= stride;
-    }
-}
-
-// ENC::SELF-XOR (right-left)
-__global__ void ENC_XOR_RL(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xCol, const int cols)
-{
-    // Initialize parameters
-    double x = xCol[blockIdx.x];
-    const int stride = blockDim.x;
-    int prev = cols * blockIdx.x * blockDim.x + threadIdx.x + (cols - 1) * stride;
-    int curr = prev - stride;
-
-    // Initialize rightmost column
-    out[prev] = in[prev] ^ (uint8_t)(xCol[blockIdx.x] * 256);
-
-    // Each thread diffuses one channel of a row
-    for (int i = 1; i < cols; i++)
-    {
-        out[curr] = in[curr] ^ out[prev];
-        prev = curr;
-        curr -= stride;
-    }
-}
-
-// DEC::SELF-XOR (top-down)
-__global__ void DEC_XOR_TD(uint8_t* __restrict__ img, const double* __restrict__ xRow, const int rows)
-{
-    // Initialize parameters
-    const int stride = gridDim.x * blockDim.x;
-    int curr = blockIdx.x * blockDim.x + threadIdx.x + (rows - 1) * stride;
-    int next = curr - stride;
-
-    // Each thread diffuses one channel of a row
-    for (int i = 1; i < rows; i++)
-    {
-        img[curr] ^= img[next];
-        curr = next;
-        next -= stride;
-    }
-
-    // Finalize bottom row
-    img[curr] ^= (uint8_t)(xRow[blockIdx.x] * 256);
 }
 
 // DEC::SELF-XOR (left-right)
-__global__ void DEC_XOR_LR(uint8_t* __restrict__ img, const double* __restrict__ xCol, const int cols)
+__global__ void DEC_XOR_LR(uint8_t* __restrict__ img, const int cols)
 {
     // Initialize parameters
-    const int stride = blockDim.x;
-    int curr = cols * blockIdx.x * blockDim.x + threadIdx.x + (cols - 1) * stride;
-    int next = curr - stride;
+    int curr = cols * blockIdx.x * blockDim.x + threadIdx.x + (cols - 1) * blockDim.x;
+    int next = curr - blockDim.x;
 
     // Each thread diffuses one channel of a row
     for (int i = 1; i < cols; i++)
     {
         img[curr] ^= img[next];
         curr = next;
-        next -= stride;
+        next -= blockDim.x;
     }
-
-    // Finalize leftmost column
-    img[curr] ^= (uint8_t)(xCol[blockIdx.x] * 256);
-}
-
-// DEC::SELF-XOR (bottom-up)
-__global__ void DEC_XOR_BU(uint8_t* __restrict__ img, const double* __restrict__ xRow, const int rows)
-{
-    // Initialize parameters
-    const int stride = gridDim.x * blockDim.x;
-    int curr = blockIdx.x * blockDim.x + threadIdx.x;
-    int next = curr + stride;
-
-    // Each thread diffuses one channel of a row
-    for (int i = 1; i < rows; i++)
-    {
-        img[curr] ^= img[next];
-        curr = next;
-        next += stride;
-    }
-
-    // Finalize bottom row
-    img[curr] ^= (uint8_t)(xRow[blockIdx.x] * 256);
-}
-
-// DEC::SELF-XOR (right-left)
-__global__ void DEC_XOR_RL(uint8_t* __restrict__ img, const double* __restrict__ xCol, const int cols)
-{
-    // Initialize parameters
-    const int stride = blockDim.x;
-    int curr = cols * blockIdx.x * blockDim.x + threadIdx.x;
-    int next = curr + stride;
-
-    // Each thread diffuses one channel of a row
-    for (int i = 1; i < cols; i++)
-    {
-        img[curr] ^= img[next];
-        curr = next;
-        next += stride;
-    }
-
-    // Finalize rightmost column
-    img[curr] ^= (uint8_t)(xCol[blockIdx.x] * 256);
 }
 
 // Wrappers for kernel calls
@@ -231,7 +101,7 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
     }
 }
 
-extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& randRowX, const double*& randColX, const int dim[], const double r, const int mode)
+extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& randRowX, const double*& randRowY, const int dim[], const double r, const int mode)
 {
     // Set grid and block size
     const dim3 gridCol(dim[0], 1, 1);
@@ -240,16 +110,12 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
 
     if (mode == 0)
     {
-        ENC_XOR_TD << <gridRow, block >> > (in, out, randRowX, dim[0]);
-        ENC_XOR_LR << <gridCol, block >> > (out, in, randColX, dim[1]);
-        ENC_XOR_BU << <gridRow, block >> > (in, out, randRowX, dim[0]);
-        ENC_XOR_RL << <gridCol, block >> > (out, in, randColX, dim[1]);
+        DIFF_TD << <gridRow, block >> > (in, out, randRowX, randRowY, dim[0], r);
+        ENC_XOR_LR << <gridRow, block >> > (out, dim[0]);
     }
     else
     {
-        DEC_XOR_RL << <gridCol, block >> > (in, randColX, dim[1]);
-        DEC_XOR_BU << <gridRow, block >> > (in, randRowX, dim[0]);
-        DEC_XOR_LR << <gridCol, block >> > (in, randColX, dim[1]);
-        DEC_XOR_TD << <gridRow, block >> > (in, randRowX, dim[0]);
+        DEC_XOR_LR << <gridRow, block >> > (in, dim[0]);
+        DIFF_TD << <gridRow, block >> > (in, out, randRowX, randRowY, dim[0], r);
     }
 }
