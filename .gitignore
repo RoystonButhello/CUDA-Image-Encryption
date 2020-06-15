@@ -344,7 +344,6 @@ healthchecksdb
 # Directories
 CURAND
 Chaotic-Maps
-CUDA
 images
 Miscellaneous
 Papers

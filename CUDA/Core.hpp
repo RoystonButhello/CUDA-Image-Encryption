@@ -191,7 +191,7 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     const dim3 block(dim[2], 1, 1);
 
     auto start = steady_clock::now();
-    Wrap_RotatePerm(d_img, d_imgtmp, ptrU, ptrV, grid, block, int(m));
+    Wrap_RotatePerm(d_img, d_imgtmp, ptrU, ptrV, grid, block,int(m));
     cout << "Permutation: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
 
     return cudaDeviceSynchronize();
@@ -241,15 +241,25 @@ int Encrypt()
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
 
-    // Upload image to device
+    // Upload image and LUTs to device
     uint8_t* d_img, * d_imgtmp;
-    size_t data_size = img.rows * img.cols * img.channels();
+    int *gpu_u; 
+    int *gpu_v;
+    
+    size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
+    size_t lut_size_row = dim[1] * sizeof(int);
+    size_t lut_size_col = dim[0] * sizeof(int);
+      
     cudaMalloc<uint8_t>(&d_img, data_size);
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
+    
+    cudaMalloc<int>(&gpu_v, lut_size_col);
+    cudaMalloc<int>(&gpu_u, lut_size_row);
+    
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
-
+    
     // Show original image
-    imshow("Original", img);
+    //imshow("Original", img);
 
     cout << "----------------------------------------------------------------------------------------\n";
     cout << "---------------------------------------ENCRYPTION---------------------------------------\n";
@@ -269,6 +279,7 @@ int Encrypt()
             cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::ENC);
             if (cudaStatus != cudaSuccess)
             {
+                cout<<"\ncudaStatus = "<<cudaStatus;
                 cerr << "ENC_Permutation Failed!\n";
                 return -1;
             }
@@ -276,7 +287,7 @@ int Encrypt()
             pVec.push_back(perm[1]);
         }
 
-        // Diffuse image
+        //Diffuse image
         cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::ENC);
         if (cudaStatus != cudaSuccess)
         {
@@ -289,7 +300,7 @@ int Encrypt()
     // Display encrypted image
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
     imwrite(path.fn_img_enc, img);
-    imshow("Encrypted", img);
+    //imshow("Encrypted", img);
 
     cudaDeviceReset();
     return 0;
@@ -310,12 +321,23 @@ int Decrypt()
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
 
-    // Upload image to device
+    // Upload image and LUTs to device
     uint8_t* d_img, * d_imgtmp;
-    size_t data_size = img.rows * img.cols * img.channels();
+    int *gpu_u; 
+    int *gpu_v;
+    
+    size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
+    size_t lut_size_row = dim[1] * sizeof(int);
+    size_t lut_size_col = dim[0] * sizeof(int);
+      
     cudaMalloc<uint8_t>(&d_img, data_size);
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
+    
+    cudaMalloc<int>(&gpu_v, lut_size_col);
+    cudaMalloc<int>(&gpu_u, lut_size_row);
+    
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
+    
 
     cout << "----------------------------------------------------------------------------------------\n";
     cout << "---------------------------------------DECRYPTION---------------------------------------\n";
@@ -328,7 +350,7 @@ int Decrypt()
     {
         cout << "X------ROUND " << i + 1 << "------X\n";
 
-        // Undiffuse image
+        //Undiffuse image
         diff = dVec[i];
         cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DEC);
         if (cudaStatus != cudaSuccess)
@@ -336,7 +358,8 @@ int Decrypt()
             cerr << "DEC_Diffusion Failed!\n";
             return -1;
         }
-
+        
+        //Unpermute image
         for (int j = cfg.rotations - 1, idx = 4 * i + 2 * j; j >= 0; j--, idx-=2)
         {
             cout << "\n     --Rotation " << j + 1 << "--     \n";
@@ -354,9 +377,10 @@ int Decrypt()
     // Display decrypted image
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
     imwrite(path.fn_img_dec, img);
-    imshow("Decrypted", img);
+    //imshow("Decrypted", img);
 
     cudaDeviceReset();
     waitKey(0);
     return 0;
 }
+

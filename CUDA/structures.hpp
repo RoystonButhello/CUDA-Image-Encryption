@@ -47,6 +47,7 @@ void buildPaths(string file)
     path.file = "images/" + file;
     path.type = ".png";
     path.fn_img = path.file + path.type;
-    path.fn_img_enc = path.file + "_ENC" + path.type;
-    path.fn_img_dec = path.file + "_DEC" + path.type;
+    path.fn_img_enc = file + "_ENC" + path.type;
+    path.fn_img_dec = file + "_DEC" + path.type;
 }
+
