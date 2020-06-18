@@ -1,10 +1,6 @@
-// CUDA-related function definitions
-#pragma once
-#include <stdint.h>
-#include <cstdio>
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+//CUDA kernels and CUDA kernel-related function definitions
 
+#include <cstdint>
 // Warm-up Kernel
 __global__ void KWarmUp()
 {
@@ -89,7 +85,7 @@ extern "C" void kernel_WarmUp()
 
 extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int* rowRotate, const dim3 & grid, const dim3 & block, const int mode)
 {
-    if (mode == 0)
+    if (mode == 1)
     {
         ENC_RotatePerm << <grid, block >> > (in, out, colRotate, rowRotate);
         ENC_RotatePerm << <grid, block >> > (out, in, colRotate, rowRotate);
@@ -108,7 +104,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
     const dim3 gridRow(dim[1],1, 1);
     const dim3 block(dim[2], 1, 1);
 
-    if (mode == 0)
+    if (mode == 1)
     {
         DIFF_TD << <gridRow, block >> > (in, out, randRowX, randRowY, dim[0], r);
         ENC_XOR_LR << <gridRow, block >> > (out, dim[0]);
