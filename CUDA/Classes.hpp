@@ -11,7 +11,8 @@ enum class Chaos
   twodLogisticMap,
   twodSineLogisticModulatedMap,
   twodLogisticAdjustedSineMap,
-  twodLogisticAdjustedLogisticMap
+  twodLogisticAdjustedLogisticMap,
+  MersenneTwister
 };
 
 enum class Mode 
@@ -60,6 +61,7 @@ class Permuter
     double beta;
     double myu;
     double r;
+    int mt_seed;
 };
 
 class Diffuser
@@ -79,6 +81,51 @@ class Configuration
     uint8_t rotations = 1;
 };
 
+
+class Random
+{
+  
+  public:
+     
+      static inline int getRandomInteger(int LOWER_BOUND, int UPPER_BOUND)
+      {
+        std::random_device r;
+        std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+        std::mt19937 seeder(seed);
+        std::uniform_int_distribution<int> intGen(LOWER_BOUND, UPPER_BOUND);
+        int alpha = intGen(seeder);
+        return alpha;
+      }
+     
+      static inline int getRandomUnsignedInteger8(int LOWER_BOUND, int UPPER_BOUND)
+      {
+        std::random_device r;
+        std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+        std::mt19937 seeder(seed);
+        std::uniform_int_distribution<uint8_t> intGen(LOWER_BOUND, UPPER_BOUND);
+        auto randnum = intGen(seeder);
+        return (uint8_t)randnum;
+      }
+     
+     static inline double getRandomDouble(double LOWER_LIMIT, double UPPER_LIMIT)
+     {
+       std::random_device r;
+       std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+       std::mt19937 seeder(seed);
+       std::uniform_real_distribution<double> realGen(LOWER_LIMIT, UPPER_LIMIT);   
+       auto randnum = realGen(seeder);
+       return (double)randnum;
+     }
+    
+     static inline Chaos crngAssigner(int LOWER_LIMIT, int UPPER_LIMIT)
+     {
+       Chaos chaotic_map;
+       chaotic_map = (Chaos)getRandomInteger(LOWER_LIMIT, UPPER_LIMIT);
+       return chaotic_map;
+     }
+};
+
+
 /**
  * Class containing Mersenne Twister and Chaotic Maps. These are used as PRNGs 
  */
@@ -89,24 +136,49 @@ class CRNG
     double Y;
     double X_BAR;
     double Y_BAR;
+    
+    int LOWER_LIMIT;
+    int UPPER_LIMIT;
+    
+    int RANDOM_NUMBER;
+    
     double R;
     double ALPHA;
     double BETA;
-    double MYU; 
+    double MYU;
+    int MT_SEED; 
     Chaos Map; 
     
-    CRNG(double x, double y, double x_bar, double y_bar, double alpha, double beta, double myu, double r, Chaos map)
+    CRNG(double x, double y, double x_bar, double y_bar, int lower_limit, int upper_limit, double alpha, double beta, double myu, double r, int mt_seed, Chaos map)
     {
       X = x;
       Y = y;
       X_BAR = x_bar;
       Y_BAR = y_bar;
+      LOWER_LIMIT = lower_limit;
+      UPPER_LIMIT = upper_limit;
       R = r;
       ALPHA = alpha;
       BETA = beta;
       MYU = myu;
+      MT_SEED = mt_seed;
       Map = map;
-        
+      
+      if(DEBUG_CONSTRUCTORS == 1)
+      {
+        std::cout<<"\nX = "<<X;
+        std::cout<<"\nY = "<<Y;
+        std::cout<<"\nX_BAR = "<<X_BAR;
+        std::cout<<"\nY_BAR = "<<Y_BAR;
+        std::cout<<"\nLOWER_LIMIT = "<<LOWER_LIMIT;
+        std::cout<<"\nUPPER_LIMIT = "<<UPPER_LIMIT;
+        std::cout<<"\nR = "<<R;
+        std::cout<<"\nALPHA = "<<ALPHA;
+        std::cout<<"\nBETA = "<<BETA;
+        std::cout<<"\nMYU = "<<MYU;
+        std::cout<<"\nMT_SEED = "<<MT_SEED;
+        std::cout<<"\nMap = "<<int(Map);
+      }                      
     }
   
    inline void twodLM(double &X, double &Y, const double &R)
@@ -154,7 +226,15 @@ class CRNG
      return;
    }
    
-   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, const double &ALPHA, const double &BETA, const double &MYU, const double &R, Chaos Map)
+   inline void MT(int lower_limit, int upper_limit, int mt_seed, int &random_number)
+   {
+         std::mt19937 seeder(mt_seed);
+         std::uniform_int_distribution<int> intGen(lower_limit, upper_limit);
+         random_number = (int)intGen(seeder);
+         return;
+   }
+   
+   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, int LOWER_LIMIT, int UPPER_LIMIT, const double &ALPHA, const double &BETA, const double &MYU, const double &R, const double MT_SEED, Chaos Map)
    {
      
      switch(Map)
@@ -195,6 +275,12 @@ class CRNG
        }
        break;
        
+       case Chaos::MersenneTwister:
+       {
+         MT(LOWER_LIMIT, UPPER_LIMIT, MT_SEED, RANDOM_NUMBER);
+       }
+       break;
+       
        default: std::cout << "\nInvalid CRNG Option!\nExiting...";
        std::exit(0);
      }
@@ -203,54 +289,11 @@ class CRNG
    
 };
 
-class Random
-{
-  
-  public:
-     
-      static inline int getRandomInteger(int LOWER_BOUND, int UPPER_BOUND)
-      {
-        std::random_device r;
-        std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
-        std::mt19937 seeder(seed);
-        std::uniform_int_distribution<int> intGen(LOWER_BOUND, UPPER_BOUND);
-        int alpha = intGen(seeder);
-        return alpha;
-      }
-     
-      static inline int getRandomUnsignedInteger8(int LOWER_BOUND, int UPPER_BOUND)
-      {
-        std::random_device r;
-        std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
-        std::mt19937 seeder(seed);
-        std::uniform_int_distribution<uint8_t> intGen(LOWER_BOUND, UPPER_BOUND);
-        auto randnum = intGen(seeder);
-        return (uint8_t)randnum;
-      }
-     
-     static inline double getRandomDouble(double LOWER_LIMIT, double UPPER_LIMIT)
-     {
-       std::random_device r;
-       std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
-       std::mt19937 seeder(seed);
-       std::uniform_real_distribution<double> realGen(LOWER_LIMIT, UPPER_LIMIT);   
-       auto randnum = realGen(seeder);
-       return (double)randnum;
-     }
-    
-     static inline Chaos crngAssigner(int LOWER_LIMIT, int UPPER_LIMIT)
-     {
-       Chaos chaotic_map;
-       chaotic_map = (Chaos)getRandomInteger(LOWER_LIMIT, UPPER_LIMIT);
-       return chaotic_map;
-     }
-};
-
 /*Class objects*/
+Configuration config;
 Paths path;
 Permuter permute[2];
 Diffuser diffuse;
-Configuration config;
 //CRNG crng;
 Random randomNumber; 
 #endif
