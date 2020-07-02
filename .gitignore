@@ -338,3 +338,24 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# Linux Stuff
+
+# Directories
+CURAND
+Chaotic-Maps
+Miscellaneous
+Papers
+Reports
+shell_scripts
+Tests
+src/proof
+src/*.tar.gz
+output
+
+
+# Files
+*.png
+src/test.cpp
+src/test
+*.tar.gz

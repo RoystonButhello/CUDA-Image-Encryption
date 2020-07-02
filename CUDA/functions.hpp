@@ -32,3 +32,4 @@ inline void Logistic2Dv2Iteration(double& x, double& y, const std::vector<double
     y = y * v[1] * (1 - y) + v[3] * xtmp * (xtmp + y);
     return;
 }
+
