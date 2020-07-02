@@ -226,7 +226,7 @@ class CRNG
      return;
    }
    
-   inline void MT(int lower_limit, int upper_limit, int mt_seed, int &random_number)
+   inline void MT(int lower_limit, int upper_limit, const int &mt_seed, int &random_number)
    {
          std::mt19937 seeder(mt_seed);
          std::uniform_int_distribution<int> intGen(lower_limit, upper_limit);
@@ -234,7 +234,7 @@ class CRNG
          return;
    }
    
-   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, int LOWER_LIMIT, int UPPER_LIMIT, const double &ALPHA, const double &BETA, const double &MYU, const double &R, const double MT_SEED, Chaos Map)
+   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, int LOWER_LIMIT, int UPPER_LIMIT, const double &ALPHA, const double &BETA, const double &MYU, const double &R, const int &MT_SEED, Chaos Map)
    {
      
      switch(Map)

@@ -55,7 +55,7 @@ __global__ void ENC_XOR_LR(uint8_t* __restrict__ in, const int cols)
     // Each thread diffuses one channel of a row
     for (int i = 1; i < cols; i++)
     {
-         in[curr] ^= in[prev];
+        in[curr] ^= in[prev];
         prev = curr;
         curr += blockDim.x;
     }

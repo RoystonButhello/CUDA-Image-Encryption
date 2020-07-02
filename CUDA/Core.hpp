@@ -2,9 +2,10 @@
 #define CORE_H
 
 // Top-level encryption functions
-#define DEBUG_VECTORS    0
-#define DEBUG_PARAMETERS 0
-#define PRINT_IMAGES     0
+#define DEBUG_VECTORS      0
+#define DEBUG_PARAMETERS   0
+#define PRINT_IMAGES       0
+#define DEBUG_CONSTRUCTORS 0
 
 #include <iostream> /*For IO*/
 #include <cstdio>   /*For printf*/
@@ -15,6 +16,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <openssl/sha.h> /*For sha256*/
+#include <sstream>
 #include <fstream>
 #include "kernels.hpp"
 #include "Classes.hpp"
@@ -28,6 +31,49 @@ using namespace thrust;
 std::vector<Permuter> pVec;
 std::vector<Diffuser> dVec;
 
+static inline void getIntegerBytes(uint32_t value, char *&buffer)
+{
+   for(int i = 0; i < sizeof(value); ++i)
+   {
+     buffer[i] = (value >> (8 * i)) & 0xff;
+   }
+} 
+
+static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH])
+{
+    
+  stringstream ss;
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+      ss << hex << setw(2) << setfill('0') << (int)hash[i];
+  }
+    
+  return ss.str();
+}
+
+static inline std::string calc_sha256(uint32_t value)
+  {    
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    
+    const int bufSize = SHA256_DIGEST_LENGTH;
+    //const int bufSize = 3;
+    char* buffer = (char*)calloc(bufSize, sizeof(char));
+    int bytesRead = 0;
+    
+    getIntegerBytes(value, buffer);
+    //cout <<"\nEnter buffer ";
+    //cin >> buffer;
+    SHA256_Update(&sha256, buffer, bufSize);
+    
+    SHA256_Final(hash, &sha256);
+
+    std::string hash_final = sha256_hash_string(hash);
+    
+    
+    return hash_final;
+  } 
 
 static inline void printImageContents(cv::Mat image,int channels)
   {
@@ -77,7 +123,8 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
         permute.beta = randomNumber.getRandomDouble(2.97 , 3.00);
         permute.myu = randomNumber.getRandomDouble(0.5 , 0.9);
         permute.r = randomNumber.getRandomDouble(1.12 , 1.18);
-        permute.map = randomNumber.crngAssigner(1 , 5);
+        permute.map = randomNumber.crngAssigner(1 , 6);
+        permute.mt_seed = randomNumber.getRandomInteger(10000, 60000);
         
         if(DEBUG_PARAMETERS == 1)
         {
@@ -88,7 +135,8 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
           cout<<"\npermute.beta = "<<permute.beta;
           cout<<"\npermute.myu = "<<permute.myu;
           cout<<"\npermute.r = "<<permute.r;
-          cout<<"\npermute.map = "<<int(permute.map)<<"\n";
+          cout<<"\npermute.map = "<<int(permute.map);
+          cout<<"\npermute.mt_seed = "<<permute.mt_seed<<"\n";
         }
     }
     
@@ -103,7 +151,8 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
         cout<<"\npermute.beta = "<<permute.beta;
         cout<<"\npermute.myu = "<<permute.myu;
         cout<<"\npermute.r = "<<permute.r;
-        cout<<"\npermute.map = "<<int(permute.map)<<"\n";
+        cout<<"\npermute.map = "<<int(permute.map);
+        cout<<"\npermute.mt_seed = "<<permute.mt_seed<<"\n";
       }
     }
 
@@ -114,9 +163,10 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     const double beta = permute.beta;
     const double myu = permute.myu;
     const double r = permute.r; 
+    const int mt_seed = permute.mt_seed;
     Chaos map = permute.map;
     
-    CRNG crng(permute.x, permute.y, 0, 0, permute.alpha, permute.beta, permute.myu, permute.r, permute.map);
+    CRNG crng(permute.x, permute.y, 0, 0, 0, (N - 1), permute.alpha, permute.beta, permute.myu, permute.r, permute.mt_seed, permute.map);
     
     host_vector<int> ranVec(N);
     const int exp = (int)pow(10, 9);
@@ -126,7 +176,7 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     
     for(int i = 0; i < N ; ++i)
     {
-        crng.CRNGUpdateHost(x, y, 0, 0, alpha, beta, myu, r, map);
+        crng.CRNGUpdateHost(x, y, 0, 0, 0, (N - 1), alpha, beta, myu, r, mt_seed, map);
         ranVec[i] = (int)(x * exp) % M;
     }
     
@@ -185,7 +235,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     const double r = diffuse.r;
     Chaos map = diffuse.map;
     
-    CRNG crng(diffuse.x, diffuse.y, 0, 0, 0, 0, 0, diffuse.r, diffuse.map);
+    CRNG crng(diffuse.x, diffuse.y, 0, 0, 0, 0, 0, 0, 0, diffuse.r, 0, diffuse.map);
     
     //const int exp = (int)pow(10, 9);
     int i = 0;
@@ -193,7 +243,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     
     for(i = 0; i < N; ++i)
     {
-      crng.CRNGUpdateHost(x, y, 0, 0, 0, 0, 0, r, map);
+      crng.CRNGUpdateHost(x, y, 0, 0, 0, 0, 0, 0, 0, r, 0, map);
       xVec[i] = x;
       yVec[i] = y;
     }
