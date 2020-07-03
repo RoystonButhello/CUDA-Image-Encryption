@@ -2,12 +2,13 @@
 #define CORE_H
 
 // Top-level encryption functions
-#define DEBUG_VECTORS      0
-#define DEBUG_PARAMETERS   0
-#define PRINT_IMAGES       0
-#define DEBUG_CONSTRUCTORS 0
-#define STATIC_MODE        1
-#define EXP                1000000000
+#define DEBUG_VECTORS              0
+#define DEBUG_PARAMETERS           0
+#define DEBUG_MODIFIED_PARAMETERS  0
+#define PRINT_IMAGES               0
+#define DEBUG_CONSTRUCTORS         0
+#define STATIC_MODE                1
+#define EXP                        1000000000
 
 #include <iostream> /*For IO*/
 #include <cstdio>   /*For printf*/
@@ -19,6 +20,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <openssl/sha.h> /*For sha256*/
+#include <cmath>
 #include <sstream>
 #include <fstream>
 #include "kernels.hpp"
@@ -36,49 +38,6 @@ std::vector<Diffuser> dVec;
 // Temporarily store generated parameters at the end of each round
 std::vector<Permuter> pVecTemp;
 std::vector<Diffuser> dVecTemp;
-
-static inline void getIntegerBytes(uint32_t value, char *&buffer)
-{
-   for(int i = 0; i < sizeof(value); ++i)
-   {
-     buffer[i] = (value >> (8 * i)) & 0xff;
-   }
-} 
-
-static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH])
-{
-    
-  stringstream ss;
-  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-  {
-      ss << hex << setw(2) << setfill('0') << (int)hash[i];
-  }
-    
-  return ss.str();
-}
-
-static inline const char* calc_sha256(uint32_t value)
-{    
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-    
-  const int bufSize = SHA256_DIGEST_LENGTH;
-  //const int bufSize = 3;
-  char* buffer = (char*)calloc(bufSize, sizeof(char));
-  int bytesRead = 0;
-    
-  getIntegerBytes(value, buffer);
-  //cout <<"\nEnter buffer ";
-  //cin >> buffer;
-  SHA256_Update(&sha256, buffer, bufSize);
-    
-  SHA256_Final(hash, &sha256);
-
-  std::string hash_final = sha256_hash_string(hash);
-    
-  return hash_final.c_str();
-} 
 
 static inline void printImageContents(cv::Mat image,int channels)
 {
@@ -155,7 +114,6 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
           cout<<"\npermute.beta = "<<permute.beta;
           cout<<"\npermute.myu = "<<permute.myu;
           cout<<"\npermute.r = "<<permute.r;
-          cout<<"\npermute.map = "<<int(permute.map);
           cout<<"\npermute.mt_seed = "<<permute.mt_seed<<"\n";
         }
     }
@@ -328,24 +286,117 @@ cudaError_t CudaImageSum(uint8_t*& d_img, uint32_t *device_sum, const int dim[])
   return cudaDeviceSynchronize();
 } 
 
-void hashPermParameters(Permuter permute, const char* hash_of_sum)
+static inline void getIntegerBytes(uint32_t value, char *&buffer)
 {
-    permute.x = permute.x + (double)(hash_of_sum[0] / 1000);
-    permute.y = permute.y + (double)(hash_of_sum[1] / 1000);
-    permute.myu = permute.myu + (double)(hash_of_sum[2] / 1000);
-    permute.alpha = permute.alpha + (double)(hash_of_sum[3] / 10000);
-    permute.beta = permute.beta + (double)(hash_of_sum[4] / 10000);
-    permute.r = permute.r + (double)(hash_of_sum[5] / 10000);
-    permute.mt_seed = permute.mt_seed ^ (int)hash_of_sum[6]; 
+   for(int i = 0; i < sizeof(value); ++i)
+   {
+     buffer[i] = (value >> (8 * i)) & 0xff;
+   }
+} 
+
+static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH])
+{
     
-    pVec.push_back(permute);
+  stringstream ss;
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+      ss << hex << setw(2) << setfill('0') << (int)hash[i];
+  }
+    
+  return ss.str();
 }
 
-void hashDiffParameters(Diffuser diffuse, const char* hash_of_sum)
+static inline int calc_sha256(uint32_t value)
+{ 
+  int sum_of_hash = 0;   
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+    
+  const int bufSize = SHA256_DIGEST_LENGTH;
+  //const int bufSize = 3;
+  char* buffer = (char*)calloc(bufSize, sizeof(char));
+  int bytesRead = 0;
+    
+  getIntegerBytes(value, buffer);
+  //cout <<"\nEnter buffer ";
+  //cin >> buffer;
+  SHA256_Update(&sha256, buffer, bufSize);
+    
+  SHA256_Final(hash, &sha256);
+
+  std::string hash_final = sha256_hash_string(hash);
+  
+  for(int i = 0; i < hash_final.length(); ++i)
+  {
+    sum_of_hash = sum_of_hash + hash_final.at(i);
+  }
+  
+  sum_of_hash = sum_of_hash % 256;
+  
+  cout<<"\nsum_of_hash % 256 = "<<sum_of_hash;  
+  return sum_of_hash;
+} 
+
+
+double getParameterOffset(int value)
 {
-    diffuse.x = diffuse.x + (double)(hash_of_sum[0] / 1000);
-    diffuse.y = diffuse.y + (double)(hash_of_sum[1] / 1000);
-    diffuse.r = diffuse.r + (double)(hash_of_sum[5] / 10000);
+  double parameter_offset = -0.1;
+  double dVal = (double)value; 
+ 
+  if(dVal >= 100 && dVal <= 255)
+  {
+    parameter_offset = dVal / 1000;
+    return parameter_offset;
+  } 
+  
+  else if(dVal >= 10 && dVal <= 99)
+  {
+    parameter_offset = dVal / 100;
+    return parameter_offset;
+  }
+  
+  else if(dVal >= 9 && dVal <= 0)
+  {
+    parameter_offset = dVal / 10 ;
+    return parameter_offset;
+  }
+  
+  else
+  {
+    cout<<"\ndVal out of range\n";
+    printf("\ndVal = %f", dVal);
+    return parameter_offset;
+  }
+  
+  return parameter_offset;
+}
+
+void hashPermParameters(Permuter permute, int hash_of_sum)
+{
+    double offset = getParameterOffset(hash_of_sum);
+    printf("\noffset =  %f", offset);
+    permute.x = permute.x + offset;
+    permute.y = permute.y + offset;
+    permute.myu = permute.myu + offset;
+    permute.alpha = permute.alpha + offset;
+    permute.beta = permute.beta + offset;
+    permute.r = permute.r + offset;
+    permute.mt_seed = permute.mt_seed ^ hash_of_sum;
+    
+    pVec.push_back(permute);
+    
+}
+
+void hashDiffParameters(Diffuser diffuse, int hash_of_sum)
+{
+    double offset = getParameterOffset(hash_of_sum);
+    printf("\noffset =  %f", offset);
+    
+    diffuse.x = diffuse.x + offset;
+    diffuse.y = diffuse.y + offset;
+    diffuse.r = diffuse.r + offset;
+    
     dVec.push_back(diffuse);
 }
 
@@ -392,7 +443,8 @@ int Encrypt()
     int *gpu_u;
     int *gpu_v;
     
-    const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    //const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    int hash_of_sum = -1000;
     
     cudaMalloc(&device_sum, device_sum_size);
     
@@ -533,7 +585,8 @@ int Decrypt()
     int *gpu_u;
     int *gpu_v;
     
-    const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    //const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    int hash_of_sum = -1000;
     
     uint32_t host_sum;
     uint32_t *device_sum;
@@ -649,6 +702,25 @@ int Decrypt()
       cout<<"\nDecrypted image \n";
       printImageContents(img, dim[2]);
     }
+    
+    cout<<"\nIn pVec: ";
+    for(Permuter permute : pVec)
+    {
+       printf("\npermute.x =  %3.6f", permute.x);
+       printf("\npermute.y =  %3.6f", permute.y);
+       printf("\npermute.r =  %3.6f", permute.r);
+       printf("\npermute.mt_seed = %d", permute.mt_seed);
+    }
+    cout<<"\n\n";
+    
+    cout<<"\n In dVec: ";
+    for(Diffuser diffuse : dVec)
+    {
+      printf("\ndiffuse.x =  %3.6f", diffuse.x);
+      printf("\ndiffuse.y =  %3.6f", diffuse.y);
+      printf("\ndiffuse.r =  %3.6f", diffuse.r);
+    }
+    
     return 0;
 }
 
