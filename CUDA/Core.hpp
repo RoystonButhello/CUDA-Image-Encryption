@@ -6,6 +6,7 @@
 #define DEBUG_PARAMETERS   0
 #define PRINT_IMAGES       0
 #define DEBUG_CONSTRUCTORS 0
+#define STATIC_MODE        1
 #define EXP                1000000000
 
 #include <iostream> /*For IO*/
@@ -117,17 +118,33 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
+        if(STATIC_MODE == 1)
+        {
+          permute.x = randomNumber.getRandomDouble(0.1 , 0.1);
+          permute.y = randomNumber.getRandomDouble(0.2 , 0.2);
+          permute.x_bar = 0;
+          permute.y_bar = 0;
+          permute.alpha = randomNumber.getRandomDouble(0.905 , 0.905);
+          permute.beta = randomNumber.getRandomDouble(2.97 , 2.97);
+          permute.myu = randomNumber.getRandomDouble(0.9 , 0.9);
+          permute.r = randomNumber.getRandomDouble(1.16 , 1.16);
+          permute.map = randomNumber.crngAssigner(1 , 1);
+          permute.mt_seed = randomNumber.getRandomInteger(10000, 10000);
+        }
         
-        permute.x = randomNumber.getRandomDouble(0 , 1);
-        permute.y = randomNumber.getRandomDouble(0 , 1);
-        permute.x_bar = 0;
-        permute.y_bar = 0;
-        permute.alpha = randomNumber.getRandomDouble(0.905 , 0.995);
-        permute.beta = randomNumber.getRandomDouble(2.97 , 3.00);
-        permute.myu = randomNumber.getRandomDouble(0.5 , 0.9);
-        permute.r = randomNumber.getRandomDouble(1.12 , 1.18);
-        permute.map = randomNumber.crngAssigner(1 , 5);
-        permute.mt_seed = randomNumber.getRandomInteger(10000, 60000);
+        else
+        {
+          permute.x = randomNumber.getRandomDouble(0 , 1);
+          permute.y = randomNumber.getRandomDouble(0 , 1);
+          permute.x_bar = 0;
+          permute.y_bar = 0;
+          permute.alpha = randomNumber.getRandomDouble(0.905 , 0.995);
+          permute.beta = randomNumber.getRandomDouble(2.97 , 3.00);
+          permute.myu = randomNumber.getRandomDouble(0.5 , 0.9);
+          permute.r = randomNumber.getRandomDouble(1.12 , 1.18);
+          permute.map = randomNumber.crngAssigner(1 , 5);
+          permute.mt_seed = randomNumber.getRandomInteger(10000, 60000);
+        }
         
         if(DEBUG_PARAMETERS == 1)
         {
@@ -204,11 +221,22 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
-        diffuse.x = randomNumber.getRandomDouble(0 , 0.7);
-        diffuse.y = randomNumber.getRandomDouble(0 , 0.7);
-        diffuse.r = randomNumber.getRandomDouble(1.12 , 1.18);
-        diffuse.map = randomNumber.crngAssigner(1 , 2);
-           
+        if(STATIC_MODE == 1)
+        {
+          diffuse.x = randomNumber.getRandomDouble(0.1 , 0.1);
+          diffuse.y = randomNumber.getRandomDouble(0.2 , 0.2);
+          diffuse.r = randomNumber.getRandomDouble(1.16 , 1.16);
+          diffuse.map = randomNumber.crngAssigner(1 , 1);        
+        }
+        
+        else
+        {
+          diffuse.x = randomNumber.getRandomDouble(0.1 , 0.7);
+          diffuse.y = randomNumber.getRandomDouble(0.2 , 0.7);
+          diffuse.r = randomNumber.getRandomDouble(1.12 , 1.16);
+          diffuse.map = randomNumber.crngAssigner(1 , 2);
+        }
+            
         if(DEBUG_PARAMETERS == 1)
         {
           cout<<"\nInitializing crng parameters for diffusion\n";
@@ -302,13 +330,13 @@ cudaError_t CudaImageSum(uint8_t*& d_img, uint32_t *device_sum, const int dim[])
 
 void hashPermParameters(Permuter permute, const char* hash_of_sum)
 {
-    /*permute.x = permute.x + (double)(hash_of_sum[0] / 1000);
+    permute.x = permute.x + (double)(hash_of_sum[0] / 1000);
     permute.y = permute.y + (double)(hash_of_sum[1] / 1000);
     permute.myu = permute.myu + (double)(hash_of_sum[2] / 1000);
     permute.alpha = permute.alpha + (double)(hash_of_sum[3] / 10000);
     permute.beta = permute.beta + (double)(hash_of_sum[4] / 10000);
     permute.r = permute.r + (double)(hash_of_sum[5] / 10000);
-    permute.mt_seed = permute.mt_seed + (int)hash_of_sum[6];*/ 
+    permute.mt_seed = permute.mt_seed ^ (int)hash_of_sum[6]; 
     
     pVec.push_back(permute);
 }
@@ -576,8 +604,26 @@ int Decrypt()
         {
             cout << "\n     --Rotation " << j + 1 << "--     \n";
             
-            permute[0] = pVec[idx];
-            permute[1] = pVec[idx + 1];
+            if(i == 0)
+            {
+              permute[0] = pVec[idx];
+              permute[1] = pVec[idx + 1];
+            }
+            
+            else if(i > 0)
+            {
+              permute[0] = pVecTemp[idx];
+              permute[1] = pVecTemp[idx + 1];
+              
+              hashPermParameters(permute[0], hash_of_sum);
+              hashPermParameters(permute[1], hash_of_sum);
+              
+              permute[0] = pVec[idx];
+              permute[1] = pVec[idx + 1]; 
+            }
+            
+            //permute[0] = pVec[idx];
+            //permute[1] = pVec[idx + 1];
             cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::DECRYPT);
             
             if (cudaStatus != cudaSuccess)
