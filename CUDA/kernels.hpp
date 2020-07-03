@@ -9,6 +9,6 @@
 extern "C" void kernel_WarmUp();
 extern "C" void Wrap_RotatePerm(uint8_t*, uint8_t*, int*, int*, const dim3&, const dim3&, const int mode);
 extern "C" void Wrap_Diffusion(uint8_t*&, uint8_t*&, const double*& , const double*&, const int [], const double, const int mode);
-
+extern "C" void Wrap_imageSum(uint8_t *&image_vec, uint32_t *sum, const int dim[]);
 #endif
 

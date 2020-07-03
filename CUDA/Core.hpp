@@ -6,6 +6,7 @@
 #define DEBUG_PARAMETERS   0
 #define PRINT_IMAGES       0
 #define DEBUG_CONSTRUCTORS 0
+#define EXP                1000000000
 
 #include <iostream> /*For IO*/
 #include <cstdio>   /*For printf*/
@@ -31,6 +32,10 @@ using namespace thrust;
 std::vector<Permuter> pVec;
 std::vector<Diffuser> dVec;
 
+// Temporarily store generated parameters at the end of each round
+std::vector<Permuter> pVecTemp;
+std::vector<Diffuser> dVecTemp;
+
 static inline void getIntegerBytes(uint32_t value, char *&buffer)
 {
    for(int i = 0; i < sizeof(value); ++i)
@@ -51,46 +56,44 @@ static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_L
   return ss.str();
 }
 
-static inline std::string calc_sha256(uint32_t value)
-  {    
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
+static inline const char* calc_sha256(uint32_t value)
+{    
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
     
-    const int bufSize = SHA256_DIGEST_LENGTH;
-    //const int bufSize = 3;
-    char* buffer = (char*)calloc(bufSize, sizeof(char));
-    int bytesRead = 0;
+  const int bufSize = SHA256_DIGEST_LENGTH;
+  //const int bufSize = 3;
+  char* buffer = (char*)calloc(bufSize, sizeof(char));
+  int bytesRead = 0;
     
-    getIntegerBytes(value, buffer);
-    //cout <<"\nEnter buffer ";
-    //cin >> buffer;
-    SHA256_Update(&sha256, buffer, bufSize);
+  getIntegerBytes(value, buffer);
+  //cout <<"\nEnter buffer ";
+  //cin >> buffer;
+  SHA256_Update(&sha256, buffer, bufSize);
     
-    SHA256_Final(hash, &sha256);
+  SHA256_Final(hash, &sha256);
 
-    std::string hash_final = sha256_hash_string(hash);
+  std::string hash_final = sha256_hash_string(hash);
     
-    
-    return hash_final;
-  } 
+  return hash_final.c_str();
+} 
 
 static inline void printImageContents(cv::Mat image,int channels)
-  {
-    for(int i=0;i<image.rows;++i)
-    { 
-      printf("\n");
-      for(int j=0;j<image.cols;++j)
-      {
-         for(int k=0; k < channels; ++k)
-         {
-          
-          printf("%d\t",image.at<Vec3b>(i,j)[k]); 
-         } 
-       }
-    }
-    cout<<"\n";
-  }
+{
+  for(int i=0;i<image.rows;++i)
+  { 
+    printf("\n");
+    for(int j=0;j<image.cols;++j)
+    {
+       for(int k=0; k < channels; ++k)
+       {
+         printf("%d\t",image.at<Vec3b>(i,j)[k]); 
+       } 
+     }
+   }
+   cout<<"\n";
+}
 
 
 // Initiliaze parameters
@@ -123,7 +126,7 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
         permute.beta = randomNumber.getRandomDouble(2.97 , 3.00);
         permute.myu = randomNumber.getRandomDouble(0.5 , 0.9);
         permute.r = randomNumber.getRandomDouble(1.12 , 1.18);
-        permute.map = randomNumber.crngAssigner(1 , 6);
+        permute.map = randomNumber.crngAssigner(1 , 5);
         permute.mt_seed = randomNumber.getRandomInteger(10000, 60000);
         
         if(DEBUG_PARAMETERS == 1)
@@ -201,8 +204,8 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
-        diffuse.x = randomNumber.getRandomDouble(0 , 1);
-        diffuse.y = randomNumber.getRandomDouble(0 , 1);
+        diffuse.x = randomNumber.getRandomDouble(0 , 0.7);
+        diffuse.y = randomNumber.getRandomDouble(0 , 0.7);
         diffuse.r = randomNumber.getRandomDouble(1.12 , 1.18);
         diffuse.map = randomNumber.crngAssigner(1 , 2);
            
@@ -261,9 +264,9 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     const dim3 grid(dim[0], dim[1], 1);
     const dim3 block(dim[2], 1, 1);
 
-    auto start = steady_clock::now();
+    //auto start = steady_clock::now();
     Wrap_RotatePerm(d_img, d_imgtmp, ptrU, ptrV, grid, block,int(m));
-    cout << "Permutation: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
+    //cout << "Permutation: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
 
     return cudaDeviceSynchronize();
 }
@@ -282,12 +285,40 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     
     cout<<"\ndiffuse.r = "<<diffuse.r;
     
-    auto start = steady_clock::now();
+    //auto start = steady_clock::now();
     Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.r, int(m));
-    cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
+    //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
     swap(d_img, d_imgtmp);
    
     return cudaDeviceSynchronize();
+}
+
+cudaError_t CudaImageSum(uint8_t*& d_img, uint32_t *device_sum, const int dim[])
+{
+  uint32_t sum = 0;
+  Wrap_imageSum(d_img, device_sum, dim); 
+  return cudaDeviceSynchronize();
+} 
+
+void hashPermParameters(Permuter permute, const char* hash_of_sum)
+{
+    /*permute.x = permute.x + (double)(hash_of_sum[0] / 1000);
+    permute.y = permute.y + (double)(hash_of_sum[1] / 1000);
+    permute.myu = permute.myu + (double)(hash_of_sum[2] / 1000);
+    permute.alpha = permute.alpha + (double)(hash_of_sum[3] / 10000);
+    permute.beta = permute.beta + (double)(hash_of_sum[4] / 10000);
+    permute.r = permute.r + (double)(hash_of_sum[5] / 10000);
+    permute.mt_seed = permute.mt_seed + (int)hash_of_sum[6];*/ 
+    
+    pVec.push_back(permute);
+}
+
+void hashDiffParameters(Diffuser diffuse, const char* hash_of_sum)
+{
+    diffuse.x = diffuse.x + (double)(hash_of_sum[0] / 1000);
+    diffuse.y = diffuse.y + (double)(hash_of_sum[1] / 1000);
+    diffuse.r = diffuse.r + (double)(hash_of_sum[5] / 10000);
+    dVec.push_back(diffuse);
 }
 
 int Encrypt()
@@ -320,7 +351,11 @@ int Encrypt()
     
     // Upload image to device
     uint8_t* d_img, * d_imgtmp;
-
+    
+    uint32_t host_sum;
+    uint32_t *device_sum;
+    size_t device_sum_size = sizeof(device_sum);
+    
     size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
     
     size_t lut_size_row = dim[1] * sizeof(int);
@@ -328,6 +363,10 @@ int Encrypt()
     
     int *gpu_u;
     int *gpu_v;
+    
+    const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    
+    cudaMalloc(&device_sum, device_sum_size);
     
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
@@ -351,7 +390,22 @@ int Encrypt()
     for (int i = 0; i < config.rounds; i++)
     {
         cout << "X------ROUND " << i + 1 << "------X\n";
-
+        
+        /*Calculate sum of image in each round*/
+        if(i > 0)
+        {
+          cudaStatus = CudaImageSum(d_img, device_sum, dim);
+          if (cudaStatus != cudaSuccess)
+          {
+            cerr << "\nimageSum Failed!";
+            cout<<"\nimageSum kernel error / status = "<<cudaStatus;
+            return -1;
+          }
+          
+          cudaMemcpy(&host_sum, device_sum, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+          hash_of_sum = calc_sha256(host_sum);
+        }
+        
         // Permute Image
         for (int j = 0; j < config.rotations; j++)
         {
@@ -364,8 +418,20 @@ int Encrypt()
                 cout<<"\nENC_Permutation kernel error / status = "<<cudaStatus;
                 return -1;
             }
-            pVec.push_back(permute[0]);
-            pVec.push_back(permute[1]);
+            
+            if(i == 0)
+            {
+              pVec.push_back(permute[0]);
+              pVec.push_back(permute[1]);
+            }
+            
+            else if(i > 0)
+            {
+              pVecTemp.push_back(permute[0]);
+              pVecTemp.push_back(permute[1]);
+              hashPermParameters(permute[0], hash_of_sum);
+              hashPermParameters(permute[1], hash_of_sum); 
+            }
         }
 
         /*Diffuse image*/
@@ -376,14 +442,28 @@ int Encrypt()
             cout<<"\nENC_Diffusion kernel error / status = "<<cudaStatus;
             return -1;
         }
-        dVec.push_back(diffuse);
+        
+        if(i == 0)
+        {
+          dVec.push_back(diffuse); 
+        }
+            
+        else if(i > 0)
+        {
+          dVecTemp.push_back(diffuse);
+          hashDiffParameters(diffuse, hash_of_sum);
+        }
     }
-
+    
+    cout<<"\nimg_sum = "<<host_sum<<"\n";
+    
     // Display encrypted image
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
     imwrite(path.fn_img_enc, img);
+    
     //imshow("Encrypted", img);
-
+    
+    
     cudaDeviceReset();
     return 0;
 }
@@ -419,9 +499,19 @@ int Decrypt()
     size_t lut_size_row = dim[1] * sizeof(int);
     size_t lut_size_col = dim[0] * sizeof(int);
     
+    //uint32_t *img_sum;
+    
+    
     int *gpu_u;
     int *gpu_v;
     
+    const char *hash_of_sum = (const char*)calloc(SHA256_DIGEST_LENGTH, sizeof(const char)); 
+    
+    uint32_t host_sum;
+    uint32_t *device_sum;
+    size_t device_sum_size = sizeof(device_sum);
+    
+    cudaMalloc(&device_sum, device_sum_size);
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
 
@@ -443,9 +533,36 @@ int Decrypt()
     for (int i = config.rounds - 1; i >= 0; i--)
     {
         cout << "X------ROUND " << i + 1 << "------X\n";
-
+        
         /*Undiffuse image*/
-        diffuse = dVec[i];
+        
+        /*Calculate sum of image in each round*/
+        if(i > 0)
+        {
+          cudaStatus = CudaImageSum(d_img, device_sum, dim);
+          if (cudaStatus != cudaSuccess)
+          {
+            cerr << "\nimageSum Failed!";
+            cout<<"\nimageSum kernel error / status = "<<cudaStatus;
+            return -1;
+          }
+          
+          cudaMemcpy(&host_sum, device_sum, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+          hash_of_sum = calc_sha256(host_sum);
+        }
+         
+        if(i == 0)
+        {
+          diffuse = dVec[i]; 
+        }
+            
+        else if(i > 0)
+        {
+          diffuse = dVecTemp[i];
+          hashDiffParameters(diffuse, hash_of_sum);
+          diffuse = dVec[i];
+        }
+        
         cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DECRYPT);
         if (cudaStatus != cudaSuccess)
         {
@@ -458,9 +575,11 @@ int Decrypt()
         for (int j = config.rotations - 1, idx = 4 * i + 2 * j; j >= 0; j--, idx-=2)
         {
             cout << "\n     --Rotation " << j + 1 << "--     \n";
+            
             permute[0] = pVec[idx];
             permute[1] = pVec[idx + 1];
             cudaStatus = CudaPermute(d_img, d_imgtmp, dim, Mode::DECRYPT);
+            
             if (cudaStatus != cudaSuccess)
             {
                 cerr << "DEC_Permutation Failed!";
