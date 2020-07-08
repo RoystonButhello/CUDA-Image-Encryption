@@ -3,9 +3,27 @@
 
 // Top-level encryption functions
 #define DEBUG_VECTORS      0
-#define DEBUG_PARAMETERS   0
+#define DEBUG_PARAMETERS   1
+#define DEBUG_PARAM_MOD    0
 #define PRINT_IMAGES       0
 #define DEBUG_CONSTRUCTORS 0
+
+#define X_LOWER_LIMIT      0.1
+#define X_UPPER_LIMIT      0.6
+#define Y_LOWER_LIMIT      0.1
+#define Y_UPPER_LIMIT      0.6
+#define ALPHA_LOWER_LIMIT  0.905
+#define ALPHA_UPPER_LIMIT  0.975
+#define BETA_LOWER_LIMIT   2.97
+#define BETA_UPPER_LIMIT   3.00
+#define MYU_LOWER_LIMIT    0.40
+#define MYU_UPPER_LIMIT    0.70
+#define R_LOWER_LIMIT      1.15
+#define R_UPPER_LIMIT      1.16
+#define MAP_LOWER_LIMIT    1
+#define MAP_UPPER_LIMIT    5
+#define NONCE_LOWER_LIMIT  2400000
+#define NONCE_UPPER_LIMIT  3600000  
 
 #include <iostream> /*For IO*/
 #include <cstdio>   /*For printf*/
@@ -32,6 +50,8 @@ using namespace thrust;
 std::vector<Permuter> pVec;
 std::vector<Diffuser> dVec;
 
+uint32_t permute_xor_value = 0;
+uint32_t diffuse_xor_value = 0;
 
 /*Function Prototypes*/
 static inline void printImageContents(cv::Mat image,int channels);
@@ -103,7 +123,7 @@ double getParameterOffset(double value)
   
   else if(value >= 9 && value <= 0)
   {
-    parameter_offset = value / 100 ;
+    parameter_offset = value / 100;
     return parameter_offset;
   }
   
@@ -111,6 +131,7 @@ double getParameterOffset(double value)
   {
     cout<<"\nValue out of range\n";
     printf("\nvalue = %f", value);
+    //parameter_offset = parameter_offset + 0.1;
     return parameter_offset;
   }
   
@@ -125,15 +146,15 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
-        permute.x = randomNumber.getRandomDouble(0.1 , 0.7);
-        permute.y = randomNumber.getRandomDouble(0.1 , 0.7);
+        permute.x = randomNumber.getRandomDouble(X_LOWER_LIMIT , X_UPPER_LIMIT);
+        permute.y = randomNumber.getRandomDouble(Y_LOWER_LIMIT , Y_UPPER_LIMIT);
         permute.x_bar = 0;
         permute.y_bar = 0;
-        permute.alpha = randomNumber.getRandomDouble(0.905 , 0.925);
-        permute.beta = randomNumber.getRandomDouble(2.97 , 2.98);
-        permute.myu = randomNumber.getRandomDouble(0.1 , 0.7);
-        permute.r = randomNumber.getRandomDouble(1.15 , 1.17);
-        permute.map = randomNumber.crngAssigner(1 , 5);
+        permute.alpha = randomNumber.getRandomDouble(ALPHA_LOWER_LIMIT , ALPHA_UPPER_LIMIT);
+        permute.beta = randomNumber.getRandomDouble(BETA_LOWER_LIMIT , BETA_UPPER_LIMIT);
+        permute.myu = randomNumber.getRandomDouble(MYU_LOWER_LIMIT , MYU_UPPER_LIMIT);
+        permute.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
+        permute.map = randomNumber.crngAssigner(MAP_LOWER_LIMIT , MAP_UPPER_LIMIT);
         permute.mt_seed = randomNumber.getRandomInteger(10000, 60000);
         
         if(DEBUG_PARAMETERS == 1)
@@ -211,18 +232,18 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
-        diffuse.x = randomNumber.getRandomDouble(0.1 , 0.7);
-        diffuse.y = randomNumber.getRandomDouble(0.1 , 0.7);
-        diffuse.r = randomNumber.getRandomDouble(1.15 , 1.16);
-        diffuse.map = randomNumber.crngAssigner(2 , 2);
+        diffuse.x = randomNumber.getRandomDouble(X_LOWER_LIMIT , X_UPPER_LIMIT);
+        diffuse.y = randomNumber.getRandomDouble(Y_LOWER_LIMIT , Y_UPPER_LIMIT);
+        diffuse.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
+        diffuse.map = randomNumber.crngAssigner(1 , 2);
         
         if(DEBUG_PARAMETERS == 1)
         {
-          /*cout<<"\nINITITALIZING crng PARAMETERS FOR DIFFUSION\n";
+          cout<<"\nINITITALIZING crng PARAMETERS FOR DIFFUSION\n";
           cout<<"\ndiffuse.x = "<<diffuse.x;
           cout<<"\ndiffuse.y = "<<diffuse.y;
           cout<<"\ndiffuse.r = "<<diffuse.r;
-          cout<<"\ndiffuse.map = "<<int(diffuse.map)<<"\n";*/
+          cout<<"\ndiffuse.map = "<<int(diffuse.map)<<"\n";
         }
     }
     
@@ -377,7 +398,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
     /*Modifying all diffusion parameters*/
     for(int i = 0; i < dVec.size(); ++i)
     {
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\nORIGINAL diffuse.x in ENCRYPT = %f", diffuse.x);
         printf("\nORIGINAL diffuse.y in ENCRYPT = %f", diffuse.y);
@@ -391,7 +412,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       diffuse.r = diffuse.r + offset;
       dVec[i] = diffuse;
       
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\noffset in ENCRYPT = %f", offset);
         printf("\ndiffuse.x in ENCRYPT after PLUS = %f", diffuse.x);
@@ -403,7 +424,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
     /*Modifying all permutation parameters*/
     for(int i = 0; i < pVec.size(); ++i)
     {
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\nORIGINAL permute.x in ENCRYPT = %f", permute.x);
         printf("\nORIGINAL permute.y in ENCRYPT = %f", permute.y);
@@ -425,7 +446,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       
       pVec[i] = permute;
       
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\noffset in ENCRYPT = %f", offset);
         printf("\npermute.x in ENCRYPT after PLUS = %f", permute.x);
@@ -444,7 +465,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
     for(int i = 0; i < dVec.size(); ++i)
     {
       diffuse = dVec[i];
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\nORIGINAL diffuse.x in DECRYPT  = %f", diffuse.x);
         printf("\nORIGINAL diffuse.y in DECRYPT  = %f", diffuse.y);
@@ -458,7 +479,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       
       dVec[i] = diffuse;  
       
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\noffset in DECRYPT = %f", offset);
         printf("\ndiffuse.x in DECRYPT after MINUS = %f", diffuse.x);
@@ -470,7 +491,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
     /*Unodifying all permutation parameters*/
     for(int i = 0; i < pVec.size(); ++i)
     {
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\nORIGINAL permute.x in DECRYPT = %f", permute.x);
         printf("\nORIGINAL permute.y in DECRYPT = %f", permute.y);
@@ -492,7 +513,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       
       pVec[i] = permute;
       
-      if(DEBUG_PARAMETERS == 1)
+      if(DEBUG_PARAM_MOD == 1)
       {
         printf("\noffset in DECRYPT = %f", offset);
         printf("\npermute.x in DECRYPT after MINUS = %f", permute.x);
@@ -800,5 +821,6 @@ int Decrypt()
 }
 
 #endif
+
 
 
