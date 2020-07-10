@@ -84,14 +84,14 @@ __global__ void DEC_XOR_LR(uint8_t* __restrict__ img, const int cols)
 
 __global__ void imageSum(uint8_t* __restrict__ img, uint32_t *sum)
 {
-  int index = blockIdx.x * blockDim.x + blockDim.y; 
-  *sum = *sum + img[index];
+  int index = blockIdx.x * blockDim.x + threadIdx.x; 
+  atomicAdd(sum, img[index]);
 }
 
 // Wrappers for kernel calls
 extern "C" void kernel_WarmUp()
 {
-    KWarmUp << <1, 1 >> > ();
+    KWarmUp <<<1, 1>>> ();
 }
 
 extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int* rowRotate, const dim3 & grid, const dim3 & block, const int mode)
@@ -104,8 +104,8 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        ENC_RotatePerm << <grid, block >> > (in, out, colRotate, rowRotate);
-        ENC_RotatePerm << <grid, block >> > (out, in, colRotate, rowRotate);
+        ENC_RotatePerm <<<grid, block>>> (in, out, colRotate, rowRotate);
+        ENC_RotatePerm <<<grid, block>>> (out, in, colRotate, rowRotate);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
@@ -122,8 +122,8 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
            
-        DEC_RotatePerm << <grid, block >> > (in, out, colRotate, rowRotate);
-        DEC_RotatePerm << <grid, block >> > (out, in, colRotate, rowRotate);
+        DEC_RotatePerm <<<grid, block>>> (in, out, colRotate, rowRotate);
+        DEC_RotatePerm <<<grid, block>>> (out, in, colRotate, rowRotate);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
@@ -148,8 +148,8 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DIFF_TD << <gridRow, block >> > (in, out, randRowX, randRowY, dim[0], r);
-        ENC_XOR_LR << <gridRow, block >> > (out, dim[0]);
+        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], r);
+        ENC_XOR_LR <<<gridRow, block>>> (out, dim[0]);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
@@ -166,8 +166,8 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DEC_XOR_LR << <gridRow, block >> > (in, dim[0]);
-        DIFF_TD << <gridRow, block >> > (in, out, randRowX, randRowY, dim[0], r);
+        DEC_XOR_LR <<<gridRow, block>>> (in, dim[0]);
+        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], r);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
