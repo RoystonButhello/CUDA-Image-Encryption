@@ -31,7 +31,7 @@ __global__ void DEC_RotatePerm(const uint8_t* __restrict__ in, uint8_t* __restri
 }
 
 // Diffusion (top-down)
-__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double r)
+__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, uint32_t host_sum_plain, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double r)
 {
     // Initialize parameters
     double x = xRow[blockIdx.x];
@@ -44,12 +44,12 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
     {
         x = r * (3 * y + 1) * x * (1 - x);
         y = r * (3 * x + 1) * y * (1 - y);
-        out[idx] = in[idx] ^ (uint8_t)(x * 256);
+        out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
     }
 }
 
 // ENC::SELF-XOR (left-right)
-__global__ void ENC_XOR_LR(uint8_t* __restrict__ in, const int cols)
+__global__ void ENC_XOR_LR(uint8_t* __restrict__ in, uint32_t host_sum_plain, const int cols)
 {
     // Initialize parameters
     int prev = cols * blockIdx.x * blockDim.x + threadIdx.x;
@@ -58,14 +58,14 @@ __global__ void ENC_XOR_LR(uint8_t* __restrict__ in, const int cols)
     // Each thread diffuses one channel of a row
     for (int i = 1; i < cols; i++)
     {
-        in[curr] ^= in[prev];
+        in[curr] = in[curr] ^ in[prev] ^ host_sum_plain;
         prev = curr;
         curr += blockDim.x;
     }
 }
 
 // DEC::SELF-XOR (left-right)
-__global__ void DEC_XOR_LR(uint8_t* __restrict__ img, const int cols)
+__global__ void DEC_XOR_LR(uint8_t* __restrict__ img, uint32_t host_sum_plain, const int cols)
 {
     // Initialize parameters
     int curr = cols * blockIdx.x * blockDim.x + threadIdx.x + (cols - 1) * blockDim.x;
@@ -74,7 +74,7 @@ __global__ void DEC_XOR_LR(uint8_t* __restrict__ img, const int cols)
     // Each thread diffuses one channel of a row
     for (int i = 1; i < cols; i++)
     {
-        img[curr] ^= img[next];
+        img[curr] = img[curr] ^ img[next] ^ host_sum_plain;
         curr = next;
         next -= blockDim.x;
     }
@@ -133,7 +133,7 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
     }
 }
 
-extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& randRowX, const double*& randRowY, const int dim[], const double r, const int mode)
+extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_plain, const double*& randRowX, const double*& randRowY, const int dim[], const double r, const int mode)
 {
     // Set grid and block size
     const dim3 gridCol(dim[0], 1, 1);
@@ -148,8 +148,8 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], r);
-        ENC_XOR_LR <<<gridRow, block>>> (out, dim[0]);
+        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], r);
+        ENC_XOR_LR <<<gridRow, block>>> (out, host_sum_plain, dim[0]);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
@@ -166,8 +166,8 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DEC_XOR_LR <<<gridRow, block>>> (in, dim[0]);
-        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], r);
+        DEC_XOR_LR <<<gridRow, block>>> (in, host_sum_plain, dim[0]);
+        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], r);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);

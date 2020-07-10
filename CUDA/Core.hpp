@@ -3,17 +3,17 @@
 
 // Top-level encryption functions
 #define DEBUG_VECTORS      0
-#define DEBUG_PARAMETERS   1
+#define DEBUG_PARAMETERS   0
 #define DEBUG_PARAM_MOD    0
 #define PRINT_IMAGES       0
 #define DEBUG_CONSTRUCTORS 0
 
 #define X_LOWER_LIMIT      0.1
-#define X_UPPER_LIMIT      0.6
+#define X_UPPER_LIMIT      0.7
 #define Y_LOWER_LIMIT      0.1
-#define Y_UPPER_LIMIT      0.6
+#define Y_UPPER_LIMIT      0.7
 #define ALPHA_LOWER_LIMIT  0.905
-#define ALPHA_UPPER_LIMIT  0.975
+#define ALPHA_UPPER_LIMIT  0.945
 #define BETA_LOWER_LIMIT   2.97
 #define BETA_UPPER_LIMIT   3.00
 #define MYU_LOWER_LIMIT    0.40
@@ -50,8 +50,10 @@ using namespace thrust;
 std::vector<Permuter> pVec;
 std::vector<Diffuser> dVec;
 
+/*Global variables to store the values with which to XOR the hash_byte*/
 uint32_t permute_xor_value = 0;
 uint32_t diffuse_xor_value = 0;
+uint32_t host_sum_plain = 0;
 
 /*Function Prototypes*/
 static inline void printImageContents(cv::Mat image,int channels);
@@ -62,16 +64,17 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m);
 void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int M, const int N, Diffuser &diffuse, Mode m);
 
 cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m);
-cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], int iteration, uint8_t &hash_byte, uint32_t *device_sum, Mode m);
+cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_plain, const int dim[], Mode m);
 cudaError_t CudaImageSum(uint8_t device_img_vec, uint32_t *device_sum, uint32_t &host_sum, const int dim[]);
 static inline void getIntegerBytes(uint32_t value, unsigned char *&buffer);
 static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH]);
-static inline void calc_sha256(uint32_t value, uint8_t &hash_byte);
-void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, uint8_t hash_byte, Mode m);
+static inline void calc_sha256(uint32_t value, uint32_t &hash_byte);
+void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, uint32_t hash_byte, Mode m);
 int Encrypt();
 int Decrypt();
 void printInt8Array(uint8_t *array, int length);
 uint32_t imageSum(uint8_t *array, int length);
+uint32_t getPowerOf10(uint32_t value);
 
 static inline void printImageContents(cv::Mat image,int channels)
 {
@@ -105,32 +108,23 @@ void Initialize()
 }
 
 
-double getParameterOffset(double value)
+double getParameterOffset(uint32_t value)
 {
   double parameter_offset = -0.1;
+  int power = getPowerOf10(value);
+  double val = (double)value;
+  double divisor = pow(10, ((double)power + 2));
   
-  if(value >= 100 && value <= 255)
+  if(value > 0)
   {
-    parameter_offset = value / 10000;
-    return parameter_offset;
-  } 
-  
-  else if(value >= 10 && value <= 99)
-  {
-    parameter_offset = value / 1000;
-    return parameter_offset;
-  }
-  
-  else if(value >= 9 && value <= 0)
-  {
-    parameter_offset = value / 100;
+    parameter_offset = val / divisor;
     return parameter_offset;
   }
   
   else
   {
     cout<<"\nValue out of range\n";
-    printf("\nvalue = %f", value);
+    printf("\nvalue = %d", value);
     //parameter_offset = parameter_offset + 0.1;
     return parameter_offset;
   }
@@ -299,11 +293,12 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     return cudaDeviceSynchronize();
 }
 
-cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m)
+cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_plain, const int dim[], Mode m)
 {
     
     // Initiliaze diffusion vectors
     uint32_t sum_of_image = 0;
+    
     size_t img_data_size = dim[0] * dim[1] * dim[2];
         
     host_vector<double> randRowX(dim[1]), randRowY(dim[1]);
@@ -317,7 +312,7 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     cudaError_t cudaStatus;
     
     //auto start = steady_clock::now();
-    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.r, int(m));
+    Wrap_Diffusion(d_img, d_imgtmp, host_sum_plain, rowXptr, rowYptr, dim, diffuse.r, int(m));
     swap(d_img, d_imgtmp);
     //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
     
@@ -351,7 +346,7 @@ static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_L
   return ss.str();
 }
 
-static inline void calc_sha256(uint32_t value, uint8_t &hash_byte)
+static inline void calc_sha256(uint32_t value, uint32_t &hash_byte)
 { 
   const char *hash_final_array;
   long x = 0;   
@@ -387,12 +382,12 @@ static inline void calc_sha256(uint32_t value, uint8_t &hash_byte)
   
 } 
 
-void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, uint8_t hash_byte, Mode m)
+void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, uint32_t hash_byte, Mode m)
 {
-    double offset = 0;
-    double hash_sum = (double)hash_byte;
-    Permuter permute;
-    Diffuser diffuse;
+  double offset = 0;
+  Permuter permute;
+  Diffuser diffuse;
+  
   if(m == Mode::ENCRYPT)
   {
     /*Modifying all diffusion parameters*/
@@ -406,7 +401,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       }
       
       diffuse = dVec[i];
-      offset = getParameterOffset(hash_sum);
+      offset = getParameterOffset(hash_byte);
       diffuse.x = diffuse.x + offset;
       diffuse.y = diffuse.y + offset;
       diffuse.r = diffuse.r + offset;
@@ -436,7 +431,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
     
       permute = pVec[i];
       
-      offset = getParameterOffset(hash_sum);
+      offset = getParameterOffset(hash_byte);
       permute.x = permute.x + offset;
       permute.y = permute.y + offset;
       permute.r = permute.r + offset;
@@ -472,7 +467,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
         printf("\nORIGINAL diffuse.r in DECRYPT  = %f\n", diffuse.r);
       }
       
-      offset = getParameterOffset(hash_sum);
+      offset = getParameterOffset(hash_byte);
       diffuse.x = diffuse.x - offset;
       diffuse.y = diffuse.y - offset;
       diffuse.r = diffuse.r - offset;
@@ -495,7 +490,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       {
         printf("\nORIGINAL permute.x in DECRYPT = %f", permute.x);
         printf("\nORIGINAL permute.y in DECRYPT = %f", permute.y);
-        printf("\nORIGINAL permute.r in ENCRYPT = %f", permute.r);
+        printf("\nORIGINAL permute.r in DECRYPT = %f", permute.r);
         printf("\nORIGINAL permute.alpha in DECRYPT = %f", permute.alpha);
         printf("\nORIGINAL permute.beta in DECRYPT = %f", permute.beta);
         printf("\nORIGINAL permute.myu in DECRYPT = %f\n", permute.myu);
@@ -503,7 +498,7 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       
       permute = pVec[i];
       
-      offset = getParameterOffset(hash_sum);
+      offset = getParameterOffset(hash_byte);
       permute.x = permute.x - offset;
       permute.y = permute.y - offset;
       permute.r = permute.r - offset;
@@ -544,6 +539,17 @@ uint32_t imageSum(uint8_t *array, int length)
   }
 }
 
+uint32_t getPowerOf10(uint32_t value)
+{
+  int power = 0;
+  while(value > 0)
+  {
+    value = value / 10;
+    ++power;
+  }
+  return power;
+}
+
 int Encrypt()
 {
     kernel_WarmUp();
@@ -578,9 +584,9 @@ int Encrypt()
     uint8_t *img_in;
     uint8_t *img_out;
     
-    uint32_t host_sum = 0;
-    uint32_t *device_sum;
-    size_t device_sum_size = sizeof(device_sum);
+    uint32_t host_sum_ENC = 0;
+    uint32_t *device_sum_ENC, *device_sum_plain;
+    size_t device_sum_size = sizeof(device_sum_ENC);
     
     size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
     
@@ -590,9 +596,12 @@ int Encrypt()
     int *gpu_u;
     int *gpu_v;
     
-    uint8_t hash_byte = 0; 
+    cudaError_t cudaStatus;
     
-    cudaMalloc(&device_sum, device_sum_size);
+    uint32_t hash_byte = 0; 
+    
+    cudaMalloc(&device_sum_plain, device_sum_size);
+    cudaMalloc(&device_sum_ENC, device_sum_size);
     
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
@@ -600,12 +609,21 @@ int Encrypt()
     cudaMalloc<uint8_t>(&d_img, data_size);
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
     
-    img_in = (uint8_t*)calloc((data_size / sizeof(uint8_t)), sizeof(uint8_t));
-    img_out = (uint8_t*)calloc((data_size / sizeof(uint8_t)), sizeof(uint8_t));
-    
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
     
+    /*Calculating the sum of plain image, the sum of whose hash will be used in diffusion for forward propagation*/
+    cudaStatus = CudaImageSum(d_img, device_sum_plain, host_sum_plain, dim);
     
+    if(cudaStatus != cudaSuccess)
+    {
+      cerr << "\nimage sum Failed!";
+      cout<<"\nimage sum kernel error / status = "<<cudaStatus;
+      return -1;
+    }
+    
+    
+    printf("\nhost_sum_plain = %d", host_sum_plain);
+    printf("\nhash_byte = %d", hash_byte);
     // Show original image
     //imshow("Original", img);
 
@@ -613,8 +631,7 @@ int Encrypt()
     cout << "---------------------------------------ENCRYPTION---------------------------------------\n";
     cout << "----------------------------------------------------------------------------------------\n\n";
 
-    cudaError_t cudaStatus;
-
+    
     // Encryption rounds
     for (int i = 0; i < config.rounds; i++)
     {
@@ -639,7 +656,7 @@ int Encrypt()
         
         
         /*Diffuse image*/
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::ENCRYPT);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, host_sum_plain, dim, Mode::ENCRYPT);
         
         if (cudaStatus != cudaSuccess)
         {
@@ -655,7 +672,7 @@ int Encrypt()
     imwrite(path.fn_img_enc, img);
     
     /*Calculate sum of encrypted image*/
-    cudaStatus = CudaImageSum(d_img, device_sum, host_sum, dim);
+    cudaStatus = CudaImageSum(d_img, device_sum_ENC, host_sum_ENC, dim);
     
     if (cudaStatus != cudaSuccess)
     {
@@ -664,9 +681,18 @@ int Encrypt()
       return -1;
     }
     
-    printf("\nhost_sum = %d", host_sum);
-    calc_sha256(host_sum, hash_byte);
+    
+    printf("\nhost_sum_ENC = %d", host_sum_ENC);
+    
+    /*Calculate sha256 hash of the sum of the encrypted image*/
+    calc_sha256(host_sum_ENC, hash_byte);
     printf("\nhash_byte = %d", hash_byte);
+    
+    /*XOR the hash_byte to obtain a modified value. Done to protect hash_byte against brute-force attacks*/
+    
+    
+    
+    /*Modify the parameters using an offset generated from the hash*/
     hashParameters(pVec, dVec, hash_byte, Mode::ENCRYPT);
     
     // Display encrypted image 
@@ -718,16 +744,17 @@ int Decrypt()
     int *gpu_u;
     int *gpu_v;
     
-    uint8_t hash_byte = 209;
+    uint32_t hash_byte = 209;
     
-    uint32_t host_sum = 0;
-    uint32_t *device_sum;
-    size_t device_sum_size = sizeof(device_sum);
+    uint32_t host_sum_DEC = 0;
+    uint32_t *device_sum_DEC, *device_sum_plain;
+    size_t device_sum_size = sizeof(device_sum_DEC);
     uint32_t x = 0;
     
     cudaError_t cudaStatus;
     
-    cudaMalloc(&device_sum, device_sum_size);
+    cudaMalloc(&device_sum_DEC, device_sum_size);
+    cudaMalloc(&device_sum_plain, device_sum_size);
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
 
@@ -739,10 +766,12 @@ int Decrypt()
     cudaMalloc<uint8_t>(&d_img, data_size);
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
     
+    cudaMemcpy(device_sum_plain, &host_sum_plain, device_sum_size, cudaMemcpyHostToDevice);
+    
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
     
     /*Calculate sum of encrypted image*/
-    cudaStatus = CudaImageSum(d_img, device_sum, host_sum, dim);
+    cudaStatus = CudaImageSum(d_img, device_sum_DEC, host_sum_DEC, dim);
     
     if (cudaStatus != cudaSuccess)
     {
@@ -751,8 +780,8 @@ int Decrypt()
       return -1;
     }
     
-    printf("\nhost_sum = %d", host_sum);
-    calc_sha256(host_sum, hash_byte);
+    printf("\nhost_sum_DEC = %d", host_sum_DEC);
+    calc_sha256(host_sum_DEC, hash_byte);
     printf("\nhash_byte = %d", hash_byte);
     hashParameters(pVec, dVec, hash_byte, Mode::DECRYPT);
 
@@ -768,7 +797,7 @@ int Decrypt()
         diffuse = dVec[i];
         
         /*Undiffuse image*/
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DECRYPT);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, host_sum_plain, dim, Mode::DECRYPT);
         if (cudaStatus != cudaSuccess)
         {
             cerr << "DEC_Diffusion Failed!";
