@@ -45,6 +45,7 @@ using namespace cv;
 using namespace std;
 using namespace chrono;
 using namespace thrust;
+using namespace cub;
 
 // Store generated parameters in vectors as File I/O is somehow proving to be the most trying part of this code
 std::vector<Permuter> pVec;
@@ -65,7 +66,9 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
 
 cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m);
 cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_plain, const int dim[], Mode m);
-cudaError_t CudaImageSum(uint8_t device_img_vec, uint32_t *device_sum, uint32_t &host_sum, const int dim[]);
+cudaError_t CudaImageSum(uint8_t *device_img_vec, uint32_t *device_sum, uint32_t &host_sum, const int dim[]);
+cudaError_t CudaImageSumReduce(uint8_t *img, uint32_t *device_result, uint32_t &host_sum, const int dim[]);
+
 static inline void getIntegerBytes(uint32_t value, unsigned char *&buffer);
 static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_LENGTH]);
 static inline void calc_sha256(uint32_t value, uint32_t &hash_byte);
@@ -195,7 +198,6 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     
     host_vector<int> ranVec(N);
     const int exp = (int)pow(10, 9);
-    int i = 0;
 
     auto start = steady_clock::now();
     
@@ -295,12 +297,7 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
 
 cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_plain, const int dim[], Mode m)
 {
-    
-    // Initiliaze diffusion vectors
-    uint32_t sum_of_image = 0;
-    
-    size_t img_data_size = dim[0] * dim[1] * dim[2];
-        
+    // Initiliaze diffusion vectors    
     host_vector<double> randRowX(dim[1]), randRowY(dim[1]);
 
     getDiffVecs(randRowX, randRowY, dim[0], dim[1], diffuse, m);
@@ -309,8 +306,7 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_p
 
     const double* rowXptr = (double*)(thrust::raw_pointer_cast(&DRowX[0]));
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
-    cudaError_t cudaStatus;
-    
+        
     //auto start = steady_clock::now();
     Wrap_Diffusion(d_img, d_imgtmp, host_sum_plain, rowXptr, rowYptr, dim, diffuse.r, int(m));
     swap(d_img, d_imgtmp);
@@ -319,12 +315,19 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_p
     return cudaDeviceSynchronize();
 }
 
-cudaError_t CudaImageSum(uint8_t* device_img_vec, uint32_t *device_sum, uint32_t &host_sum, const int dim[])
+cudaError_t CudaImageSum(uint8_t *device_img_vec, uint32_t *device_sum, uint32_t &host_sum, const int dim[])
 {
   Wrap_imageSum(device_img_vec, device_sum, dim);
   cudaMemcpy(&host_sum, device_sum, sizeof(uint32_t), cudaMemcpyDeviceToHost);
   return cudaDeviceSynchronize();
 } 
+
+cudaError_t CudaImageSumReduce(uint8_t *img, uint32_t *device_result, uint32_t &host_sum, const int dim[])
+{
+  Wrap_imageSumReduce(img, device_result, dim);
+  cudaMemcpy(&host_sum, device_result, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+  return cudaDeviceSynchronize(); 
+}
 
 static inline void getIntegerBytes(uint32_t value, unsigned char *&buffer)
 {
@@ -348,7 +351,6 @@ static inline std::string sha256_hash_string (unsigned char hash[SHA256_DIGEST_L
 
 static inline void calc_sha256(uint32_t value, uint32_t &hash_byte)
 { 
-  const char *hash_final_array;
   long x = 0;   
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
@@ -357,8 +359,7 @@ static inline void calc_sha256(uint32_t value, uint32_t &hash_byte)
   const int bufSize = SHA256_DIGEST_LENGTH;
   //const int bufSize = 3;
   unsigned char* buffer = (unsigned char*)calloc(bufSize, sizeof(unsigned char));
-  int bytesRead = 0;
-    
+  
   getIntegerBytes(value, buffer);
   //cout <<"\nEnter buffer ";
   //cin >> buffer;
@@ -537,6 +538,8 @@ uint32_t imageSum(uint8_t *array, int length)
   {
     sum = sum + array[i]; 
   }
+  
+  return sum;
 }
 
 uint32_t getPowerOf10(uint32_t value)
@@ -580,12 +583,10 @@ int Encrypt()
     
     // Upload image to device
     uint8_t* d_img, * d_imgtmp;
-    
-    uint8_t *img_in;
-    uint8_t *img_out;
-    
+
     uint32_t host_sum_ENC = 0;
-    uint32_t *device_sum_ENC, *device_sum_plain;
+    uint32_t *device_sum_ENC, *device_sum_plain, *device_result;
+    
     size_t device_sum_size = sizeof(device_sum_ENC);
     
     size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
@@ -602,6 +603,7 @@ int Encrypt()
     
     cudaMalloc(&device_sum_plain, device_sum_size);
     cudaMalloc(&device_sum_ENC, device_sum_size);
+    cudaMalloc(&device_result, device_sum_size);
     
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
@@ -612,7 +614,7 @@ int Encrypt()
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
     
     /*Calculating the sum of plain image, the sum of whose hash will be used in diffusion for forward propagation*/
-    cudaStatus = CudaImageSum(d_img, device_sum_plain, host_sum_plain, dim);
+    cudaStatus = CudaImageSumReduce(d_img, device_sum_plain, host_sum_plain, dim);
     
     if(cudaStatus != cudaSuccess)
     {
@@ -672,7 +674,7 @@ int Encrypt()
     imwrite(path.fn_img_enc, img);
     
     /*Calculate sum of encrypted image*/
-    cudaStatus = CudaImageSum(d_img, device_sum_ENC, host_sum_ENC, dim);
+    cudaStatus = CudaImageSumReduce(d_img, device_result, host_sum_ENC, dim);
     
     if (cudaStatus != cudaSuccess)
     {
@@ -689,8 +691,6 @@ int Encrypt()
     printf("\nhash_byte = %d", hash_byte);
     
     /*XOR the hash_byte to obtain a modified value. Done to protect hash_byte against brute-force attacks*/
-    
-    
     
     /*Modify the parameters using an offset generated from the hash*/
     hashParameters(pVec, dVec, hash_byte, Mode::ENCRYPT);
@@ -747,22 +747,21 @@ int Decrypt()
     uint32_t hash_byte = 209;
     
     uint32_t host_sum_DEC = 0;
-    uint32_t *device_sum_DEC, *device_sum_plain;
+    uint32_t *device_sum_DEC, *device_sum_plain, *device_result;
+   
     size_t device_sum_size = sizeof(device_sum_DEC);
-    uint32_t x = 0;
     
     cudaError_t cudaStatus;
     
     cudaMalloc(&device_sum_DEC, device_sum_size);
     cudaMalloc(&device_sum_plain, device_sum_size);
+    cudaMalloc(&device_result, device_sum_size);
+    
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
 
     size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
-    
-    uint8_t *img_out;
-    uint8_t *img_in;
-    
+        
     cudaMalloc<uint8_t>(&d_img, data_size);
     cudaMalloc<uint8_t>(&d_imgtmp, data_size);
     
@@ -771,7 +770,7 @@ int Decrypt()
     cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
     
     /*Calculate sum of encrypted image*/
-    cudaStatus = CudaImageSum(d_img, device_sum_DEC, host_sum_DEC, dim);
+    cudaStatus = CudaImageSumReduce(d_img, device_result, host_sum_DEC, dim);
     
     if (cudaStatus != cudaSuccess)
     {

@@ -2,6 +2,9 @@
 
 #include <cstdint>
 #include <cstdio>
+#include "cub-1.8.0/cub/cub.cuh"
+
+using namespace cub;
 using namespace std;
 
 // Warm-up Kernel
@@ -87,6 +90,7 @@ __global__ void imageSum(uint8_t* __restrict__ img, uint32_t *sum)
   int index = blockIdx.x * blockDim.x + threadIdx.x; 
   atomicAdd(sum, img[index]);
 }
+
 
 // Wrappers for kernel calls
 extern "C" void kernel_WarmUp()
@@ -198,4 +202,30 @@ extern "C" void Wrap_imageSum(uint8_t *&image_vec, uint32_t *sum, const int dim[
   std::printf("\nTime to calculate sum:  %3.6f ms \n", time);
 }
 
+extern "C" void Wrap_imageSumReduce(uint8_t* __restrict__ image_vec, uint32_t *device_result, const int dim[])
+{
+  int num_items = dim[0] * dim[1] * dim[2];
+  void *d_temp_storage = NULL;
+  size_t temp_storage_bytes = 0;
+  
+  float time;
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  cudaEventRecord(start, 0);
+  
+  //Run the reduction function to check how much temporary storage is needed
+  cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, image_vec, device_result, num_items);
+  
+  // Allocate temporary storage
+  cudaMalloc(&d_temp_storage, temp_storage_bytes);
+  
+  //Run the reduction function to get the sum of the image
+  cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, image_vec, device_result, num_items);
+  
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&time, start, stop);
+  printf("\nTime to reduce sum:  %3.6f ms \n", time);
+}
 
