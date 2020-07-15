@@ -230,14 +230,20 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     {
         diffuse.x = randomNumber.getRandomDouble(X_LOWER_LIMIT , X_UPPER_LIMIT);
         diffuse.y = randomNumber.getRandomDouble(Y_LOWER_LIMIT , Y_UPPER_LIMIT);
+        diffuse.alpha = randomNumber.getRandomDouble(ALPHA_LOWER_LIMIT, ALPHA_UPPER_LIMIT);
+        diffuse.beta = randomNumber.getRandomDouble(BETA_LOWER_LIMIT, BETA_UPPER_LIMIT);
+        diffuse.myu = randomNumber.getRandomDouble(MYU_LOWER_LIMIT, MYU_UPPER_LIMIT);
         diffuse.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
-        diffuse.map = randomNumber.crngAssigner(1 , 2);
+        diffuse.map = randomNumber.crngAssigner(1 , 5);
         
         if(DEBUG_PARAMETERS == 1)
         {
           cout<<"\nINITITALIZING crng PARAMETERS FOR DIFFUSION\n";
           cout<<"\ndiffuse.x = "<<diffuse.x;
           cout<<"\ndiffuse.y = "<<diffuse.y;
+          cout<<"\ndiffuse.alpha = "<<diffuse.alpha;
+          cout<<"\ndiffuse.beta = "<<diffuse.beta;
+          cout<<"\ndiffuse.myu = "<<diffuse.myu;
           cout<<"\ndiffuse.r = "<<diffuse.r;
           cout<<"\ndiffuse.map = "<<int(diffuse.map)<<"\n";
         }
@@ -250,6 +256,9 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
         cout<<"\nDECRYPTION PARAMETERS\n";
         cout<<"\ndiffuse.x = "<<diffuse.x;
         cout<<"\ndiffuse.y = "<<diffuse.y;
+        cout<<"\ndiffuse.alpha = "<<diffuse.alpha;
+        cout<<"\ndiffuse.beta = "<<diffuse.beta;
+        cout<<"\ndiffuse.myu = "<<diffuse.myu;
         cout<<"\ndiffuse.r = "<<diffuse.r;
         cout<<"\ndiffuse.map = "<<int(diffuse.map)<<"\n";
       }
@@ -259,10 +268,13 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     
     double x = diffuse.x;
     double y = diffuse.y;
+    double alpha = diffuse.alpha;
+    double beta = diffuse.beta;
+    double myu = diffuse.myu;
     const double r = diffuse.r;
     Chaos map = diffuse.map;
     
-    CRNG crng(diffuse.x, diffuse.y, 0, 0, 0, 0, 0, 0, 0, diffuse.r, 0, diffuse.map);
+    CRNG crng(diffuse.x, diffuse.y, 0, 0, 0, 0, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, 0, diffuse.map);
     
     //const int exp = (int)pow(10, 9);
     int i = 0;
@@ -270,7 +282,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     
     for(i = 0; i < N; ++i)
     {
-      crng.CRNGUpdateHost(x, y, 0, 0, 0, 0, 0, 0, 0, r, 0, map);
+      crng.CRNGUpdateHost(x, y, 0, 0, 0, 0, alpha, beta, myu, r, 0, map);
       xVec[i] = x;
       yVec[i] = y;
     }
@@ -308,7 +320,7 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, uint32_t host_sum_p
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
         
     //auto start = steady_clock::now();
-    Wrap_Diffusion(d_img, d_imgtmp, host_sum_plain, rowXptr, rowYptr, dim, diffuse.r, int(m));
+    Wrap_Diffusion(d_img, d_imgtmp, host_sum_plain, rowXptr, rowYptr, dim, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, int(m), int(diffuse.map));
     swap(d_img, d_imgtmp);
     //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
     
@@ -398,14 +410,24 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       {
         printf("\nORIGINAL diffuse.x in ENCRYPT = %f", diffuse.x);
         printf("\nORIGINAL diffuse.y in ENCRYPT = %f", diffuse.y);
+        printf("\nORIGINAL diffuse.alpha in ENCRYPT = %f\n", diffuse.alpha);
+        printf("\nORIGINAL diffuse.beta in ENCRYPT = %f\n", diffuse.beta);
+        printf("\nORIGINAL diffuse.myu in ENCRYPT = %f\n", diffuse.myu);
         printf("\nORIGINAL diffuse.r in ENCRYPT = %f\n", diffuse.r);
+        
+        
       }
       
       diffuse = dVec[i];
+      
       offset = getParameterOffset(hash_byte);
       diffuse.x = diffuse.x + offset;
       diffuse.y = diffuse.y + offset;
+      diffuse.alpha = diffuse.alpha + offset;
+      diffuse.beta = diffuse.beta + offset;
+      diffuse.myu = diffuse.myu + offset;
       diffuse.r = diffuse.r + offset;
+      
       dVec[i] = diffuse;
       
       if(DEBUG_PARAM_MOD == 1)
@@ -413,6 +435,9 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
         printf("\noffset in ENCRYPT = %f", offset);
         printf("\ndiffuse.x in ENCRYPT after PLUS = %f", diffuse.x);
         printf("\ndiffuse.y in ENCRYPT after PLUS = %f", diffuse.y);
+        printf("\ndiffuse.alpha in ENCRYPT after PLUS = %f\n", diffuse.alpha);
+        printf("\ndiffuse.beta in ENCRYPT after PLUS = %f\n", diffuse.beta);
+        printf("\ndiffuse.myu in ENCRYPT after PLUS = %f\n", diffuse.myu);
         printf("\ndiffuse.r in ENCRYPT after PLUS = %f\n", diffuse.r);
       }
     }   
@@ -465,12 +490,18 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
       {
         printf("\nORIGINAL diffuse.x in DECRYPT  = %f", diffuse.x);
         printf("\nORIGINAL diffuse.y in DECRYPT  = %f", diffuse.y);
+        printf("\nORIGINAL diffuse.alpha in ENCRYPT = %f\n", diffuse.alpha);
+        printf("\nORIGINAL diffuse.beta in ENCRYPT = %f\n", diffuse.beta);
+        printf("\nORIGINAL diffuse.myu in ENCRYPT = %f\n", diffuse.myu);
         printf("\nORIGINAL diffuse.r in DECRYPT  = %f\n", diffuse.r);
       }
       
       offset = getParameterOffset(hash_byte);
       diffuse.x = diffuse.x - offset;
       diffuse.y = diffuse.y - offset;
+      diffuse.alpha = diffuse.alpha - offset;
+      diffuse.beta = diffuse.beta - offset;
+      diffuse.myu = diffuse.myu - offset;
       diffuse.r = diffuse.r - offset;
       
       dVec[i] = diffuse;  
@@ -480,6 +511,9 @@ void hashParameters(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, ui
         printf("\noffset in DECRYPT = %f", offset);
         printf("\ndiffuse.x in DECRYPT after MINUS = %f", diffuse.x);
         printf("\ndiffuse.y in DECRYPT after MINUS = %f", diffuse.y);
+        printf("\ndiffuse.alpha in DECRYPT after MINUS = %f", diffuse.alpha);
+        printf("\ndiffuse.beta in DECRYPT after MINUS = %f", diffuse.beta);
+        printf("\ndiffuse.myu in DECRYPT after MINUS = %f", diffuse.myu);
         printf("\ndiffuse.r in DECRYPT after MINUS = %f\n", diffuse.r);
       }
     }

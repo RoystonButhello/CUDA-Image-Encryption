@@ -34,22 +34,80 @@ __global__ void DEC_RotatePerm(const uint8_t* __restrict__ in, uint8_t* __restri
 }
 
 // Diffusion (top-down)
-__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, uint32_t host_sum_plain, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double r)
+__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, uint32_t host_sum_plain, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double alpha, const double beta, const double myu, const double r, const int map)
 {
     // Initialize parameters
     double x = xRow[blockIdx.x];
     double y = yRow[blockIdx.x];
     const int stride = gridDim.x * blockDim.x;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
+    
+    double x_bar = 0;
+    double y_bar = 0; 
     // Each thread diffuses one channel of a column
-    for (int i = 0; i < rows; i++, idx += stride)
+    
+    //Arnold Map
+    if(map == 1)
     {
+      //std::printf("\nDIFF_TD KERNEL ARNOLD MAP\n");
+      for(int i = 0; i < rows; i++, idx += stride)
+      {
+        auto xtmp = x + y;
+        y = x + 2 * y;
+        x = xtmp - (int)xtmp;
+        y = y - (int)y;
+        out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+      }
+    }
+      
+    //2D Logistic Map
+    if(map == 2)
+    {
+      //std::printf("\nDIFF_TD KERNEL 2D LOGISTIC MAP\n");
+      for (int i = 0; i < rows; i++, idx += stride)
+      {
         x = r * (3 * y + 1) * x * (1 - x);
         y = r * (3 * x + 1) * y * (1 - y);
         out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+      }
     }
-}
+    
+    //2D Sine Logistic Modulation Map
+    if(map == 3)
+    {
+      for (int i = 0; i < rows; i++, idx += stride)
+      {
+        x = alpha * (sin(3.14 * y) + beta) * x * (1 - x);
+        y = alpha * (sin(3.14 * x) + beta) * y * (1 - y);
+        out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+      }
+    }
+    
+    //2D Logistic Adjusted Sine Map
+    if(map == 4)
+    {
+      for (int i = 0; i < rows; i++, idx += stride)
+      {
+        x = sin(M_PI * myu * (y + 3) * x * (1 - x));
+        y = sin(M_PI * myu * (x + 3) * y * (1 - y));
+        out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+      }
+    }
+    
+    if(map == 5)
+    {
+     
+      for (int i = 0; i < rows; i++, idx += stride)
+      {
+        x_bar = myu * (y * 3) * x * (1 - x);
+        x = 4 * x_bar * (1 - x_bar);
+        y_bar = myu * (x + 3) * y * (1 - y);
+        y = 4 * y_bar * (1 - y_bar);
+        out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+      }  
+     
+    }
+} 
 
 // ENC::SELF-XOR (left-right)
 __global__ void ENC_XOR_LR(uint8_t* __restrict__ in, uint32_t host_sum_plain, const int cols)
@@ -137,7 +195,7 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
     }
 }
 
-extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_plain, const double*& randRowX, const double*& randRowY, const int dim[], const double r, const int mode)
+extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_plain, const double*& randRowX, const double*& randRowY, const int dim[], const double alpha, const double beta, const double myu, const double r, const int mode, const int map)
 {
     // Set grid and block size
     const dim3 gridCol(dim[0], 1, 1);
@@ -152,7 +210,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], r);
+        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], alpha, beta, myu, r, map);
         ENC_XOR_LR <<<gridRow, block>>> (out, host_sum_plain, dim[0]);
         
         cudaEventRecord(stop, 0);
@@ -171,7 +229,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_
         cudaEventRecord(start, 0);
         
         DEC_XOR_LR <<<gridRow, block>>> (in, host_sum_plain, dim[0]);
-        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], r);
+        DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], alpha, beta, myu, r, map);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
