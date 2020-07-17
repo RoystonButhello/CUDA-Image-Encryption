@@ -70,6 +70,11 @@ class Diffuser
     Chaos map;
     double x;
     double y;
+    double x_bar;
+    double y_bar;
+    double alpha;
+    double beta;
+    double myu;
     double r;
 };
 
@@ -193,14 +198,6 @@ class CRNG
      Y = X + 2 * Y;
      X = xtmp - (int)xtmp;
      Y = Y - (int)Y;
-   }
-   
-   inline void Logistic2Dv2Iteration(double& x, double& y, const std::vector<double> &v)
-   {
-    auto xtmp = x;
-    x = x * v[0] * (1 - x) + v[2] * y * y;
-    y = y * v[1] * (1 - y) + v[3] * xtmp * (xtmp + y);
-    return;
    }
    
    inline void twodSLMM(double &x, double &y, const double &alpha, const double &beta)
