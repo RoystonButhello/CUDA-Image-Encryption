@@ -147,15 +147,6 @@ __global__ void DEC_XOR_LR(uint8_t* __restrict__ img, uint32_t host_sum_plain, c
     }
 }
 
-//Compute sum of image gray level values
-
-__global__ void imageSum(uint8_t* __restrict__ img, uint32_t *sum)
-{
-  int index = blockIdx.x * blockDim.x + threadIdx.x; 
-  atomicAdd(sum, img[index]);
-}
-
-
 // Wrappers for kernel calls
 extern "C" void kernel_WarmUp()
 {
@@ -189,8 +180,6 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
         cudaEventRecord(start, 0);
            
         DEC_RotatePerm <<<grid, block>>> (in, out, colRotate, rowRotate);
-        //DEC_RotatePerm <<<grid, block>>> (out, in, colRotate, rowRotate);
-        
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
@@ -220,48 +209,27 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-    
+   
         std::printf("\nTime to diffuse:  %3.6f ms \n", time);
     }
 
     else
     {
-        /*float time;
+        float time;
         cudaEvent_t start, stop;
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
-        cudaEventRecord(start, 0);*/
+        cudaEventRecord(start, 0);
         
         DEC_XOR_LR <<<gridRow, block>>> (in, host_sum_plain, dim[0]);
         DIFF_TD <<<gridRow, block>>> (in, out, host_sum_plain, randRowX, randRowY, dim[0], alpha, beta, myu, r, map);
         
-        /*cudaEventRecord(stop, 0);
+        cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
     
-        std::printf("\nTime to undiffuse:  %3.6f ms \n", time);*/
+        std::printf("\nTime to undiffuse:  %3.6f ms \n", time);
     }
-}
-
-extern "C" void Wrap_imageSum(uint8_t *&image_vec, uint32_t *sum, const int dim[])
-{
-  // Set grid and block size
-  const dim3 grid((dim[0] * dim[1]), 1, 1);
-  const dim3 block(dim[2], 1, 1);
-  
-  /*float time;
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
-  cudaEventRecord(start, 0);*/
-  
-  imageSum<<<grid, block>>>(image_vec, sum); 
-    
-  /*cudaEventRecord(stop, 0);
-  cudaEventSynchronize(stop);
-  cudaEventElapsedTime(&time, start, stop);
-    
-  std::printf("\nTime to calculate sum:  %3.6f ms \n", time);*/
 }
 
 extern "C" void Wrap_imageSumReduce(uint8_t* __restrict__ image_vec, uint32_t *device_result, const int dim[])
@@ -270,11 +238,11 @@ extern "C" void Wrap_imageSumReduce(uint8_t* __restrict__ image_vec, uint32_t *d
   void *d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
   
-  /*float time;
+  float time;
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
-  cudaEventRecord(start, 0);*/
+  cudaEventRecord(start, 0);
   
   //Run the reduction function to check how much temporary storage is needed
   cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, image_vec, device_result, num_items);
@@ -285,9 +253,9 @@ extern "C" void Wrap_imageSumReduce(uint8_t* __restrict__ image_vec, uint32_t *d
   //Run the reduction function to get the sum of the image
   cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, image_vec, device_result, num_items);
   
-  /*cudaEventRecord(stop, 0);
+  cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&time, start, stop);
-  printf("\nTime to reduce sum:  %3.6f ms \n", time);*/
+  printf("\nTime to reduce sum:  %3.6f ms \n", time);
 }
 
