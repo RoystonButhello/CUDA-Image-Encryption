@@ -2,10 +2,13 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
 #include "cub-1.8.0/cub/cub.cuh"
 
 using namespace cub;
 using namespace std;
+using namespace thrust;
 
 // Warm-up Kernel
 __global__ void KWarmUp()
@@ -42,6 +45,7 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
     const int stride = gridDim.x * blockDim.x;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
+    
     double x_bar = 0;
     double y_bar = 0; 
     // Each thread diffuses one channel of a column
@@ -57,6 +61,7 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
         x = xtmp - (int)xtmp;
         y = y - (int)y;
         out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
+        
       }
     }
       
@@ -77,8 +82,8 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
     {
       for (int i = 0; i < rows; i++, idx += stride)
       {
-        x = alpha * (sin(3.14 * y) + beta) * x * (1 - x);
-        y = alpha * (sin(3.14 * x) + beta) * y * (1 - y);
+        x = alpha * (sin(M_PI * y) + beta) * x * (1 - x);
+        y = alpha * (sin(M_PI * x) + beta) * y * (1 - y);
         out[idx] = in[idx] ^ host_sum_plain ^ (uint8_t)(x * 256);
       }
     }
@@ -94,6 +99,7 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
       }
     }
     
+    //2D Logistic Adjusted Logistic Map
     if(map == 5)
     {
      
@@ -141,15 +147,6 @@ __global__ void DEC_XOR_LR(uint8_t* __restrict__ img, uint32_t host_sum_plain, c
     }
 }
 
-//Compute sum of image gray level values
-
-__global__ void imageSum(uint8_t* __restrict__ img, uint32_t *sum)
-{
-  int index = blockIdx.x * blockDim.x + threadIdx.x; 
-  atomicAdd(sum, img[index]);
-}
-
-
 // Wrappers for kernel calls
 extern "C" void kernel_WarmUp()
 {
@@ -167,8 +164,6 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
         cudaEventRecord(start, 0);
         
         ENC_RotatePerm <<<grid, block>>> (in, out, colRotate, rowRotate);
-        ENC_RotatePerm <<<grid, block>>> (out, in, colRotate, rowRotate);
-        
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
@@ -185,8 +180,6 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
         cudaEventRecord(start, 0);
            
         DEC_RotatePerm <<<grid, block>>> (in, out, colRotate, rowRotate);
-        DEC_RotatePerm <<<grid, block>>> (out, in, colRotate, rowRotate);
-        
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
@@ -216,7 +209,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-    
+   
         std::printf("\nTime to diffuse:  %3.6f ms \n", time);
     }
 
@@ -237,27 +230,6 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, uint32_t host_sum_
     
         std::printf("\nTime to undiffuse:  %3.6f ms \n", time);
     }
-}
-
-extern "C" void Wrap_imageSum(uint8_t *&image_vec, uint32_t *sum, const int dim[])
-{
-  // Set grid and block size
-  const dim3 grid((dim[0] * dim[1]), 1, 1);
-  const dim3 block(dim[2], 1, 1);
-  
-  float time;
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
-  cudaEventRecord(start, 0);
-  
-  imageSum<<<grid, block>>>(image_vec, sum); 
-    
-  cudaEventRecord(stop, 0);
-  cudaEventSynchronize(stop);
-  cudaEventElapsedTime(&time, start, stop);
-    
-  std::printf("\nTime to calculate sum:  %3.6f ms \n", time);
 }
 
 extern "C" void Wrap_imageSumReduce(uint8_t* __restrict__ image_vec, uint32_t *device_result, const int dim[])

@@ -25,21 +25,42 @@ enum class Mode
 class Paths
 {
   public: 
-    std::string file;
+    std::string file_path;
+    std::string file_name;
     std::string type;
     std::string fn_img;
     std::string fn_img_enc;
     std::string fn_img_dec;
     
-    inline void buildPaths(std::string file)
+    inline std::string getFileNameFromPath(std::string filename)
     {
-      file = "images/" + file;
-      type = ".png";
-      fn_img = file + type;
-      fn_img_enc = file + "_ENC" + type;
-      fn_img_dec = file + "_DEC" + type;
+      const size_t last_slash_idx = filename.find_last_of("\\/");
+      if (std::string::npos != last_slash_idx)
+      {
+        filename.erase(0, last_slash_idx + 1);
+      }
+
+      // Remove extension if present.
+      const size_t period_idx = filename.rfind('.');
+      if (std::string::npos != period_idx)
+      {
+        filename.erase(period_idx);
+      }
       
-      std::cout<<"\nfile = "<<file;
+      return filename;
+    }
+
+    
+    inline void buildPaths(std::string file_path)
+    {
+      type = ".png";
+      fn_img = file_path;
+      file_name = getFileNameFromPath(file_path);
+      fn_img_enc = file_name + "_ENC" + type;
+      fn_img_dec = file_name + "_DEC" + type;
+      
+      std::cout<<"\nfile_path = "<<file_path;
+      std::cout<<"\nfile_name = "<<file_name;
       std::cout<<"\ntype = "<<type;
       std::cout<<"\nfn_img = "<<fn_img;
       std::cout<<"\nfn_img_enc = "<<fn_img_enc;
@@ -61,9 +82,9 @@ class Permuter
     double beta;
     double myu;
     double r;
-    int mt_seed;
 };
 
+// Contains diffusion parameters
 class Diffuser
 {
   public:
@@ -76,6 +97,12 @@ class Diffuser
     double beta;
     double myu;
     double r;
+};
+
+class Protect
+{
+  uint32_t permute_protect;
+  uint32_t diffuse_protect;
 };
 
 // Contains details on no. of rounds and number of rotations
@@ -142,31 +169,24 @@ class CRNG
     double X_BAR;
     double Y_BAR;
     
-    int LOWER_LIMIT;
-    int UPPER_LIMIT;
-    
     int RANDOM_NUMBER;
     
     double R;
     double ALPHA;
     double BETA;
-    double MYU;
-    int MT_SEED; 
+    double MYU; 
     Chaos Map; 
     
-    CRNG(double x, double y, double x_bar, double y_bar, int lower_limit, int upper_limit, double alpha, double beta, double myu, double r, int mt_seed, Chaos map)
+    CRNG(double x, double y, double x_bar, double y_bar, double alpha, double beta, double myu, double r, Chaos map)
     {
       X = x;
       Y = y;
       X_BAR = x_bar;
       Y_BAR = y_bar;
-      LOWER_LIMIT = lower_limit;
-      UPPER_LIMIT = upper_limit;
       R = r;
       ALPHA = alpha;
       BETA = beta;
       MYU = myu;
-      MT_SEED = mt_seed;
       Map = map;
       
       if(DEBUG_CONSTRUCTORS == 1)
@@ -175,13 +195,10 @@ class CRNG
         std::cout<<"\nY = "<<Y;
         std::cout<<"\nX_BAR = "<<X_BAR;
         std::cout<<"\nY_BAR = "<<Y_BAR;
-        std::cout<<"\nLOWER_LIMIT = "<<LOWER_LIMIT;
-        std::cout<<"\nUPPER_LIMIT = "<<UPPER_LIMIT;
         std::cout<<"\nR = "<<R;
         std::cout<<"\nALPHA = "<<ALPHA;
         std::cout<<"\nBETA = "<<BETA;
         std::cout<<"\nMYU = "<<MYU;
-        std::cout<<"\nMT_SEED = "<<MT_SEED;
         std::cout<<"\nMap = "<<int(Map);
       }                      
     }
@@ -223,15 +240,7 @@ class CRNG
      return;
    }
    
-   inline void MT(int lower_limit, int upper_limit, const int &mt_seed, int &random_number)
-   {
-         std::mt19937 seeder(mt_seed);
-         std::uniform_int_distribution<int> intGen(lower_limit, upper_limit);
-         random_number = (int)intGen(seeder);
-         return;
-   }
-   
-   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, int LOWER_LIMIT, int UPPER_LIMIT, const double &ALPHA, const double &BETA, const double &MYU, const double &R, const int &MT_SEED, Chaos Map)
+   inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, const double &ALPHA, const double &BETA, const double &MYU, const double &R, Chaos Map)
    {
      
      switch(Map)
@@ -272,12 +281,6 @@ class CRNG
        }
        break;
        
-       case Chaos::MersenneTwister:
-       {
-         MT(LOWER_LIMIT, UPPER_LIMIT, MT_SEED, RANDOM_NUMBER);
-       }
-       break;
-       
        default: std::cout << "\nInvalid CRNG Option!\nExiting...";
        std::exit(0);
      }
@@ -292,5 +295,6 @@ Paths path;
 Permuter permute[2];
 Diffuser diffuse;
 //CRNG crng;
-Random randomNumber; 
+Random randomNumber;
+Protect protect; 
 #endif
