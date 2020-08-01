@@ -99,10 +99,12 @@ class Diffuser
     double r;
 };
 
-class Protect
+class Offset
 {
-  uint32_t permute_protect;
-  uint32_t diffuse_protect;
+  public:
+    double encrypt_param_modifier;
+    double permute_param_offset;
+    double diffuse_param_offset;
 };
 
 // Contains details on no. of rounds and number of rotations
@@ -296,5 +298,5 @@ Permuter permute[2];
 Diffuser diffuse;
 //CRNG crng;
 Random randomNumber;
-Protect protect; 
+Offset offset; 
 #endif
