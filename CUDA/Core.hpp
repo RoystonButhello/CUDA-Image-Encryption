@@ -2,32 +2,36 @@
 #define CORE_H
 
 // Top-level encryption functions
-#define DEBUG_VECTORS            0
-#define DEBUG_PARAMETERS         0
-#define DEBUG_KEY                1
-#define DEBUG_PARAM_MOD          0
-#define PRINT_IMAGES             0
-#define DEBUG_CONSTRUCTORS       0
+#define DEBUG_VECTORS                    0
+#define DEBUG_PARAMETERS                 0
+#define DEBUG_KEY                        0
+#define DEBUG_PARAM_MOD                  0
+#define PRINT_IMAGES                     0
+#define DEBUG_CONSTRUCTORS               0
 
-#define X_LOWER_LIMIT            0.1
-#define X_UPPER_LIMIT            0.7
-#define Y_LOWER_LIMIT            0.1
-#define Y_UPPER_LIMIT            0.7
-#define ALPHA_LOWER_LIMIT        0.905
-#define ALPHA_UPPER_LIMIT        0.965
-#define BETA_LOWER_LIMIT         2.97
-#define BETA_UPPER_LIMIT         3.00
-#define MYU_LOWER_LIMIT          0.50
-#define MYU_UPPER_LIMIT          0.80
-#define R_LOWER_LIMIT            1.15
-#define R_UPPER_LIMIT            1.18
-#define MAP_LOWER_LIMIT          1
-#define MAP_UPPER_LIMIT          5
+#define X_LOWER_LIMIT                    0.1
+#define X_UPPER_LIMIT                    0.7
+#define Y_LOWER_LIMIT                    0.1
+#define Y_UPPER_LIMIT                    0.7
+#define ALPHA_LOWER_LIMIT                0.905
+#define ALPHA_UPPER_LIMIT                0.985
+#define BETA_LOWER_LIMIT                 2.97
+#define BETA_UPPER_LIMIT                 3.00
+#define MYU_LOWER_LIMIT                  0.50
+#define MYU_UPPER_LIMIT                  0.80
+#define R_LOWER_LIMIT                    1.15
+#define R_UPPER_LIMIT                    1.17
+#define MAP_LOWER_LIMIT                  1
+#define MAP_UPPER_LIMIT                  5
+#define PERMUTE_PROPAGATION_LOWER_LIMIT  4000
+#define PERMUTE_PROPAGATION_UPPER_LIMIT  5000
+#define DIFFUSE_PROPAGATION_LOWER_LIMIT  8000
+#define DIFFUSE_PROPAGATION_UPPER_LIMIT  10000  
 
-#define PERM_OFFSET_LOWER_LIMIT  0.00001  
-#define PERM_OFFSET_UPPER_LIMIT  0.00002
-#define DIFF_OFFSET_LOWER_LIMIT  0.00001
-#define DIFF_OFFSET_UPPER_LIMIT  0.00002 
+#define PERM_OFFSET_LOWER_LIMIT          0.00001  
+#define PERM_OFFSET_UPPER_LIMIT          0.00002
+#define DIFF_OFFSET_LOWER_LIMIT          0.00001
+#define DIFF_OFFSET_UPPER_LIMIT          0.00002 
 
 #include <iostream> /*For IO*/
 #include <cstdio>   /*For printf*/
@@ -67,11 +71,11 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m);
 
 void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int M, const int N, Diffuser &diffuse, Mode m);
 
-void modifyPermutationParameters(Permuter &permute, double encryption_parameter_modifier, double perm_param_offset);
-void modifyDiffusionParameters(Diffuser &diffuse, double encryption_parameter_modifier, double diff_param_offset);
+void modifyPermutationParameters(Permuter &permute, double permutation_parameter_modifier, double perm_param_offset);
+void modifyDiffusionParameters(Diffuser &diffuse, double diffusion_parameter_modifier, double diff_param_offset);
 
 cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m);
-cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m);
+cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], uint32_t diffuse_propagation_factor, Mode m);
 cudaError_t CudaImageSumReduce(uint8_t *img, uint32_t *device_result, uint32_t &host_sum, const int dim[]);
 
 static inline void getIntegerBytes(uint32_t value, unsigned char *&buffer);
@@ -152,7 +156,7 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
         permute.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
         permute.map = randomNumber.crngAssigner(MAP_LOWER_LIMIT , MAP_UPPER_LIMIT);
         offset.permute_param_offset = randomNumber.getRandomDouble(PERM_OFFSET_LOWER_LIMIT, PERM_OFFSET_UPPER_LIMIT);
-        modifyPermutationParameters(permute, offset.encrypt_param_modifier, offset.permute_param_offset);
+        modifyPermutationParameters(permute, offset.permute_param_modifier, offset.permute_param_offset);
        
         if(DEBUG_PARAMETERS == 1)
         {
@@ -221,7 +225,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
         diffuse.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
         diffuse.map = randomNumber.crngAssigner(1 , 5);
         offset.diffuse_param_offset = randomNumber.getRandomDouble(DIFF_OFFSET_LOWER_LIMIT, DIFF_OFFSET_UPPER_LIMIT);
-        modifyDiffusionParameters(diffuse, offset.encrypt_param_modifier, offset.diffuse_param_offset);
+        modifyDiffusionParameters(diffuse, offset.diffuse_param_modifier, offset.diffuse_param_offset);
         
         if(DEBUG_PARAMETERS == 1)
         {
@@ -264,49 +268,49 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
 }
 
 
-void modifyPermutationParameters(Permuter &permute, double encryption_parameter_modifier, double perm_param_offset)
+void modifyPermutationParameters(Permuter &permute, double permutation_parameter_modifier, double perm_param_offset)
 {
   switch(int(permute.map))
   {
     case 1:
     {
-      permute.x = permute.x + encryption_parameter_modifier + perm_param_offset;
-      permute.y = permute.y + encryption_parameter_modifier + perm_param_offset;
+      permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
+      permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
     }
     break;
     
     case 2:
     {
-      permute.x = permute.x + encryption_parameter_modifier + perm_param_offset;
-      permute.y = permute.y + encryption_parameter_modifier + perm_param_offset;
-      permute.r = permute.r + encryption_parameter_modifier + perm_param_offset;
+      permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
+      permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
+      permute.r = permute.r + permutation_parameter_modifier + perm_param_offset;
     }
     break;
     
     case 3:
     {
-      permute.x = permute.x + encryption_parameter_modifier + perm_param_offset;
-      permute.y = permute.y + encryption_parameter_modifier + perm_param_offset;
-      permute.alpha = permute.alpha + encryption_parameter_modifier + perm_param_offset;
-      permute.beta = permute.beta + encryption_parameter_modifier + perm_param_offset;
+      permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
+      permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
+      permute.alpha = permute.alpha + permutation_parameter_modifier + perm_param_offset;
+      permute.beta = permute.beta + permutation_parameter_modifier + perm_param_offset;
     }
     break;
     
     case 4:
     {
-      permute.x = permute.x + encryption_parameter_modifier + perm_param_offset;
-      permute.y = permute.y + encryption_parameter_modifier + perm_param_offset;
-      permute.myu = permute.myu + encryption_parameter_modifier + perm_param_offset;
+      permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
+      permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
+      permute.myu = permute.myu + permutation_parameter_modifier + perm_param_offset;
     }
     break;
     
     case 5:
     {
-      permute.x = permute.x + encryption_parameter_modifier + perm_param_offset;
-      permute.y = permute.y + encryption_parameter_modifier + perm_param_offset;
-      permute.x_bar = permute.x_bar + encryption_parameter_modifier + perm_param_offset;
-      permute.y_bar = permute.y_bar + encryption_parameter_modifier + perm_param_offset;
-      permute.myu = permute.myu + encryption_parameter_modifier + perm_param_offset;  
+      permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
+      permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
+      permute.x_bar = permute.x_bar + permutation_parameter_modifier + perm_param_offset;
+      permute.y_bar = permute.y_bar + permutation_parameter_modifier + perm_param_offset;
+      permute.myu = permute.myu + permutation_parameter_modifier + perm_param_offset;  
     }
     break;
     
@@ -314,49 +318,49 @@ void modifyPermutationParameters(Permuter &permute, double encryption_parameter_
   }
 }
 
-void modifyDiffusionParameters(Diffuser &diffuse, double encryption_parameter_modifier, double diff_param_offset)
+void modifyDiffusionParameters(Diffuser &diffuse, double diffusion_parameter_modifier, double diff_param_offset)
 {
   switch(int(diffuse.map))
   {
     case 1:
     {
-      diffuse.x = diffuse.x + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y = diffuse.y + encryption_parameter_modifier + diff_param_offset;
+      diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
     }
     break;
     
     case 2:
     {
-      diffuse.x = diffuse.x + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y = diffuse.y + encryption_parameter_modifier + diff_param_offset;
-      diffuse.r = diffuse.r + encryption_parameter_modifier + diff_param_offset;
+      diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.r = diffuse.r + diffusion_parameter_modifier + diff_param_offset;
     }
     break;
     
     case 3:
     {
-      diffuse.x = diffuse.x + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y = diffuse.y + encryption_parameter_modifier + diff_param_offset;
-      diffuse.alpha = diffuse.alpha + encryption_parameter_modifier + diff_param_offset;
-      diffuse.beta = diffuse.beta + encryption_parameter_modifier + diff_param_offset;
+      diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.alpha = diffuse.alpha + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.beta = diffuse.beta + diffusion_parameter_modifier + diff_param_offset;
     }
     break;
     
     case 4:
     {
-      diffuse.x = diffuse.x + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y = diffuse.y + encryption_parameter_modifier + diff_param_offset;
-      diffuse.myu = diffuse.myu + encryption_parameter_modifier + diff_param_offset;
+      diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.myu = diffuse.myu + diffusion_parameter_modifier + diff_param_offset;
     }
     break;
     
     case 5:
     {
-      diffuse.x = diffuse.x + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y = diffuse.y + encryption_parameter_modifier + diff_param_offset;
-      diffuse.x_bar = diffuse.x_bar + encryption_parameter_modifier + diff_param_offset;
-      diffuse.y_bar = diffuse.y_bar + encryption_parameter_modifier + diff_param_offset;
-      diffuse.myu = diffuse.myu + encryption_parameter_modifier + diff_param_offset;  
+      diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.x_bar = diffuse.x_bar + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.y_bar = diffuse.y_bar + diffusion_parameter_modifier + diff_param_offset;
+      diffuse.myu = diffuse.myu + diffusion_parameter_modifier + diff_param_offset;  
     }
     break;
     
@@ -385,7 +389,7 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     return cudaDeviceSynchronize();
 }
 
-cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mode m)
+cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], uint32_t diffuse_propagation_factor, Mode m)
 {
     // Initiliaze diffusion vectors    
     host_vector<double> randRowX(dim[1]), randRowY(dim[1]);
@@ -398,7 +402,7 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
         
     //auto start = steady_clock::now();
-    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, int(m), int(diffuse.map));
+    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, int(m), diffuse_propagation_factor, int(diffuse.map));
     swap(d_img, d_imgtmp);
     //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
     
@@ -680,7 +684,14 @@ int Encrypt(std::string file, int rounds, int rotations)
     // Calculating hash of plain image sum 
     calc_sha256(host_sum_plain, hash_byte_plain);
     
-    offset.encrypt_param_modifier = getParameterOffset(hash_byte_plain);
+    //Factor to induce propagation in permutation vector generation parameters
+    propagator.permute_propagation_factor = hash_byte_plain ^ randomNumber.getRandomUnsignedInteger32(PERMUTE_PROPAGATION_LOWER_LIMIT, PERMUTE_PROPAGATION_UPPER_LIMIT);
+    //Factor to induce forward propagation in diffusion vector generation parameters and diffusion kernel
+    propagator.diffuse_propagation_factor = hash_byte_plain ^ randomNumber.getRandomUnsignedInteger32(DIFFUSE_PROPAGATION_LOWER_LIMIT, DIFFUSE_PROPAGATION_UPPER_LIMIT);
+
+    //Permutation and diffusion parameter modifiers 
+    offset.permute_param_modifier = getParameterOffset(propagator.permute_propagation_factor);
+    offset.diffuse_param_modifier = getParameterOffset(propagator.diffuse_propagation_factor);
     
     if(cudaStatus != cudaSuccess)
     {
@@ -730,7 +741,7 @@ int Encrypt(std::string file, int rounds, int rotations)
         
         
         /*Diffuse image*/
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::ENCRYPT);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, propagator.diffuse_propagation_factor, Mode::ENCRYPT);
         if (cudaStatus != cudaSuccess)
         {
             cerr << "\nENC_Diffusion Failed!";
@@ -920,7 +931,7 @@ int Decrypt()
         diffuse = dVec[i];
         
         //Undiffuse image 
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, Mode::DECRYPT);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, propagator.diffuse_propagation_factor, Mode::DECRYPT);
         if (cudaStatus != cudaSuccess)
         {
             cerr << "DEC_Diffusion Failed!";

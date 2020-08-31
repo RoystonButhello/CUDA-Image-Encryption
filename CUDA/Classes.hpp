@@ -102,7 +102,8 @@ class Diffuser
 class Offset
 {
   public:
-    double encrypt_param_modifier;
+    double permute_param_modifier;
+    double diffuse_param_modifier;
     double permute_param_offset;
     double diffuse_param_offset;
 };
@@ -141,6 +142,16 @@ class Random
         return (uint8_t)randnum;
       }
      
+     static inline int getRandomUnsignedInteger32(int LOWER_BOUND, int UPPER_BOUND)
+      {
+        std::random_device r;
+        std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
+        std::mt19937 seeder(seed);
+        std::uniform_int_distribution<uint32_t> intGen(LOWER_BOUND, UPPER_BOUND);
+        auto randnum = intGen(seeder);
+        return (uint32_t)randnum;
+      }
+
      static inline double getRandomDouble(double LOWER_LIMIT, double UPPER_LIMIT)
      {
        std::random_device r;
@@ -291,6 +302,13 @@ class CRNG
    
 };
 
+class Propagation
+{
+  public:
+    uint32_t permute_propagation_factor;
+    uint32_t diffuse_propagation_factor;
+};
+
 /*Class objects*/
 Configuration config;
 Paths path;
@@ -298,5 +316,6 @@ Permuter permute[2];
 Diffuser diffuse;
 //CRNG crng;
 Random randomNumber;
-Offset offset; 
+Offset offset;
+Propagation propagator; 
 #endif
