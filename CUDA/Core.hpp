@@ -402,7 +402,7 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], ui
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
         
     //auto start = steady_clock::now();
-    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, int(m), diffuse_propagation_factor, int(diffuse.map));
+    Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.alpha, diffuse.beta, diffuse.myu, diffuse.r, int(m), diffuse_propagation_factor);
     swap(d_img, d_imgtmp);
     //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
     
@@ -906,6 +906,7 @@ int Decrypt()
     
     auto start_modification = steady_clock::now();
     //Modify the parameters using an offset generated from the sum of the hash
+    
     hashParameters(pVec, dVec, hash_byte, Mode::DECRYPT);
     auto end_modification = steady_clock::now();
     auto duration_modification = (int)duration_cast<microseconds>(end_modification - start_modification).count();

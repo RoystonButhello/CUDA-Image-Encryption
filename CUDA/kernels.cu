@@ -37,7 +37,7 @@ __global__ void DEC_RotatePerm(const uint8_t* __restrict__ in, uint8_t* __restri
 }
 
 // Diffusion (top-down)
-__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double alpha, const double beta, const double myu, const double r, uint32_t diffuse_propagation_factor, const int map)
+__global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ out, const double* __restrict__ xRow, const double* __restrict__ yRow, const int rows, const double alpha, const double beta, const double myu, const double r, uint32_t diffuse_propagation_factor)
 {
     // Initialize parameters
     double x = xRow[blockIdx.x];
@@ -46,78 +46,21 @@ __global__ void DIFF_TD(const uint8_t* __restrict__ in, uint8_t* __restrict__ ou
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
     
-    double x_bar = 0;
-    double y_bar = 0; 
+    //double x_bar = 0;
+    //double y_bar = 0; 
     // Each thread diffuses one channel of a column
     
-    //Arnold Map
-    if(map == 1)
+    
+    //std::printf("\nDIFF_TD KERNEL 2D LOGISTIC MAP\n");
+    for (int i = 0; i < rows; i++, idx += stride)
     {
-      //std::printf("\nDIFF_TD KERNEL ARNOLD MAP\n");
-      for(int i = 0; i < rows; i++, idx += stride)
-      {
-        auto xtmp = x + y;
-        y = x + 2 * y;
-        x = xtmp - (int)xtmp;
-        y = y - (int)y;
-        out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
-        
-      }
-    }
-      
-    //2D Logistic Map
-    else if(map == 2)
-    {
-      //std::printf("\nDIFF_TD KERNEL 2D LOGISTIC MAP\n");
-      for (int i = 0; i < rows; i++, idx += stride)
-      {
-        x = r * (3 * y + 1) * x * (1 - x);
-        y = r * (3 * x + 1) * y * (1 - y);
-        out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
-      }
+      x = r * (3 * y + 1) * x * (1 - x);
+      y = r * (3 * x + 1) * y * (1 - y);
+      out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
     }
     
-    //2D Sine Logistic Modulation Map
-    else if(map == 3)
-    {
-      for (int i = 0; i < rows; i++, idx += stride)
-      {
-        x = alpha * (sin(M_PI * y) + beta) * x * (1 - x);
-        y = alpha * (sin(M_PI * x) + beta) * y * (1 - y);
-        out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
-      }
-    }
     
-    //2D Logistic Adjusted Sine Map
-    else if(map == 4)
-    {
-      for (int i = 0; i < rows; i++, idx += stride)
-      {
-        x = sin(M_PI * myu * (y + 3) * x * (1 - x));
-        y = sin(M_PI * myu * (x + 3) * y * (1 - y));
-        out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
-      }
-    }
     
-    //2D Logistic Adjusted Logistic Map
-    else if(map == 5)
-    {
-     
-      for (int i = 0; i < rows; i++, idx += stride)
-      {
-        x_bar = myu * (y * 3) * x * (1 - x);
-        x = 4 * x_bar * (1 - x_bar);
-        y_bar = myu * (x + 3) * y * (1 - y);
-        y = 4 * y_bar * (1 - y_bar);
-        out[idx] = in[idx] ^ diffuse_propagation_factor ^ (uint8_t)(x * 256);
-      }  
-     
-    }
-    
-    else
-    {
-      std::printf("\nInvalid chaotic map choice in DIFF_TD kernel");
-    }
 } 
 
 // ENC::SELF-XOR (left-right)
@@ -136,7 +79,7 @@ __global__ void ENC_XOR_LR(uint8_t* __restrict__ in, uint32_t diffuse_propagatio
     }
 }
 
-// DEC::SELF-XOR (left-right)
+// DEC::SELF-XOR (right-left)
 __global__ void DEC_XOR_LR(uint8_t* __restrict__ img, uint32_t diffuse_propagation_factor, const int cols)
 {
     // Initialize parameters
@@ -193,7 +136,7 @@ extern "C" void Wrap_RotatePerm(uint8_t * in, uint8_t * out, int* colRotate, int
     }
 }
 
-extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& randRowX, const double*& randRowY, const int dim[], const double alpha, const double beta, const double myu, const double r, const int mode, uint32_t diffuse_propagation_factor, const int map)
+extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& randRowX, const double*& randRowY, const int dim[], const double alpha, const double beta, const double myu, const double r, const int mode, uint32_t diffuse_propagation_factor)
 {
     // Set grid and block size
     const dim3 gridCol(dim[0], 1, 1);
@@ -208,9 +151,9 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventCreate(&stop);
         cudaEventRecord(start, 0);
         
-        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], alpha, beta, myu, r, diffuse_propagation_factor, map);
+        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], alpha, beta, myu, r, diffuse_propagation_factor);
         ENC_XOR_LR <<<gridRow, block>>> (out, diffuse_propagation_factor, dim[0]);
-        std::printf("\nmap = %d", map);
+       
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
@@ -228,8 +171,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& ran
         cudaEventRecord(start, 0);
         
         DEC_XOR_LR <<<gridRow, block>>> (in, diffuse_propagation_factor, dim[0]);
-        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], alpha, beta, myu, r, diffuse_propagation_factor, map);
-        std::printf("\nmap = %d", map);
+        DIFF_TD <<<gridRow, block>>> (in, out, randRowX, randRowY, dim[0], alpha, beta, myu, r, diffuse_propagation_factor);
         
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
