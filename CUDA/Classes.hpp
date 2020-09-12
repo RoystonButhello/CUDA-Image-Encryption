@@ -5,23 +5,30 @@ using namespace std;
 
 /*Contains all classes used in the program*/
 
+/**
+ * Enumeration class containing all PRNG choices
+ */
 enum class Chaos 
 { 
   ArnoldMap = 1, 
   twodLogisticMap,
   twodSineLogisticModulatedMap,
   twodLogisticAdjustedSineMap,
-  twodLogisticAdjustedLogisticMap,
-  MersenneTwister
+  twodLogisticAdjustedLogisticMap
 };
 
+/**
+ * Enumeration class containing all modes of operation
+ */
 enum class Mode 
 { 
   ENCRYPT = 1, 
   DECRYPT 
 };
 
-// Contains paths
+/**
+ * Class containing file paths and extensions
+ */
 class Paths
 {
   public: 
@@ -32,6 +39,9 @@ class Paths
     std::string fn_img_enc;
     std::string fn_img_dec;
     
+    /**
+     * Gets file name from absolute file path. Takes absolute image file path as argument
+     */
     inline std::string getFileNameFromPath(std::string filename)
     {
       const size_t last_slash_idx = filename.find_last_of("\\/");
@@ -50,7 +60,9 @@ class Paths
       return filename;
     }
 
-    
+    /**
+     * Initializes file paths at the beginning of operation. Takes absolute image file path as argument
+     */
     inline void buildPaths(std::string file_path)
     {
       type = ".png";
@@ -69,7 +81,9 @@ class Paths
 };
 
 
-// Contains getRandVec params
+/**
+ * Class containing parameters of all chaotic maps used in generating permutation vectors 
+ */
 class Permuter
 {
   public:
@@ -84,7 +98,9 @@ class Permuter
     double r;
 };
 
-// Contains diffusion parameters
+/**
+ * Class containing parameters of all chaotic maps used in generating diffusion vectors 
+ */
 class Diffuser
 {
   public:
@@ -99,6 +115,9 @@ class Diffuser
     double r;
 };
 
+/**
+ * Class containing permutation and diffusion parameter modifiers and offsets used to modify permutation and diffusion parameters
+ */
 class Offset
 {
   public:
@@ -108,20 +127,27 @@ class Offset
     double diffuse_param_offset;
 };
 
-// Contains details on no. of rounds and number of rotations
+/** 
+ *  Class containing details on number of encryption and decryption rounds and number of permutations (rotations) per round
+ */
 class Configuration
 {
   public:
-    uint8_t rounds = 2;
-    uint8_t rotations = 1;
+    uint8_t rounds;
+    uint8_t rotations;
 };
 
-
+/**
+ * Class containing functions for generating random numbers using MT-19937 PRNG
+ */
 class Random
 {
   
   public:
      
+      /**
+       * Returns a random 32-bit signed integer in the range of (LOWER_BOUND, UPPER_BOUND). Takes the lower bound and the upper bound as arguments
+       */
       static inline int getRandomInteger(int LOWER_BOUND, int UPPER_BOUND)
       {
         std::random_device r;
@@ -132,6 +158,9 @@ class Random
         return alpha;
       }
      
+      /**
+       * Returns a random 8-bit unsigned integer in the range of (LOWER_BOUND, UPPER_BOUND). Takes the lower bound and the upper bound as arguments
+       */
       static inline int getRandomUnsignedInteger8(int LOWER_BOUND, int UPPER_BOUND)
       {
         std::random_device r;
@@ -142,7 +171,10 @@ class Random
         return (uint8_t)randnum;
       }
      
-     static inline int getRandomUnsignedInteger32(int LOWER_BOUND, int UPPER_BOUND)
+     /**
+      * Returns a random 8-bit unsigned integer in the range of (LOWER_BOUND, UPPER_BOUND). Takes the lower bound and the upper bound as arguments
+      */
+      static inline int getRandomUnsignedInteger32(int LOWER_BOUND, int UPPER_BOUND)
       {
         std::random_device r;
         std::seed_seq seed{r(), r(), r(), r(), r(), r(), r(), r()};
@@ -152,6 +184,10 @@ class Random
         return (uint32_t)randnum;
       }
 
+    
+     /**
+      * Returns a random 32-bit double in the range of (LOWER_LIMIT, UPPER_LIMIT). Takes the lower limit and the upper limit as arguments
+      */
      static inline double getRandomDouble(double LOWER_LIMIT, double UPPER_LIMIT)
      {
        std::random_device r;
@@ -162,6 +198,9 @@ class Random
        return (double)randnum;
      }
     
+     /**
+      * Returns a random instance of Chaos in the range of (LOWER_LIMIT, UPPER_LIMIT). Takes the lower limit and the upper limit as arguments
+      */
      static inline Chaos crngAssigner(int LOWER_LIMIT, int UPPER_LIMIT)
      {
        Chaos chaotic_map;
@@ -216,12 +255,18 @@ class CRNG
       }                      
     }
   
+   /**
+    * 2D Logistic Map. Takes initializing parameters X, Y and control parameter R as arguments
+    */
    inline void twodLM(double &X, double &Y, const double &R)
    {
        X = R * (3 * Y + 1) * X * (1 - X);
        Y = R * (3 * X + 1) * Y * (1 - Y);
    }
    
+   /**
+    * Arnold Map. Takes initializing parameters X and Y as arguments 
+    */
    inline void ArnoldIteration(double &X, double &Y)
    {
      auto xtmp = X + Y;
@@ -230,6 +275,9 @@ class CRNG
      Y = Y - (int)Y;
    }
    
+   /**
+    * 2D Sine Logistic Modulation Map. Takes initializing parameters X, Y and control parameters alpha and beta as arguments 
+    */
    inline void twodSLMM(double &x, double &y, const double &alpha, const double &beta)
    {
     x = alpha * (sin(M_PI * y) + beta) * x * (1 - x);
@@ -237,13 +285,19 @@ class CRNG
     return; 
    }
   
+   /**
+    * 2D Sine Logistic Modulation Map. Takes initializing parameters X, Y and control parameter myu arguments 
+    */
    inline void twodLASM(double &x, double &y, const double &myu)
    {
      x = sin(M_PI * myu * (y + 3) * x * (1 - x));
      y = sin(M_PI * myu * (x + 3) * y * (1 - y));
      return;
    }
-  
+   
+   /**
+    * 2D Sine Logistic Adjusted Logistic Map. Takes initializing parameters x,y,x_bar,y_bar and control parameter myu as arguments 
+    */
    inline void twodLALM(double &x, double &y, double &x_bar, double &y_bar, const double &myu)
    {
      x_bar = myu * (y * 3) * x * (1 - x);
@@ -253,6 +307,9 @@ class CRNG
      return;
    }
    
+   /**
+    * CRNG host update function used to select chaotic map for generating permutation or diffusion vectors. Takes all initializing parameters and contro parameters of all CRNGs included in Permute and Diffuse classes  
+    */
    inline void CRNGUpdateHost(double &X, double &Y, double X_BAR, double Y_BAR, const double &ALPHA, const double &BETA, const double &MYU, const double &R, Chaos Map)
    {
      
@@ -302,6 +359,9 @@ class CRNG
    
 };
 
+/**
+ * Class containing propagation factors used for Forward change propagation during permutation and diffusion
+ */
 class Propagation
 {
   public:
