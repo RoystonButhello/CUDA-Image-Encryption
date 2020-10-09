@@ -352,6 +352,7 @@ Tests
 src/proof
 src/*.tar.gz
 output
+CUDA/cub
 
 
 # Files
