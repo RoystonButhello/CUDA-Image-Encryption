@@ -356,6 +356,8 @@ CUDA/cub
 
 
 # Files
+*.sln
+*.vcxproj
 *.png
 src/test.cpp
 src/test
