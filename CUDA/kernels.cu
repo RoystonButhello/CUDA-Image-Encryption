@@ -86,6 +86,7 @@ __global__ void DEC_DIFF_LR(uint8_t* __restrict__ img, const int cols, uint32_t 
     }
 }
 
+
 /* Wrappers for kernel launches */
 
 // GPU Warmup
@@ -108,7 +109,7 @@ extern "C" void Wrap_Permutation(uint8_t * in, uint8_t * out, int* colRotate, in
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-        std::printf("\nPermute Kernel (GPU):  %3.6f ms \n", time);
+        std::printf("\nPermute Kernel (GPU):  %3.6fms \n", time);
     }
 
     else
@@ -122,7 +123,7 @@ extern "C" void Wrap_Permutation(uint8_t * in, uint8_t * out, int* colRotate, in
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-        std::printf("\nPermute Kernel (GPU):  %3.6f ms \n", time);
+        std::printf("\nPermute Kernel (GPU):  %3.6fms \n", time);
     }
 }
 
@@ -146,7 +147,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& xRo
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-        std::printf("\nDiffuse kernels (GPU):  %3.6f ms \n", time);
+        std::printf("\nDiffuse kernels (GPU):  %3.6fms \n", time);
     }
 
     else
@@ -161,7 +162,7 @@ extern "C" void Wrap_Diffusion(uint8_t * &in, uint8_t * &out, const double*& xRo
         cudaEventRecord(stop, 0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time, start, stop);
-        std::printf("\nDiffuse kernels (GPU):  %3.6f ms \n", time);
+        std::printf("\nDiffuse kernels (GPU):  %3.6fms \n", time);
     }
 }
 
@@ -190,7 +191,7 @@ extern "C" void Wrap_ImageReduce(uint8_t * __restrict__ img, uint32_t * sum, con
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
-    printf("\nImage Reduction (GPU):  %3.6f ms \n", time);
+    printf("\nImage Reduction (GPU):  %3.6fms", time);
 }
 
 

@@ -1,3 +1,5 @@
+/*Contains all classes used in the program*/
+
 #ifndef CLASSES_H
 #define CLASSES_H
 
@@ -5,8 +7,6 @@
 #include <corecrt_math_defines.h> // For M_PI
 
 using namespace std;
-
-/*Contains all classes used in the program*/
 
 // PRNG choices
 enum class Chaos
@@ -29,11 +29,11 @@ enum class Mode:bool
 class Paths
 {
     public:
-        std::string file_name;
-        std::string file_type;
-        std::string fn_img;
-        std::string fn_img_enc;
-        std::string fn_img_dec;
+        string file_name;
+        string file_type;
+        string fn_img;
+        string fn_img_enc;
+        string fn_img_dec;
 
         // Initializes paths at the beginning of operation
         inline void buildPaths(string file)
@@ -58,23 +58,23 @@ class Configuration
 class CRNG
 {
     public:
-        Chaos map;
-        double x;
-        double y;
-        double alpha;
-        double beta;
-        double myu;
-        double r;
+        Chaos map = Chaos::Arnold;
+        double x = 0.0;
+        double y = 0.0;
+        double alpha = 0.0;
+        double beta = 0.0;
+        double myu = 0.0;
+        double r = 0.0;
 };
 
 // Parameter modifiers and offsets
 class Offset
 {
     public:
-        double permute_param_modifier;
-        double diffuse_param_modifier;
-        double permute_param_offset;
-        double diffuse_param_offset;
+        double perm_modifier;
+        double diff_modifier;
+        double perm_offset;
+        double diff_offset;
 };
 
 class Propagation
@@ -90,6 +90,6 @@ Paths path;
 CRNG permute[2];
 CRNG diffuse;
 Offset offset;
-Propagation propagator;
+Propagation prop;
 
 #endif

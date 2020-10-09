@@ -1,13 +1,14 @@
+// Top-level encryption functions
+
 #ifndef CORE_H
 #define CORE_H
 
-// Top-level encryption functions
 
 #define DEBUG_KEY                        1
 #define PRINT_IMAGES                     1
 
-#define XY_LOWER_LIMIT                    0.1
-#define XY_UPPER_LIMIT                    0.7
+#define XY_LOWER_LIMIT                   0.1
+#define XY_UPPER_LIMIT                   0.7
 #define ALPHA_LOWER_LIMIT                0.905
 #define ALPHA_UPPER_LIMIT                0.985
 #define BETA_LOWER_LIMIT                 2.97
@@ -22,18 +23,16 @@
 #define PERMUTE_PROPAGATION_UPPER_LIMIT  5000
 #define DIFFUSE_PROPAGATION_LOWER_LIMIT  8000
 #define DIFFUSE_PROPAGATION_UPPER_LIMIT  10000  
-#define OFFSET_LOWER_LIMIT          0.00001  
-#define OFFSET_UPPER_LIMIT          0.00002
+#define OFFSET_LOWER_LIMIT              0.00001  
+#define OFFSET_UPPER_LIMIT              0.00002
 
 #include <cstdio>   //printf
-#include <chrono>   //Timing
 #include <openssl/sha.h> //sha256
 #include <opencv2/opencv.hpp> //Convenient Image I/O
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <thrust/host_vector.h> // Convenient vector transfer between host and device
 #include <thrust/device_vector.h>
-#include "Classes.hpp"
 #include "functions.hpp"
 
 using namespace cv;
@@ -43,15 +42,6 @@ using namespace thrust;
 
 // Store generated parameters in vectors instead of writing to disk as File I/O is somehow proving to be the most trying part of this code
 std::vector<CRNG> pVec, dVec;
-
-// Sum of plain image
-uint32_t host_hash_sum_plain = 0;
-uint32_t hash_sum_byte_plain = 0;
-
-/*Function Prototypes*/
-
-void modifyPermutationParameters(CRNG& permute, double permutation_parameter_modifier, double perm_param_offset);
-void modifyDiffusionParameters(CRNG& diffuse, double diffusion_parameter_modifier, double diff_param_offset);
 
 // Initiliaze parameters
 void Initialize()
@@ -65,10 +55,12 @@ void Initialize()
     scanf("%d", &config.rounds);
     config.rounds = (config.rounds > 0) ? config.rounds : 2;
     config.rotations = 2;
+
+    cout << endl;
 }
 
 // Returns number of digits in provided value
-uint32_t getPowerOf10(uint32_t value)
+int getNumOfDigits(uint32_t value)
 {
     int power = 0;
     while (value > 0)
@@ -79,56 +71,94 @@ uint32_t getPowerOf10(uint32_t value)
     return power;
 }
 
+// Generates offset (<0.1) using the given integer
 double getParameterOffset(uint32_t value)
 {
-    double parameter_offset = -0.1;
-    int power = getPowerOf10(value);
-    double val = (double)value;
-    double divisor = pow(10, ((double)power + 2));
+    double divisor = pow(10, ((double)getNumOfDigits(value) + 2));
+    return (value > 0) ? (double)value / divisor : -0.05;
+}
 
-    if (value > 0)
+// Modifies permutation parameters for a given permutation round
+void modifyParameters(CRNG& crng, double modifier, double offset)
+{
+    switch (crng.map)
     {
-        parameter_offset = val / divisor;
-        return parameter_offset;
-    }
-
-    else
+    case Chaos::Arnold:
     {
-        cout << "\nValue out of range\n";
-        printf("\nvalue = %d", value);
-        //parameter_offset = parameter_offset + 0.1;
-        return parameter_offset;
+        crng.x += modifier + offset;
+        crng.y += modifier + offset;
     }
+    break;
 
-    return parameter_offset;
+    case Chaos::LM:
+    {
+        crng.x += modifier + offset;
+        crng.y += modifier + offset;
+        crng.r += modifier + offset;
+    }
+    break;
+
+    case Chaos::SLMM:
+    {
+        crng.x += modifier + offset;
+        crng.y += modifier + offset;
+        crng.alpha += modifier + offset;
+        crng.beta += modifier + offset;
+    }
+    break;
+
+    case Chaos::LASM:
+    {
+        crng.x += modifier + offset;
+        crng.y += modifier + offset;
+        crng.myu += modifier + offset;
+    }
+    break;
+
+    case Chaos::LALM:
+    {
+        crng.x += modifier + offset;
+        crng.y += modifier + offset;
+        crng.myu += modifier + offset;
+    }
+    break;
+    }
 }
 
 // Generates vector of N random numbers in [0,M]
 int* getPermVec(const int M, const int N, CRNG& permute, Mode m)
 {
-
     //Initiliaze CRNG
     if (m == Mode::ENC)
     {
+        permute.map = getRandCRNG(MAP_LOWER_LIMIT, MAP_UPPER_LIMIT);
         permute.x = getRandDouble(XY_LOWER_LIMIT, XY_UPPER_LIMIT);
         permute.y = getRandDouble(XY_LOWER_LIMIT, XY_UPPER_LIMIT);
-        permute.alpha = getRandDouble(ALPHA_LOWER_LIMIT, ALPHA_UPPER_LIMIT);
-        permute.beta = getRandDouble(BETA_LOWER_LIMIT, BETA_UPPER_LIMIT);
-        permute.myu = getRandDouble(MYU_LOWER_LIMIT, MYU_UPPER_LIMIT);
-        permute.r = getRandDouble(R_LOWER_LIMIT, R_UPPER_LIMIT);
-        permute.map = getRandCRNG(MAP_LOWER_LIMIT, MAP_UPPER_LIMIT);
-        offset.permute_param_offset = getRandDouble(OFFSET_LOWER_LIMIT, OFFSET_UPPER_LIMIT);
-        modifyPermutationParameters(permute, offset.permute_param_modifier, offset.permute_param_offset);
+        if (permute.map == Chaos::LM)
+        {
+            permute.r = getRandDouble(R_LOWER_LIMIT, R_UPPER_LIMIT);
+        }
+        else if (permute.map == Chaos::SLMM)
+        {
+            permute.alpha = getRandDouble(ALPHA_LOWER_LIMIT, ALPHA_UPPER_LIMIT);
+            permute.beta = getRandDouble(BETA_LOWER_LIMIT, BETA_UPPER_LIMIT);
+        }
+        else if (permute.map != Chaos::Arnold)
+        {
+            permute.myu = getRandDouble(MYU_LOWER_LIMIT, MYU_UPPER_LIMIT);
+        }
+        offset.perm_offset = getRandDouble(OFFSET_LOWER_LIMIT, OFFSET_UPPER_LIMIT);
+        modifyParameters(permute, offset.perm_modifier, offset.perm_offset);
     }
 
-    //Initiliaze Parameters
+    //Initialize Parameters
+    Chaos map = permute.map;
     double x = permute.x;
     double y = permute.y;
     const double alpha = permute.alpha;
     const double beta = permute.beta;
     const double myu = permute.myu;
     const double r = permute.r;
-    Chaos map = permute.map;
 
     host_vector<int> ranVec(N);
     const int exp = (int)pow(10, 9);
@@ -141,7 +171,7 @@ int* getPermVec(const int M, const int N, CRNG& permute, Mode m)
         ranVec[i] = (int)(x * exp) % M;
     }
 
-    cout << "\nPERMUTATION CRNG: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n";
+    timeSince(start, "Permutation CRNG");
 
     device_vector<int> dVec = ranVec;
     return (int*)(thrust::raw_pointer_cast(&dVec[0]));
@@ -153,136 +183,46 @@ void getDiffVecs(host_vector<double>& xVec, host_vector<double>& yVec, const int
     //Initiliaze CRNG
     if (m == Mode::ENC)
     {
+        diffuse.map = getRandCRNG(MAP_LOWER_LIMIT, MAP_UPPER_LIMIT);
         diffuse.x = getRandDouble(XY_LOWER_LIMIT, XY_UPPER_LIMIT);
         diffuse.y = getRandDouble(XY_LOWER_LIMIT, XY_UPPER_LIMIT);
-        diffuse.alpha = getRandDouble(ALPHA_LOWER_LIMIT, ALPHA_UPPER_LIMIT);
-        diffuse.beta = getRandDouble(BETA_LOWER_LIMIT, BETA_UPPER_LIMIT);
-        diffuse.myu = getRandDouble(MYU_LOWER_LIMIT, MYU_UPPER_LIMIT);
-        diffuse.r = getRandDouble(R_LOWER_LIMIT, R_UPPER_LIMIT);
-        diffuse.map = getRandCRNG(MAP_LOWER_LIMIT, MAP_UPPER_LIMIT);
-        offset.diffuse_param_offset = getRandDouble(OFFSET_LOWER_LIMIT, OFFSET_UPPER_LIMIT);
-        modifyDiffusionParameters(diffuse, offset.diffuse_param_modifier, offset.diffuse_param_offset);
+        if (diffuse.map == Chaos::LM)
+        {
+            diffuse.r = getRandDouble(R_LOWER_LIMIT, R_UPPER_LIMIT);
+        }
+        else if (diffuse.map == Chaos::SLMM)
+        {
+            diffuse.alpha = getRandDouble(ALPHA_LOWER_LIMIT, ALPHA_UPPER_LIMIT);
+            diffuse.beta = getRandDouble(BETA_LOWER_LIMIT, BETA_UPPER_LIMIT);
+        }
+        else if (diffuse.map != Chaos::Arnold)
+        {
+            diffuse.myu = getRandDouble(MYU_LOWER_LIMIT, MYU_UPPER_LIMIT);
+        }
+        offset.diff_offset = getRandDouble(OFFSET_LOWER_LIMIT, OFFSET_UPPER_LIMIT);
+        modifyParameters(diffuse, offset.diff_modifier, offset.diff_offset);
     }
 
     //Initiliaze Parameters
 
+    Chaos map = diffuse.map;
     double x = diffuse.x;
     double y = diffuse.y;
     double alpha = diffuse.alpha;
     double beta = diffuse.beta;
     double myu = diffuse.myu;
     const double r = diffuse.r;
-    Chaos map = diffuse.map;
 
-    int i = 0;
     auto start = steady_clock::now();
 
-    for (i = 0; i < N; ++i)
+    for (int i = 0; i < N; ++i)
     {
         CRNGUpdate(x, y, alpha, beta, myu, r, map);
         xVec[i] = x;
         yVec[i] = y;
     }
 
-    cout << "DIFFUSION CRNG: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n";
-}
-
-// Modifies permutation parameters for a given permutation round
-void modifyPermutationParameters(CRNG& permute, double permutation_parameter_modifier, double perm_param_offset)
-{
-    switch (int(permute.map))
-    {
-        case 1:
-        {
-            permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
-            permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
-        }
-        break;
-
-        case 2:
-        {
-            permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
-            permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
-            permute.r = permute.r + permutation_parameter_modifier + perm_param_offset;
-        }
-        break;
-
-        case 3:
-        {
-            permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
-            permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
-            permute.alpha = permute.alpha + permutation_parameter_modifier + perm_param_offset;
-            permute.beta = permute.beta + permutation_parameter_modifier + perm_param_offset;
-        }
-        break;
-
-        case 4:
-        {
-            permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
-            permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
-            permute.myu = permute.myu + permutation_parameter_modifier + perm_param_offset;
-        }
-        break;
-
-        case 5:
-        {
-            permute.x = permute.x + permutation_parameter_modifier + perm_param_offset;
-            permute.y = permute.y + permutation_parameter_modifier + perm_param_offset;
-            permute.myu = permute.myu + permutation_parameter_modifier + perm_param_offset;
-        }
-        break;
-
-        default:cout << "\nInvalid map choice for permutation\n";
-    }
-}
-
-// Modifies permutation parameters for a given encryption round
-void modifyDiffusionParameters(CRNG& diffuse, double diffusion_parameter_modifier, double diff_param_offset)
-{
-    switch (int(diffuse.map))
-    {
-        case 1:
-        {
-            diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
-        }
-        break;
-
-        case 2:
-        {
-            diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.r = diffuse.r + diffusion_parameter_modifier + diff_param_offset;
-        }
-        break;
-
-        case 3:
-        {
-            diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.alpha = diffuse.alpha + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.beta = diffuse.beta + diffusion_parameter_modifier + diff_param_offset;
-        }
-        break;
-
-        case 4:
-        {
-            diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.myu = diffuse.myu + diffusion_parameter_modifier + diff_param_offset;
-        }
-        break;
-
-        case 5:
-        {
-            diffuse.x = diffuse.x + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.y = diffuse.y + diffusion_parameter_modifier + diff_param_offset;
-            diffuse.myu = diffuse.myu + diffusion_parameter_modifier + diff_param_offset;
-        }
-        break;
-
-        default:cout << "\nInvalid map choice for permutation\n";
-    }
+    timeSince(start, "Diffusion CRNG");
 }
 
 // Top-level function to generate permutation vectors and run the permutation kernel
@@ -296,13 +236,11 @@ cudaError_t CudaPermute(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], Mo
     const dim3 grid(dim[0], dim[1], 1);
     const dim3 block(dim[2], 1, 1);
 
-    //auto start = steady_clock::now();
     // Call the kernel wrapper function
     Wrap_Permutation(d_img, d_imgtmp, ptrU, ptrV, grid, block, int(m));
+
     // Swap input and output vectors for subsequent rounds
     swap(d_img, d_imgtmp);
-    //cout << "Permutation: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
-
     return cudaDeviceSynchronize();
 }
 
@@ -320,73 +258,61 @@ cudaError_t CudaDiffuse(uint8_t*& d_img, uint8_t*& d_imgtmp, const int dim[], ui
     const double* rowXptr = (double*)(thrust::raw_pointer_cast(&DRowX[0]));
     const double* rowYptr = (double*)(thrust::raw_pointer_cast(&DRowY[0]));
 
-    //auto start = steady_clock::now();
     // Call the kernel wrapper function
     Wrap_Diffusion(d_img, d_imgtmp, rowXptr, rowYptr, dim, diffuse.r, int(m), diff_propfac);
+
     // Swap input and output vectors for subsequent rounds
     swap(d_img, d_imgtmp);
-    //cout << "\nDiffusion: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n\n";
 
     return cudaDeviceSynchronize();
 }
 
-// Top-level function for calculating sum of an image's pixels
-cudaError_t CudaImageSumReduce(uint8_t* img, uint32_t* device_result, uint32_t& host_sum, const int dim[])
+// Top-level function to calculate the sum of an image's pixels
+cudaError_t CudaImageReduce(uint8_t* img, uint32_t& result, const int dim[])
 {
-    Wrap_ImageReduce(img, device_result, dim);
-    cudaMemcpy(&host_sum, device_result, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+    uint32_t* d_result;
+    cudaMalloc(&d_result, sizeof(d_result));
+
+    Wrap_ImageReduce(img, d_result, dim);
+
+    cudaMemcpy(&result, d_result, sizeof(uint32_t), cudaMemcpyDeviceToHost);
     return cudaDeviceSynchronize();
-}
-
-// Extract each byte of an integer to a character array
-static inline void getIntegerBytes(uint32_t value, unsigned char*& buffer)
-{
-    for (int i = 0; i < sizeof(value); ++i)
-    {
-        buffer[i] = (value >> (8 * i)) & 0xff;
-    }
-}
-
-// Converts SHA256 hash to std::string
-static inline std::string sha256_hash_string(unsigned char hash[SHA256_DIGEST_LENGTH])
-{
-    stringstream ss;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        ss << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-    return ss.str();
 }
 
 // Generates SHA256 hash of integer, adds up its bytes, divides the sum by 256 and returns its remainder.
-static inline void calc_sum_of_hash(uint32_t value, uint32_t& hash_sum_byte)
+static inline uint32_t getReducedHash(uint32_t value)
 {
     long x = 0;
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
 
-    const int bufSize = SHA256_DIGEST_LENGTH;
-    //const int bufSize = 3;
-    unsigned char* buffer = (unsigned char*)calloc(bufSize, sizeof(unsigned char));
+    auto buffer = (unsigned char*)calloc(SHA256_DIGEST_LENGTH, sizeof(unsigned char));
 
-    getIntegerBytes(value, buffer);
-    //cout <<"\nEnter buffer ";
-    //cin >> buffer;
-    SHA256_Update(&sha256, buffer, bufSize);
-
-    SHA256_Final(hash, &sha256);
-
-    std::string hash_final = sha256_hash_string(hash);
-
-    for (int i = 0; i < hash_final.length(); ++i)
+    // Extract each byte of <value> to buffer[]
+    for (int i = 0; i < sizeof(value); ++i)
     {
-        x = x + hash_final.at(i);
+        buffer[i] = (value >> (8 * i)) & 0xff;
     }
 
-    x = x % 256;
+    SHA256_Update(&sha256, buffer, SHA256_DIGEST_LENGTH);
+    SHA256_Final(hash, &sha256);
 
-    hash_sum_byte = (uint8_t)x;
+    // Convert SHA256 hash to a string
+    stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+    string hash_final = ss.str();
+
+    // Calculate sum of the hash's characters
+    for (int i = 0; i < hash_final.length(); ++i)
+    {
+        x += hash_final.at(i);
+    }
+
+    return (x % 256);
 }
 
 // Modifies all permutation & diffusion parameters using the Reverse Change Propagation offset
@@ -481,78 +407,53 @@ int Encrypt()
 
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
+    size_t img_bytes = (unsigned long long)dim[0] * (unsigned long long)dim[1] * (unsigned long long)dim[2] * sizeof(uint8_t);
 
+    // Allocate VRAM for permutation vectors
+    int* gpu_u, * gpu_v;
+    cudaMalloc<int>(&gpu_v, dim[0] * sizeof(int));
+    cudaMalloc<int>(&gpu_u, dim[1] * sizeof(int));
+
+    // Allocate VRAM for input and output images
     uint8_t* d_img, * d_imgtmp;
+    cudaMalloc<uint8_t>(&d_img, img_bytes);
+    cudaMalloc<uint8_t>(&d_imgtmp, img_bytes);
 
-    uint32_t host_hash_sum_ENC = 0;
-    uint32_t* device_hash_sum_ENC, * device_hash_sum_plain;
+    // Transfer image to VRAM
+    cudaMemcpy(d_img, img.data, img_bytes, cudaMemcpyHostToDevice);
 
-    size_t device_hash_sum_size = sizeof(device_hash_sum_ENC);
-
-    size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
-
-    size_t lut_size_row = dim[1] * sizeof(int);
-    size_t lut_size_col = dim[0] * sizeof(int);
-
-    int* gpu_u;
-    int* gpu_v;
-
+    // Variable to confirm success
     cudaError_t cudaStatus;
-
-    uint32_t hash_sum_byte_ENC = 0;
-
-    //Allocating device memory for sums of hash
-    cudaMalloc(&device_hash_sum_plain, device_hash_sum_size);
-    cudaMalloc(&device_hash_sum_ENC, device_hash_sum_size);
-
-
-    //Allocating device memory for permutation vectors
-    cudaMalloc<int>(&gpu_v, lut_size_col);
-    cudaMalloc<int>(&gpu_u, lut_size_row);
-
-    //Allocating device memory for input and output images
-    cudaMalloc<uint8_t>(&d_img, data_size);
-    cudaMalloc<uint8_t>(&d_imgtmp, data_size);
-
-    // Upload image to device
-    cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
-
-    // Calculating the sum of plain image 
-    auto start_sumplain = steady_clock::now();
-    cudaStatus = CudaImageSumReduce(d_img, device_hash_sum_plain, host_hash_sum_plain, dim);
-    auto end_sumplain = steady_clock::now();
-    auto duration_sumplain = (int)duration_cast<microseconds>(end_sumplain - start_sumplain).count();
-    printf("\nSum of plain image in host = %d us", duration_sumplain);
-
-    //Calculate sum of the sha256 hash of the sum of the plain image
-    calc_sum_of_hash(host_hash_sum_plain, hash_sum_byte_plain);
-
-    //Factor to induce propagation in permutation vector generation parameters
-    propagator.perm_propfac = hash_sum_byte_plain ^ getRandUInt32(PERMUTE_PROPAGATION_LOWER_LIMIT, PERMUTE_PROPAGATION_UPPER_LIMIT);
-    //Factor to induce forward propagation in diffusion vector generation parameters and diffusion kernel
-    propagator.diff_propfac = hash_sum_byte_plain ^ getRandUInt32(DIFFUSE_PROPAGATION_LOWER_LIMIT, DIFFUSE_PROPAGATION_UPPER_LIMIT);
-
-    //Permutation and diffusion parameter modifiers 
-    offset.permute_param_modifier = getParameterOffset(propagator.perm_propfac);
-    offset.diffuse_param_modifier = getParameterOffset(propagator.diff_propfac);
-
-    if (cudaStatus != cudaSuccess)
-    {
-        cerr << "\nimage sum Failed!";
-        cout << "\nimage sum kernel error / status = " << cudaStatus;
-        return -1;
-    }
 
     cout << "----------------------------------------------------------------------------------------\n";
     cout << "---------------------------------------ENCRYPTION---------------------------------------\n";
-    cout << "----------------------------------------------------------------------------------------\n\n";
+    cout << "----------------------------------------------------------------------------------------\n";
 
-    auto start_enc = steady_clock::now();
+    // Calculate sum of the plain image's pixels
+    uint32_t imageSum_plain = 0;
+    cudaStatus = CudaImageReduce(d_img, imageSum_plain, dim);
+
+    // Reduce the SHA256 hash of the imageSum
+    auto start = steady_clock::now();
+    uint32_t reducedHash_plain = getReducedHash(imageSum_plain);
+    timeSince(start, "Generating reduced hash of plain image");
+
+    //Factor to induce propagation in permutation vector generation parameters
+    prop.perm_propfac = reducedHash_plain ^ getRandUInt32(PERMUTE_PROPAGATION_LOWER_LIMIT, PERMUTE_PROPAGATION_UPPER_LIMIT);
+    //Factor to induce forward propagation in diffusion vector generation parameters and diffusion kernel
+    prop.diff_propfac = reducedHash_plain ^ getRandUInt32(DIFFUSE_PROPAGATION_LOWER_LIMIT, DIFFUSE_PROPAGATION_UPPER_LIMIT);
+
+    //Permutation and diffusion parameter modifiers 
+    offset.perm_modifier = getParameterOffset(prop.perm_propfac);
+    offset.diff_modifier = getParameterOffset(prop.diff_propfac);
+
+    start = steady_clock::now();
 
     // Encryption rounds
+    cout << endl;
     for (int i = 0; i < config.rounds; i++)
     {
-        cout << "X------ROUND " << i + 1 << "------X\n";
+        cout << "\nX------ROUND " << i + 1 << "------X\n";
 
 
         /* Permute Image */
@@ -564,7 +465,6 @@ int Encrypt()
             if (cudaStatus != cudaSuccess)
             {
                 cerr << "\nENC_Permutation Failed!";
-                cout << "\nENC_Permutation kernel error / status = " << cudaStatus;
                 return -1;
             }
 
@@ -575,71 +475,54 @@ int Encrypt()
 
 
         /*Diffuse image*/
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, propagator.diff_propfac, Mode::ENC);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, prop.diff_propfac, Mode::ENC);
         if (cudaStatus != cudaSuccess)
         {
             cerr << "\nENC_Diffusion Failed!";
-            cout << "\nENC_Diffusion kernel error / status = " << cudaStatus;
             return -1;
         }
 
         dVec.push_back(diffuse);
     }
 
-    auto end_enc = steady_clock::now();
-    auto duration_enc = (int)duration_cast<milliseconds>(end_enc - start_enc).count();
-    printf("\nDURATION OF ENCRYPTION = %d ms", duration_enc);
+    timeSince(start, "Net Encryption Runtime");
 
-    //Copy encrypted image from device memory to host memory 
-    cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
-
-    //Write encrypted image to disk
-    auto start_write = steady_clock::now();
+    // Transfer cipherimage back to RAM and write it to disk
+    cudaMemcpy(img.data, d_img, img_bytes, cudaMemcpyDeviceToHost);
     imwrite(path.fn_img_enc, img);
-    auto end_write = steady_clock::now();
-    auto duration_write = (int)duration_cast<milliseconds>(end_write - start_write).count();
-    printf("\nWrite encrypted image = %d ms", duration_write);
 
-    auto start_imagesum = steady_clock::now();
-    //Calculate sum of encrypted image
-    cudaStatus = CudaImageSumReduce(d_img, device_hash_sum_ENC, host_hash_sum_ENC, dim);
-    auto end_imagesum = steady_clock::now();
-    auto duration_imagesum = (int)duration_cast<microseconds>(end_imagesum - start_imagesum).count();
-    printf("\nSum of encrypted image in hhost = %d us", duration_imagesum);
+    // Calculate sum of the cipherimage's pixels
+    uint32_t imageSum_ENC = 0;
+    start = steady_clock::now();
+    cudaStatus = CudaImageReduce(d_img, imageSum_ENC, dim);
 
     if (cudaStatus != cudaSuccess)
     {
-        cerr << "\nimage sum Failed!";
-        cout << "\nimage sum kernel error / status = " << cudaStatus;
+        cerr << "\nImage sum Failed!";
         return -1;
     }
 
-    auto start_hash = steady_clock::now();
-    //Calculate sum of the sha256 hash of the sum of the encrypted image
-    calc_sum_of_hash(host_hash_sum_ENC, hash_sum_byte_ENC);
-    auto end_hash = steady_clock::now();
-    auto duration_hash = (int)duration_cast<microseconds>(end_hash - start_hash).count();
-    printf("\nCompute sha256 hash of the sum of the encrypted image = %d us", duration_hash);
+    // Reduce the SHA256 hash of the imageSum
+    start = steady_clock::now();
+    uint32_t reducedHash_ENC = getReducedHash(imageSum_ENC);
+    timeSince(start, "Generated reduced hash of cipherimage");
 
-    auto start_modification = steady_clock::now();
-    //Modify the parameters by adding Reverse Change Propagation Offset to them
-    reverseChangePropagation(pVec, dVec, hash_sum_byte_ENC, Mode::ENC);
-    auto end_modification = steady_clock::now();
-    auto duration_modification = (int)duration_cast<microseconds>(end_modification - start_modification).count();
-    printf("\nModify the parameters using the offset of the generated hash = %d us", duration_modification);
+    //Modify parameters with Reverse Change Propagation Offset
+    start = steady_clock::now();
+    reverseChangePropagation(pVec, dVec, reducedHash_ENC, Mode::ENC);
+    timeSince(start, "Reverse Change Propagation");
 
     if (PRINT_IMAGES == 1)
     {
-        namedWindow("enc");
-        imshow("enc", img);
+        imshow("Encrypted Image", img);
     }
 
-    //Calculating the size of the key
+    // Calculate key size
     if (DEBUG_KEY == 1)
     {
-        size_t key_size = (sizeof(Chaos) * (pVec.size() + dVec.size())) + CRNGVecSize(pVec) + CRNGVecSize(dVec) + (sizeof(propagator.perm_propfac) * 2);
+        size_t key_size = (sizeof(Chaos) * (pVec.size() + dVec.size())) + CRNGVecSize(pVec) + CRNGVecSize(dVec) + (sizeof(prop.perm_propfac) * 2);
         printf("\nNumber of rounds = %d", config.rounds);
-        printf("\nKEY SIZE = %lu Bytes", key_size);
+        printf("\nKEY SIZE = %lu Bytes\n\n", key_size);
     }
 
     return 0;
@@ -651,99 +534,67 @@ int Decrypt()
     Wrap_WarmUp();
 
     // Read the file and confirm it's been opened
-    auto start_read = steady_clock::now();
     cv::Mat img = cv::imread(path.fn_img_enc, cv::IMREAD_UNCHANGED);
-    auto end_read = steady_clock::now();
-    auto duration_read = (int)duration_cast<milliseconds>(end_read - start_read).count();
-    printf("\nRead the encrypted image = %d ms", duration_read);
-
     if (!img.data)
     {
         cout << "Image not found!\n";
         return -1;
     }
+
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
+    size_t img_bytes = (unsigned long long)dim[0] * (unsigned long long)dim[1] * (unsigned long long)dim[2] * sizeof(uint8_t);
 
+    // Allocate VRAM for permutation vectors
+    int* gpu_u, * gpu_v;
+    cudaMalloc<int>(&gpu_v, dim[0] * sizeof(int));
+    cudaMalloc<int>(&gpu_u, dim[1] * sizeof(int));
 
-    // Upload image and LUTs to device
+    // Allocate VRAM for input and output images
     uint8_t* d_img, * d_imgtmp;
+    cudaMalloc<uint8_t>(&d_img, img_bytes);
+    cudaMalloc<uint8_t>(&d_imgtmp, img_bytes);
 
-    size_t lut_size_row = dim[1] * sizeof(int);
-    size_t lut_size_col = dim[0] * sizeof(int);
+    // Transfer cipherimage to VRAM
+    cudaMemcpy(d_img, img.data, img_bytes, cudaMemcpyHostToDevice);
 
-    int* gpu_u;
-    int* gpu_v;
-
-    uint32_t hash_sum_byte_DEC = 0;
-
-    uint32_t host_hash_sum_DEC = 0;
-    uint32_t* device_hash_sum_DEC;
-
-    size_t device_hash_sum_size = sizeof(device_hash_sum_DEC);
-
+    // Variable to confirm success
     cudaError_t cudaStatus;
-
-    //Allocating device memory for sum of plain image and encrypted image
-    cudaMalloc(&device_hash_sum_DEC, device_hash_sum_size);
-
-
-    //Allocating device memory for permutation vectors
-    cudaMalloc<int>(&gpu_v, lut_size_col);
-    cudaMalloc<int>(&gpu_u, lut_size_row);
-
-    size_t data_size = img.rows * img.cols * img.channels() * sizeof(uint8_t);
-
-    //Allocating device memory for encrypted image and decrypted image      
-    cudaMalloc<uint8_t>(&d_img, data_size);
-    cudaMalloc<uint8_t>(&d_imgtmp, data_size);
-
-    //Copying encrypted image from host memory to device memory
-    cudaMemcpy(d_img, img.data, data_size, cudaMemcpyHostToDevice);
-
-    //Calculate sum of encrypted image
-    cudaStatus = CudaImageSumReduce(d_img, device_hash_sum_DEC, host_hash_sum_DEC, dim);
-
-    if (cudaStatus != cudaSuccess)
-    {
-        cerr << "\nimage sum Failed!";
-        cout << "\nimage sum kernel error / status = " << cudaStatus;
-        return -1;
-    }
-
-    auto start_hash = steady_clock::now();
-    //Calculate sum of hash of sum of encrypted image
-    calc_sum_of_hash(host_hash_sum_DEC, hash_sum_byte_DEC);
-    auto end_hash = steady_clock::now();
-    auto duration_hash = (int)duration_cast<microseconds>(end_hash - start_hash).count();
-    printf("\nCompute sha256 hash of the sum of the encrypted image = %d us", duration_hash);
-
-    auto start_modification = steady_clock::now();
-    //Recover all permutation and diffusion parameters by subtracting from said parameters, the Reverse Propagation Offset
-    reverseChangePropagation(pVec, dVec, hash_sum_byte_DEC, Mode::DEC);
-    auto end_modification = steady_clock::now();
-    auto duration_modification = (int)duration_cast<microseconds>(end_modification - start_modification).count();
-    printf("\nModify the parameters using the offset of the generated hash = %d us", duration_modification);
 
     cout << "----------------------------------------------------------------------------------------\n";
     cout << "---------------------------------------DECRYPTION---------------------------------------\n";
-    cout << "----------------------------------------------------------------------------------------\n\n";
+    cout << "----------------------------------------------------------------------------------------\n";
 
-    auto start_dec = steady_clock::now();
+    auto start = steady_clock::now();
 
-    //Decryption rounds
+    // Calculate sum of the cipherimage's pixels
+    uint32_t imageSum_DEC = 0;
+    cudaStatus = CudaImageReduce(d_img, imageSum_DEC, dim);
+    if (cudaStatus != cudaSuccess)
+    {
+        cerr << "\nImage Reduction Failed!";
+        return -1;
+    }
+
+    // Reduce the SHA256 hash of the imageSum
+    uint32_t reducedHash_DEC = getReducedHash(imageSum_DEC);
+
+    // Recover parameters using Reverse Propagation Offset
+    reverseChangePropagation(pVec, dVec, reducedHash_DEC, Mode::DEC);
+
+    // Decryption rounds
+    cout << endl;
     for (int i = config.rounds - 1; i >= 0; i--)
     {
-        cout << "X------ROUND " << i + 1 << "------X\n";
+        cout << "\nX------ROUND " << i + 1 << "------X\n";
 
         diffuse = dVec[i];
 
         //Undiffuse image 
-        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, propagator.diff_propfac, Mode::DEC);
+        cudaStatus = CudaDiffuse(d_img, d_imgtmp, dim, prop.diff_propfac, Mode::DEC);
         if (cudaStatus != cudaSuccess)
         {
             cerr << "DEC_Diffusion Failed!";
-            cout << "\nDEC_DIffusion kernel error / status = " << cudaStatus;
             return -1;
         }
 
@@ -760,30 +611,22 @@ int Decrypt()
             if (cudaStatus != cudaSuccess)
             {
                 cerr << "DEC_Permutation Failed!";
-                cout << "\nDEC_Permutation kernel error / status = " << cudaStatus;
                 return -1;
             }
         }
     }
-    auto end_dec = steady_clock::now();
-    auto duration_dec = (int)duration_cast<milliseconds>(end_dec - start_dec).count();
-    printf("\nDURATION OF DECRYPTION = %d ms", duration_dec);
 
-    //Copy decrypted image from device memory to host memory
-    cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
+    timeSince(start, "Gross Decryption Runtime");
+    cout << endl;
 
-    //Write decrypted image to disk
-    auto start_write = steady_clock::now(); 
+    // Transfer decrypted image back to RAM and write it to disk
+    cudaMemcpy(img.data, d_img, img_bytes, cudaMemcpyDeviceToHost);
     imwrite(path.fn_img_dec, img);
-    auto end_write = steady_clock::now();
-    auto duration_write = (int)duration_cast<milliseconds>(end_write - start_write).count();
-    printf("\nWrite decrypted image = %d ms", duration_write);
 
-    //Printing image
+    // Display result
     if (PRINT_IMAGES == 1)
     {
-        namedWindow("dec");
-        imshow("dec", img);
+        imshow("Decrypted Image", img);
     }
 
     return 0;

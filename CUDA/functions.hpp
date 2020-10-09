@@ -1,11 +1,16 @@
-// Wrappers and chaotic maps
+// Ancillary functions
+
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
 #include <cstdint>
 #include <random>
+#include <chrono>
+#include "Classes.hpp"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+
+using namespace chrono;
 
 /* CUDA Kernel Wrapper Function Declarations */
 
@@ -50,6 +55,7 @@ static inline Chaos getRandCRNG(int LOWER_BOUND, int UPPER_BOUND)
     std::uniform_int_distribution<int> intGen(LOWER_BOUND, UPPER_BOUND);
     return (Chaos)intGen(seeder);
 }
+
 
 /* CRNG State Update functions */
 
@@ -114,6 +120,9 @@ inline void CRNGUpdate(double& x, double& y, const double& alpha, const double& 
     }
 }
 
+
+/* Other functions */
+
 inline size_t CRNGVecSize(std::vector<CRNG>& vec)
 {
     size_t size = 0;
@@ -123,13 +132,24 @@ inline size_t CRNGVecSize(std::vector<CRNG>& vec)
         switch (temp.map)
         {
         case Chaos::Arnold: size += (unit * 2); break;
-        case Chaos::LM:
-        case Chaos::LASM: size += (unit * 3); break;
-        case Chaos::SLMM:
-        case Chaos::LALM: size += (unit * 4); break;
+        case Chaos::SLMM: size += (unit * 4); break;
+        default: size += (unit * 3); break;
         }
     }
     return size;
+}
+
+inline void timeSince(time_point<steady_clock> start, string text)
+{
+    auto value = (int)duration_cast<microseconds>(steady_clock::now() - start).count();
+    if (value > 1000)
+    {
+        printf("\n%s: %3.6fms", text.c_str(), value / 1000.0);
+    }
+    else
+    {
+        printf("\n%s: %dus", text.c_str(), value);
+    }
 }
 
 #endif
