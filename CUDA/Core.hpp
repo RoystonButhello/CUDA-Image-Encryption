@@ -656,7 +656,8 @@ size_t calculateKeySize(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec
     }
   }
   
-  key_size = key_size + sizeof(uint32_t);
+  // Adding size of permute and diffuse propagation factors
+  key_size = key_size + (sizeof(uint32_t) * 2); 
   return key_size;
 }
 
@@ -679,7 +680,6 @@ int Encrypt(std::string file, int rounds, int rotations)
         return -1;
     }
     
- 
     //Resize image
     //cv::resize(img, img, cv::Size(4 , 4));
     
@@ -687,6 +687,10 @@ int Encrypt(std::string file, int rounds, int rotations)
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
     
+    cout <<"\nCols = "<<dim[0];
+    cout<<"\nRows = "<<dim[1];
+    cout<<"\nChannels = "<<dim[2];
+
     // Printing image
     if(PRINT_IMAGES == 1)
     {
@@ -887,7 +891,7 @@ int Decrypt()
         cout << "Image not found!\n";
         return -1;
     }
-    
+
     //img.at<Vec3b>(0, 0)[0] = img.at<Vec3b>(0, 0)[0] + 1;
     //Resize image
     //cv::resize(img, img, cv::Size(4 , 4));
@@ -895,6 +899,10 @@ int Decrypt()
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
     
+    cout <<"\nCols = "<<dim[0];
+    cout<<"\nRows = "<<dim[1];
+    cout<<"\nChannels = "<<dim[2];
+
     //Printing image
     if(PRINT_IMAGES == 1)
     {
