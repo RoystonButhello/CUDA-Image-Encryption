@@ -131,7 +131,6 @@ double getParameterOffset(uint32_t value)
   {
     cout<<"\nValue out of range\n";
     printf("\nvalue = %d", value);
-    //parameter_offset = parameter_offset + 0.1;
     return parameter_offset;
   }
   
@@ -148,6 +147,7 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
+        auto start_permgen = steady_clock::now();
         permute.x = randomNumber.getRandomDouble(X_LOWER_LIMIT , X_UPPER_LIMIT);
         permute.y = randomNumber.getRandomDouble(Y_LOWER_LIMIT , Y_UPPER_LIMIT);
         permute.x_bar = randomNumber.getRandomDouble(X_LOWER_LIMIT, X_UPPER_LIMIT);
@@ -158,8 +158,10 @@ int* getPermVec(const int M, const int N, Permuter &permute, Mode m)
         permute.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
         permute.map = randomNumber.crngAssigner(MAP_LOWER_LIMIT , MAP_UPPER_LIMIT);
         offset.permute_param_offset = randomNumber.getRandomDouble(PERM_OFFSET_LOWER_LIMIT, PERM_OFFSET_UPPER_LIMIT);
+        cout << "Generate permutation params & offset: " << (duration_cast<milliseconds>(steady_clock::now() - start_permgen).count()) << "ms\n";
+	auto start_pmod = steady_clock::now(); 
         modifyPermutationParameters(permute, offset.permute_param_modifier, offset.permute_param_offset);
-       
+        cout << "Modify permutation parameters:" << (duration_cast<nanoseconds>(steady_clock::now() - start_pmod).count()) << "ns\n";
         if(DEBUG_PARAMETERS == 1)
         {
           printf("\npermute.x = %f", permute.x);
@@ -219,6 +221,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     //Initiliaze CRNG
     if (m == Mode::ENCRYPT)
     {
+        auto start_diffgen = steady_clock::now();
         diffuse.x = randomNumber.getRandomDouble(X_LOWER_LIMIT , X_UPPER_LIMIT);
         diffuse.y = randomNumber.getRandomDouble(Y_LOWER_LIMIT , Y_UPPER_LIMIT);
         diffuse.x_bar = randomNumber.getRandomDouble(X_LOWER_LIMIT, X_UPPER_LIMIT);
@@ -229,8 +232,12 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
         diffuse.r = randomNumber.getRandomDouble(R_LOWER_LIMIT , R_UPPER_LIMIT);
         diffuse.map = randomNumber.crngAssigner(1 , 5);
         offset.diffuse_param_offset = randomNumber.getRandomDouble(DIFF_OFFSET_LOWER_LIMIT, DIFF_OFFSET_UPPER_LIMIT);
+        cout << "Generate diffusion parameters and offset: " << (duration_cast<milliseconds>(steady_clock::now() - start_diffgen).count()) << "ms\n";
+
+        auto start_dmod = steady_clock::now();
         modifyDiffusionParameters(diffuse, offset.diffuse_param_modifier, offset.diffuse_param_offset);
-        
+        cout << "Modify diffusion parameters: " << (duration_cast<nanoseconds>(steady_clock::now() - start_dmod).count()) << "ns\n";
+
         if(DEBUG_PARAMETERS == 1)
         {
           printf("\ndiffuse.x = %f", diffuse.x);
@@ -259,7 +266,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
     
     //const int exp = (int)pow(10, 9);
     int i = 0;
-    //auto start = steady_clock::now();
+    auto start = steady_clock::now();
     
     for(i = 0; i < N; ++i)
     {
@@ -268,7 +275,7 @@ void getDiffVecs(host_vector<double> &xVec, host_vector<double> &yVec, const int
       yVec[i] = y;
     }
     
-    //cout << "DIFFUSION CRNG: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n";
+    cout << "DIFFUSION CRNG: " << (duration_cast<microseconds>(steady_clock::now() - start).count()) << "us\n";
 }
 
 /**
@@ -501,24 +508,26 @@ static inline void calc_sum_of_hash(uint32_t value, uint32_t &hash_sum_byte)
  */
 void reverseChangePropagation(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec, uint32_t hash_sum_byte, Mode m)
 {
-  double offset = 0;
+  double reverse_change_propagation_offset = 0;
   Permuter permute;
   Diffuser diffuse;
   
   if(m == Mode::ENCRYPT)
   {  
+    //Getting reverse change propagation offset from output cipher image
+    reverse_change_propagation_offset = getParameterOffset(hash_sum_byte);
+    
     //Modifying all diffusion parameters
     for(int i = 0; i < dVec.size(); ++i)
     {
       diffuse = dVec[i];
       
-      offset = getParameterOffset(hash_sum_byte);
-      diffuse.x = diffuse.x + offset;
-      diffuse.y = diffuse.y + offset;
-      diffuse.alpha = diffuse.alpha + offset;
-      diffuse.beta = diffuse.beta + offset;
-      diffuse.myu = diffuse.myu + offset;
-      diffuse.r = diffuse.r + offset;
+      diffuse.x = diffuse.x + reverse_change_propagation_offset;
+      diffuse.y = diffuse.y + reverse_change_propagation_offset;
+      diffuse.alpha = diffuse.alpha + reverse_change_propagation_offset;
+      diffuse.beta = diffuse.beta + reverse_change_propagation_offset;
+      diffuse.myu = diffuse.myu + reverse_change_propagation_offset;
+      diffuse.r = diffuse.r + reverse_change_propagation_offset;
       
       dVec[i] = diffuse;
     }   
@@ -528,13 +537,12 @@ void reverseChangePropagation(std::vector<Permuter> &pVec, std::vector<Diffuser>
     {
       permute = pVec[i];
       
-      offset = getParameterOffset(hash_sum_byte);
-      permute.x = permute.x + offset;
-      permute.y = permute.y + offset;
-      permute.r = permute.r + offset;
-      permute.alpha = permute.alpha + offset;
-      permute.beta = permute.beta + offset;
-      permute.myu = permute.myu + offset;
+      permute.x = permute.x + reverse_change_propagation_offset;
+      permute.y = permute.y + reverse_change_propagation_offset;
+      permute.r = permute.r + reverse_change_propagation_offset;
+      permute.alpha = permute.alpha + reverse_change_propagation_offset;
+      permute.beta = permute.beta + reverse_change_propagation_offset;
+      permute.myu = permute.myu + reverse_change_propagation_offset;
       
       pVec[i] = permute;
     }
@@ -542,18 +550,21 @@ void reverseChangePropagation(std::vector<Permuter> &pVec, std::vector<Diffuser>
   
   else if(m == Mode::DECRYPT)
   {
+    //Getting reverse change propagation offset from input cipher image
+    reverse_change_propagation_offset = getParameterOffset(hash_sum_byte);
+    
     //Unmodifying all diffusion parameters
     for(int i = 0; i < dVec.size(); ++i)
     {
       diffuse = dVec[i];
 
-      offset = getParameterOffset(hash_sum_byte);
-      diffuse.x = diffuse.x - offset;
-      diffuse.y = diffuse.y - offset;
-      diffuse.alpha = diffuse.alpha - offset;
-      diffuse.beta = diffuse.beta - offset;
-      diffuse.myu = diffuse.myu - offset;
-      diffuse.r = diffuse.r - offset;
+      
+      diffuse.x = diffuse.x - reverse_change_propagation_offset;
+      diffuse.y = diffuse.y - reverse_change_propagation_offset;
+      diffuse.alpha = diffuse.alpha - reverse_change_propagation_offset;
+      diffuse.beta = diffuse.beta - reverse_change_propagation_offset;
+      diffuse.myu = diffuse.myu - reverse_change_propagation_offset;
+      diffuse.r = diffuse.r - reverse_change_propagation_offset;
       
       dVec[i] = diffuse;  
     }
@@ -563,13 +574,12 @@ void reverseChangePropagation(std::vector<Permuter> &pVec, std::vector<Diffuser>
     {
       permute = pVec[i];
       
-      offset = getParameterOffset(hash_sum_byte);
-      permute.x = permute.x - offset;
-      permute.y = permute.y - offset;
-      permute.r = permute.r - offset;
-      permute.alpha = permute.alpha - offset;
-      permute.beta = permute.beta - offset;
-      permute.myu = permute.myu - offset;
+      permute.x = permute.x - reverse_change_propagation_offset;
+      permute.y = permute.y - reverse_change_propagation_offset;
+      permute.r = permute.r - reverse_change_propagation_offset;
+      permute.alpha = permute.alpha - reverse_change_propagation_offset;
+      permute.beta = permute.beta - reverse_change_propagation_offset;
+      permute.myu = permute.myu - reverse_change_propagation_offset;
       
       pVec[i] = permute;
     } 
@@ -646,7 +656,8 @@ size_t calculateKeySize(std::vector<Permuter> &pVec, std::vector<Diffuser> &dVec
     }
   }
   
-  key_size = key_size + sizeof(uint32_t);
+  // Adding size of permute and diffuse propagation factors
+  key_size = key_size + (sizeof(uint32_t) * 2); 
   return key_size;
 }
 
@@ -661,9 +672,7 @@ int Encrypt(std::string file, int rounds, int rotations)
     // Read the file and confirm it's been opened
     auto start_read = steady_clock::now();
     Mat img = imread(path.fn_img, cv::IMREAD_UNCHANGED);
-    auto end_read = steady_clock::now();
-    auto duration_read = (int)duration_cast<milliseconds>(end_read - start_read).count();
-    printf("\nRead plain image = %d ms", duration_read); 
+    cout << "Read plain image: " << (duration_cast<milliseconds>(steady_clock::now() - start_read).count()) << "ms\n";
     
     if (!img.data)
     {
@@ -671,7 +680,6 @@ int Encrypt(std::string file, int rounds, int rotations)
         return -1;
     }
     
- 
     //Resize image
     //cv::resize(img, img, cv::Size(4 , 4));
     
@@ -679,6 +687,10 @@ int Encrypt(std::string file, int rounds, int rotations)
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
     
+    cout <<"\nCols = "<<dim[0];
+    cout<<"\nRows = "<<dim[1];
+    cout<<"\nChannels = "<<dim[2];
+
     // Printing image
     if(PRINT_IMAGES == 1)
     {
@@ -709,7 +721,6 @@ int Encrypt(std::string file, int rounds, int rotations)
     cudaMalloc(&device_hash_sum_plain, device_hash_sum_size);
     cudaMalloc(&device_hash_sum_ENC, device_hash_sum_size);
     
-    
     //Allocating device memory for permutation vectors
     cudaMalloc<int>(&gpu_v, lut_size_col);
     cudaMalloc<int>(&gpu_u, lut_size_row);
@@ -724,18 +735,21 @@ int Encrypt(std::string file, int rounds, int rotations)
     // Calculating the sum of plain image 
     auto start_sumplain = steady_clock::now();
     cudaStatus = CudaImageSumReduce(d_img, device_hash_sum_plain, host_hash_sum_plain, dim);
-    auto end_sumplain = steady_clock::now();
-    auto duration_sumplain = (int)duration_cast<microseconds>(end_sumplain - start_sumplain).count();
-    printf("\nSum of plain image in host = %d us", duration_sumplain);
+    cout << "Calculating sum of plain image: " << (duration_cast<microseconds>(steady_clock::now() - start_sumplain).count()) << "us\n";
+    
     
     //Calculate sum of the sha256 hash of the sum of the plain image
+    auto start_plain_hashcalc = steady_clock::now();
     calc_sum_of_hash(host_hash_sum_plain, hash_sum_byte_plain);
+    cout << "Calculate hash sum of plain image: " << (duration_cast<microseconds>(steady_clock::now() - start_plain_hashcalc).count()) << "us\n";
     
+    auto start_propagationcalc = steady_clock::now();
     //Factor to induce propagation in permutation vector generation parameters
     propagator.permute_propagation_factor = hash_sum_byte_plain ^ randomNumber.getRandomUnsignedInteger32(PERMUTE_PROPAGATION_LOWER_LIMIT, PERMUTE_PROPAGATION_UPPER_LIMIT);
     //Factor to induce forward propagation in diffusion vector generation parameters and diffusion kernel
     propagator.diffuse_propagation_factor = hash_sum_byte_plain ^ randomNumber.getRandomUnsignedInteger32(DIFFUSE_PROPAGATION_LOWER_LIMIT, DIFFUSE_PROPAGATION_UPPER_LIMIT);
-
+    cout << "Calculate permute and diffuse propagation factors: " << (duration_cast<microseconds>(steady_clock::now() - start_propagationcalc).count()) << "us\n";
+    
     //Permutation and diffusion parameter modifiers 
     offset.permute_param_modifier = getParameterOffset(propagator.permute_propagation_factor);
     offset.diffuse_param_modifier = getParameterOffset(propagator.diffuse_propagation_factor);
@@ -799,9 +813,7 @@ int Encrypt(std::string file, int rounds, int rotations)
         dVec.push_back(diffuse);
   }
     
-    auto end_enc = steady_clock::now();
-    auto duration_enc = (int)duration_cast<milliseconds>(end_enc - start_enc).count();
-    printf("\nDURATION OF ENCRYPTION = %d ms", duration_enc);
+    cout << "DURATION OF ENCRYPTION: " << (duration_cast<milliseconds>(steady_clock::now() - start_enc).count()) << "ms\n";
     
     //Copy encrypted image from device memory to host memory 
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
@@ -809,16 +821,12 @@ int Encrypt(std::string file, int rounds, int rotations)
     //Write encrypted image to disk
     auto start_write = steady_clock::now();
     imwrite(path.fn_img_enc, img);
-    auto end_write = steady_clock::now();
-    auto duration_write = (int)duration_cast<milliseconds>(end_write - start_write).count();
-    printf("\nWrite encrypted image = %d ms", duration_write); 
-    
+    cout << "Write encrypted image: " << (duration_cast<milliseconds>(steady_clock::now() - start_write).count()) << "ms\n";
+
     auto start_imagesum = steady_clock::now();    
     //Calculate sum of encrypted image
     cudaStatus = CudaImageSumReduce(d_img, device_hash_sum_ENC, host_hash_sum_ENC, dim);
-    auto end_imagesum = steady_clock::now();
-    auto duration_imagesum = (int)duration_cast<microseconds>(end_imagesum - start_imagesum).count();
-    printf("\nSum of encrypted image in hhost = %d us", duration_imagesum);
+    cout << "Calculate sum of encrypted image: " << (duration_cast<microseconds>(steady_clock::now() - start_imagesum).count()) << "us\n";
   
     if (cudaStatus != cudaSuccess)
     {
@@ -830,16 +838,12 @@ int Encrypt(std::string file, int rounds, int rotations)
     auto start_hash = steady_clock::now(); 
     //Calculate sum of the sha256 hash of the sum of the encrypted image
     calc_sum_of_hash(host_hash_sum_ENC, hash_sum_byte_ENC);
-    auto end_hash = steady_clock::now();
-    auto duration_hash = (int)duration_cast<microseconds>(end_hash - start_hash).count();
-    printf("\nCompute sha256 hash of the sum of the encrypted image = %d us", duration_hash);
+    cout << "Calculate sum of hash of encrypted image: " << (duration_cast<microseconds>(steady_clock::now() - start_hash).count()) << "us\n";
    
     auto start_modification = steady_clock::now(); 
     //Modify the parameters by adding Reverse Change Propagation Offset to them
     reverseChangePropagation(pVec, dVec, hash_sum_byte_ENC, Mode::ENCRYPT);
-    auto end_modification = steady_clock::now();
-    auto duration_modification = (int)duration_cast<microseconds>(end_modification - start_modification).count();
-    printf("\nModify the parameters using the offset of the generated hash = %d us", duration_modification);
+    cout << "Modify all parameters for reverse change propagation: " << (duration_cast<microseconds>(steady_clock::now() - start_modification).count()) << "us\n";
     
     if(DEBUG_PARAMETERS == 1)
     {    
@@ -880,16 +884,14 @@ int Decrypt()
     // Read the file and confirm it's been opened
     auto start_read = steady_clock::now(); 
     cv::Mat img = cv::imread(path.fn_img_enc, cv::IMREAD_UNCHANGED);
-    auto end_read = steady_clock::now();
-    auto duration_read = (int)duration_cast<milliseconds>(end_read - start_read).count();
-    printf("\nRead the encrypted image = %d ms", duration_read);
+    cout << "Read the encrypted image: " << (duration_cast<milliseconds>(steady_clock::now() - start_read).count()) << "ms\n";
     
     if (!img.data)
     {
         cout << "Image not found!\n";
         return -1;
     }
-    
+
     //img.at<Vec3b>(0, 0)[0] = img.at<Vec3b>(0, 0)[0] + 1;
     //Resize image
     //cv::resize(img, img, cv::Size(4 , 4));
@@ -897,6 +899,10 @@ int Decrypt()
     // Read image dimensions
     const int dim[3] = { img.rows, img.cols, img.channels() };
     
+    cout <<"\nCols = "<<dim[0];
+    cout<<"\nRows = "<<dim[1];
+    cout<<"\nChannels = "<<dim[2];
+
     //Printing image
     if(PRINT_IMAGES == 1)
     {
@@ -952,16 +958,12 @@ int Decrypt()
     auto start_hash = steady_clock::now();
     //Calculate sum of hash of sum of encrypted image
     calc_sum_of_hash(host_hash_sum_DEC, hash_sum_byte_DEC);
-    auto end_hash = steady_clock::now();
-    auto duration_hash = (int)duration_cast<microseconds>(end_hash - start_hash).count();
-    printf("\nCompute sha256 hash of the sum of the encrypted image = %d us", duration_hash);
+    cout << "Compute SHA256 hash sum of encrypted image " << (duration_cast<microseconds>(steady_clock::now() - start_hash).count()) << "us\n";
     
-    auto start_modification = steady_clock::now();
+    auto start_recovery = steady_clock::now();
     //Recover all permutation and diffusion parameters by subtracting from said parameters, the Reverse Propagation Offset
     reverseChangePropagation(pVec, dVec, hash_sum_byte_DEC, Mode::DECRYPT);
-    auto end_modification = steady_clock::now();
-    auto duration_modification = (int)duration_cast<microseconds>(end_modification - start_modification).count();
-    printf("\nModify the parameters using the offset of the generated hash = %d us", duration_modification);
+    cout << "Recover encryption parameters: " << (duration_cast<microseconds>(steady_clock::now() - start_recovery).count()) << "us\n";
     
     if(DEBUG_PARAMETERS == 1)
     {
@@ -1009,9 +1011,8 @@ int Decrypt()
             }
         }
     }
-    auto end_dec = steady_clock::now();
-    auto duration_dec = (int)duration_cast<milliseconds>(end_dec - start_dec).count();
-    printf("\nDURATION OF DECRYPTION = %d ms", duration_dec);
+
+    cout << "DURARTION OF DECRYPTION: " << (duration_cast<milliseconds>(steady_clock::now() - start_dec).count()) << "ms\n";
     
     //Copy decrypted image from device memory to host memory
     cudaMemcpy(img.data, d_img, data_size, cudaMemcpyDeviceToHost);
@@ -1019,9 +1020,7 @@ int Decrypt()
     //Write decrypted image to disk
     auto start_write = steady_clock::now();
     imwrite(path.fn_img_dec, img);
-    auto end_write = steady_clock::now();
-    auto duration_write = (int)duration_cast<milliseconds>(end_write - start_write).count();
-    printf("\nWrite decrypted image = %d ms", duration_write);
+    cout << "Write Decrypted Image: " << (duration_cast<milliseconds>(steady_clock::now() - start_write).count()) << "ms\n";
     
     // Display decrypted image
     //imshow("Decrypted", img);
