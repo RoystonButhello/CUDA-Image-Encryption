@@ -4,7 +4,34 @@
 #define CLASSES_H
 
 #include <iostream>
-#include <corecrt_math_defines.h> // For M_PI
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  //define something for Windows (32-bit and 64-bit, this part is common)
+  #include <corecrt_math_defines.h> // For M_PI
+  
+  #ifdef _WIN64
+    //define something for Windows (64-bit only)
+    #include <corecrt_math_defines.h> // For M_PI
+  #else
+    //define something for Windows (32-bit only)
+    #include <corecrt_math_defines.h> // For M_PI
+  #endif
+
+#elif __linux__
+  // Linux
+  #include <cmath> // For M_PI
+  
+#elif __unix__ // all unices not caught above
+  // Unix
+  #include <cmath> // For M_PI
+  
+#elif defined(_POSIX_VERSION)
+  // POSIX
+  #include <cmath> // For M_PI
+
+#else
+  #error "Unknown compiler"
+#endif
 
 using namespace std;
 
