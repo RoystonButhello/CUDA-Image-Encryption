@@ -68,8 +68,8 @@ class Paths
             file_name = "images/" + file;
             file_type = ".png";
             fn_img = file_name + file_type;
-            fn_img_enc = fn_img + "_ENC" + file_type;
-            fn_img_dec = fn_img + "_DEC" + file_type;
+            fn_img_enc = file_name + "_ENC" + file_type;
+            fn_img_dec = file_name + "_DEC" + file_type;
         }
 };
 
