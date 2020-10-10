@@ -129,6 +129,7 @@ inline size_t CRNGVecSize(std::vector<CRNG>& vec)
     auto unit = sizeof(double);
     for (CRNG temp : vec)
     {
+        size += sizeof(Chaos);
         switch (temp.map)
         {
         case Chaos::Arnold: size += (unit * 2); break;

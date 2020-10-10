@@ -438,12 +438,11 @@ int Encrypt()
     uint32_t reducedHash_plain = getReducedHash(imageSum_plain);
     timeSince(start, "Generating reduced hash of plain image");
 
-    //Factor to induce propagation in permutation vector generation parameters
+    // Propagation Factors to influence vector generation parameters
     prop.perm_propfac = reducedHash_plain ^ getRandUInt32(PERMUTE_PROPAGATION_LOWER_LIMIT, PERMUTE_PROPAGATION_UPPER_LIMIT);
-    //Factor to induce forward propagation in diffusion vector generation parameters and diffusion kernel
     prop.diff_propfac = reducedHash_plain ^ getRandUInt32(DIFFUSE_PROPAGATION_LOWER_LIMIT, DIFFUSE_PROPAGATION_UPPER_LIMIT);
 
-    //Permutation and diffusion parameter modifiers 
+    // Parameter modifiers 
     offset.perm_modifier = getParameterOffset(prop.perm_propfac);
     offset.diff_modifier = getParameterOffset(prop.diff_propfac);
 
@@ -467,8 +466,6 @@ int Encrypt()
                 cerr << "\nENC_Permutation Failed!";
                 return -1;
             }
-
-
             pVec.push_back(permute[0]);
             pVec.push_back(permute[1]);
         }
@@ -495,7 +492,6 @@ int Encrypt()
     uint32_t imageSum_ENC = 0;
     start = steady_clock::now();
     cudaStatus = CudaImageReduce(d_img, imageSum_ENC, dim);
-
     if (cudaStatus != cudaSuccess)
     {
         cerr << "\nImage sum Failed!";
@@ -520,7 +516,7 @@ int Encrypt()
     // Calculate key size
     if (DEBUG_KEY == 1)
     {
-        size_t key_size = (sizeof(Chaos) * (pVec.size() + dVec.size())) + CRNGVecSize(pVec) + CRNGVecSize(dVec) + (sizeof(prop.perm_propfac) * 2);
+        size_t key_size = CRNGVecSize(pVec) + CRNGVecSize(dVec);
         printf("\nNumber of rounds = %d", config.rounds);
         printf("\nKEY SIZE = %lu Bytes\n\n", key_size);
     }
