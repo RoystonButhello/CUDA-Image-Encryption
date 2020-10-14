@@ -1,0 +1,507 @@
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_Arnold_12.png
+
+horizontal correlation:
+[[ 1.         -0.04647198]
+ [-0.04647198  1.        ]]
+
+vertical correlation:
+[[1.00000000e+00 4.21976921e-04]
+ [4.21976921e-04 1.00000000e+00]]
+
+diagonal correlation:
+[[1.         0.00284686]
+ [0.00284686 1.        ]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_Arnold_12.png
+
+entropy = 7.999786101757795
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_Arnold_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.418315saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_Arnold_12.png baboon_1pix__ENC_FG_Arnold_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.607086
+UACI = 33.513780saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_Arnold_22.png
+
+horizontal correlation:
+[[1.         0.00151705]
+ [0.00151705 1.        ]]
+
+vertical correlation:
+[[ 1.00000000e+00 -6.91099823e-04]
+ [-6.91099823e-04  1.00000000e+00]]
+
+diagonal correlation:
+[[ 1.00000000e+00 -5.99915186e-04]
+ [-5.99915186e-04  1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_Arnold_22.png
+
+entropy = 7.999811123816972
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_Arnold_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.349370saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_Arnold_22.png baboon_1pix__ENC_FG_Arnold_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.614843
+UACI = 33.448524saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_Arnold_32.png
+
+horizontal correlation:
+[[ 1.         -0.00365823]
+ [-0.00365823  1.        ]]
+
+vertical correlation:
+[[1.         0.00233959]
+ [0.00233959 1.        ]]
+
+diagonal correlation:
+[[ 1.         -0.00183602]
+ [-0.00183602  1.        ]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_Arnold_32.png
+
+entropy = 7.99974713291421
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_Arnold_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.310211saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_Arnold_32.png baboon_1pix__ENC_FG_Arnold_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.596278
+UACI = 33.483106saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LM_12.png
+
+horizontal correlation:
+[[1.         0.00407707]
+ [0.00407707 1.        ]]
+
+vertical correlation:
+[[ 1.         -0.00143032]
+ [-0.00143032  1.        ]]
+
+diagonal correlation:
+[[1.         0.00163738]
+ [0.00163738 1.        ]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LM_12.png
+
+entropy = 7.9997644972519275
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.306812saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LM_12.png baboon_1pix__ENC_FG_LM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.608231
+UACI = 33.460822saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LM_22.png
+
+horizontal correlation:
+[[1.         0.00407707]
+ [0.00407707 1.        ]]
+
+vertical correlation:
+[[ 1.         -0.00143032]
+ [-0.00143032  1.        ]]
+
+diagonal correlation:
+[[1.         0.00163738]
+ [0.00163738 1.        ]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LM_22.png
+
+entropy = 7.9997644972519275
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.306812saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LM_22.png baboon_1pix__ENC_FG_LM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.610138
+UACI = 33.512912saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LM_32.png
+
+horizontal correlation:
+[[ 1.         -0.00192969]
+ [-0.00192969  1.        ]]
+
+vertical correlation:
+[[1.00000000e+00 4.63303466e-04]
+ [4.63303466e-04 1.00000000e+00]]
+
+diagonal correlation:
+[[1.00000000e+00 6.65559677e-04]
+ [6.65559677e-04 1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LM_32.png
+
+entropy = 7.9997668961680235
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.349077saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LM_32.png baboon_1pix__ENC_FG_LM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.601364
+UACI = 33.459299saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_SLMM_12.png
+
+horizontal correlation:
+[[ 1.       -0.047293]
+ [-0.047293  1.      ]]
+
+vertical correlation:
+[[1.         0.00252383]
+ [0.00252383 1.        ]]
+
+diagonal correlation:
+[[ 1.00000000e+00 -6.00133281e-04]
+ [-6.00133281e-04  1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_SLMM_12.png
+
+entropy = 7.999759515262914
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_SLMM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.410997saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_SLMM_12.png baboon_1pix__ENC_FG_SLMM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.598694
+UACI = 33.468917saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_SLMM_22.png
+
+horizontal correlation:
+[[ 1.       -0.047293]
+ [-0.047293  1.      ]]
+
+vertical correlation:
+[[1.         0.00252383]
+ [0.00252383 1.        ]]
+
+diagonal correlation:
+[[ 1.00000000e+00 -6.00133281e-04]
+ [-6.00133281e-04  1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_SLMM_22.png
+
+entropy = 7.999759515262914
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_SLMM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.410997saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_SLMM_22.png baboon_1pix__ENC_FG_SLMM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.608103
+UACI = 33.489775saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_SLMM_32.png
+
+horizontal correlation:
+[[1.         0.00111212]
+ [0.00111212 1.        ]]
+
+vertical correlation:
+[[ 1.        -0.0015887]
+ [-0.0015887  1.       ]]
+
+diagonal correlation:
+[[ 1.00000000e+00 -4.89750029e-04]
+ [-4.89750029e-04  1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_SLMM_32.png
+
+entropy = 7.999756775153141
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_SLMM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.361137saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_SLMM_32.png baboon_1pix__ENC_FG_SLMM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.618912
+UACI = 33.465044saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LASM_12.png
+
+horizontal correlation:
+[[ 1.         -0.04569859]
+ [-0.04569859  1.        ]]
+
+vertical correlation:
+[[1.00000000e+00 9.89324758e-04]
+ [9.89324758e-04 1.00000000e+00]]
+
+diagonal correlation:
+[[1.00000000e+00 8.60587785e-04]
+ [8.60587785e-04 1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LASM_12.png 
+
+entropy = 7.99977684602662
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LASM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.317869saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LASM_12.png baboon_1pix__ENC_FG_LASM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.616114
+UACI = 33.521906saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+
+python3 correlation_full.py baboon_ENC_FG_LASM_22.png
+
+horizontal correlation:
+[[ 1.00000000e+00 -1.76316232e-05]
+ [-1.76316232e-05  1.00000000e+00]]
+
+vertical correlation:
+[[1.         0.00123609]
+ [0.00123609 1.        ]]
+
+diagonal correlation:
+[[1.00000000e+00 2.20366014e-04]
+ [2.20366014e-04 1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LASM_22.png
+
+entropy = 7.9997650154191575
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+./mae baboon.png baboon_ENC_FG_LASM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.198638saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$./npcr_uaci baboon_ENC_FG_LASM_22.png baboon_1pix__ENC_FG_LASM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.609756
+UACI = 33.426518saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+python3 correlation_full.py baboon_ENC_FG_LALM_12.png
+
+horizontal correlation:
+[[ 1.         -0.04633149]
+ [-0.04633149  1.        ]]
+
+vertical correlation:
+[[ 1.         -0.00141167]
+ [-0.00141167  1.        ]]
+
+diagonal correlation:
+[[ 1.         -0.00130416]
+ [-0.00130416  1.        ]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LALM_12.png
+
+entropy = 7.999761565360253
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LALM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.299295saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LALM_12.png baboon_1pix__ENC_FG_LALM_12.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.607086
+UACI = 33.413868saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LALM_22.png
+
+horizontal correlation:
+[[1.00000000e+00 2.34132593e-05]
+ [2.34132593e-05 1.00000000e+00]]
+
+vertical correlation:
+[[ 1.00000000e+00 -8.72287477e-04]
+ [-8.72287477e-04  1.00000000e+00]]
+
+diagonal correlation:
+[[1.00000000e+00 3.36004044e-04]
+ [3.36004044e-04 1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LALM_22.png
+
+entropy = 7.9997917125864335
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LALM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.334193saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LALM_22.png baboon_1pix__ENC_FG_LALM_22.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.602763
+UACI = 33.487590saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 correlation_full.py baboon_ENC_FG_LALM_32.png
+
+horizontal correlation:
+[[ 1.         -0.00129449]
+ [-0.00129449  1.        ]]
+
+vertical correlation:
+[[1.         0.00181563]
+ [0.00181563 1.        ]]
+
+diagonal correlation:
+[[ 1.00000000e+00 -1.71198964e-04]
+ [-1.71198964e-04  1.00000000e+00]]
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ python3 entropy_2.py baboon_ENC_FG_LALM_32.png
+
+entropy = 7.999747243727934
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./mae baboon.png baboon_ENC_FG_LALM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+MAE = 76.473021saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ 
+saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$ ./npcr_uaci baboon_ENC_FG_LALM_32.png baboon_1pix__ENC_FG_LALM_32.png
+
+Rows =  512
+Columns = 512
+Channels = 3
+NPCR = 99.611791
+UACI = 33.471290saswat@saswat-HP-ProBook-440-G3:~/CUDA-Image-Encryption/CUDA/imageTests/Dynamic_Data$
+
+
+
